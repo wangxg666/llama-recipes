@@ -26,3 +26,17 @@ class alpaca_dataset:
     train_split: str = "train"
     test_split: str = "val"
     data_path: str = "ft_datasets/alpaca_data.json"
+
+
+class hallucination_dataset:
+    dataset: str = "hallucination_dataset"
+    train_split: str = "train"
+    test_split: str = "val"
+    data_path: str = "ft_datasets/hallucination_data.json"
+
+
+class my_grammar_dataset:
+    dataset: str = "my_grammar_dataset"
+    train_split: str = "train"
+    test_split: str = "val"
+    data_path: str = "/mnt/nlp/xingguang/mac_desk/husky-go/hallucination/data_scripts_grammar/train.txt"

@@ -68,6 +68,7 @@ from transformers.models.llama.modeling_llama import LlamaDecoderLayer
 
 
 def main(**kwargs):
+
     # Update the configuration for the training and sharding process
     update_config((train_config, fsdp_config), **kwargs)
 
@@ -110,7 +111,6 @@ def main(**kwargs):
     tokenizer = LlamaTokenizer.from_pretrained(train_config.model_name)
     tokenizer.add_special_tokens(
             {
-            
                 "pad_token": "<PAD>",
             }
         )

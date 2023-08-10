@@ -9,7 +9,7 @@ class train_config:
     model_name: str="PATH/to/LLAMA/7B"
     enable_fsdp: bool= False 
     run_validation: bool=True
-    batch_size_training: int=4
+    batch_size_training: int=1
     num_epochs: int=3
     num_workers_dataloader: int=1
     lr: float=1e-4
@@ -20,7 +20,7 @@ class train_config:
     mixed_precision: bool=True
     val_batch_size: int=1
     dataset = "samsum_dataset"
-    micro_batch_size: int=4
+    micro_batch_size: int=1
     peft_method: str = "lora" # None , llama_adapter, prefix
     use_peft: bool=False
     output_dir: str = "PATH/to/save/PEFT/model"

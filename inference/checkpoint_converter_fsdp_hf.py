@@ -45,8 +45,8 @@ def main(
         print(f"Model name: {HF_model_path_or_name}")
     except Exception as e:
         print(f"An error occurred: {e}")
-        
-        
+
+
     #load the HF model definition from config
     model_def = load_llama_from_config(HF_model_path_or_name)
     print("model is loaded from config")
@@ -59,5 +59,6 @@ def main(
     #save the FSDP sharded checkpoints in HF format
     model.save_pretrained(consolidated_model_path)
     print(f"HuggingFace model checkpoints has been saved in {consolidated_model_path}")
+
 if __name__ == "__main__":
     fire.Fire(main)
