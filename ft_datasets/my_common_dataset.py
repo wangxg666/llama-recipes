@@ -7,34 +7,43 @@ import torch
 from torch.utils.data import Dataset
 
 
-PROMOT = """
+PROMOT_DICT = {
+    "my_grammar_dataset": """
 Here is a short text and I need your help to review whether the words are used correctly,
 text:
     {text}
 your review result
     {description}
+""",
+
+    "my_clickbait_dataset": """
+Here is a news title and I need your help to review whether it's wrote with clickbait, exaggerate, curious, firghtened or even angry ways,
+text:
+    {text}
+your review result
+    {description}
 """
+}
 
-class MyGrammarDataset(Dataset):
+class MyCommonDataset(Dataset):
     def __init__(self, dataset_config, tokenizer, partition="train", max_words=256):
-        self.raw_data = [json.loads(data) for data in open(dataset_config.data_path)]
-        random.shuffle(self.raw_data)
-
-        n = len(self.raw_data)
-        if partition == "train":
-            self.raw_data = self.raw_data[0:int(n * 0.9)]
+        if partition == 'train':
+            self.raw_data = [json.loads(data) for data in open(dataset_config.train_data_path)]
         else:
-            self.raw_data = self.raw_data[int(n * 0.9):]
+            self.raw_data = [json.loads(data) for data in open(dataset_config.valid_data_path)]
+        random.shuffle(self.raw_data)
 
         self.max_words = max_words
         self.tokenizer = tokenizer
+
+        self.PROMPT = PROMOT_DICT[dataset_config.dataset]
 
     def __len__(self):
         return len(self.raw_data)
 
     def __getitem__(self, index):
         item = self.raw_data[index]
-        prompt = PROMOT.format_map(item)
+        prompt = self.PROMPT.format_map(item)
         example = prompt
 
         prompt = torch.tensor(
@@ -64,9 +73,3 @@ class MyGrammarDataset(Dataset):
             "labels": labels,
             "attention_mask":example_mask,
         }
-
-
-if __name__ == '__main__':
-    from configs.datasets import my_grammar_dataset
-
-    dataset = MyGrammarDataset(my_grammar_dataset, None, None, None)

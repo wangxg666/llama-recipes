@@ -9,6 +9,7 @@ import torch
 import os
 import sys
 import time
+import json
 from typing import List
 
 from transformers import LlamaTokenizer
@@ -18,9 +19,10 @@ from model_utils import load_model, load_peft_model, load_llama_from_config
 def main(
     model_name,
     peft_model: str=None,
+    dataset: str=None,
     quantization: bool=False,
-    max_new_tokens =100, #The maximum numbers of tokens to generate
-    prompt_file: str=None,
+    max_new_tokens =256, #The maximum numbers of tokens to generate
+    input_file: str=None,
     seed: int=42, #seed value for reproducibility
     do_sample: bool=True, #Whether or not to use sampling ; use greedy decoding otherwise.
     min_length: int=None, #The minimum length of the sequence to be generated, input prompt + min_new_tokens
@@ -30,9 +32,6 @@ def main(
     top_k: int=50, # [optional] The number of highest probability vocabulary tokens to keep for top-k-filtering.
     repetition_penalty: float=1.0, #The parameter for repetition penalty. 1.0 means no penalty.
     length_penalty: int=1, #[optional] Exponential penalty to the length that is used with beam-based generation. 
-    enable_azure_content_safety: bool=False, # Enable safety check with Azure content safety api
-    enable_sensitive_topics: bool=False, # Enable check for sensitive topics using AuditNLG APIs
-    enable_saleforce_content_safety: bool=True, # Enable safety check woth Saleforce safety flan t5
     **kwargs
 ):
 
@@ -44,7 +43,6 @@ def main(
     tokenizer = LlamaTokenizer.from_pretrained(model_name)
     tokenizer.add_special_tokens(
         {
-         
             "pad_token": "<PAD>",
         }
     )
@@ -52,23 +50,18 @@ def main(
     if peft_model:
         model = load_peft_model(model, peft_model)
 
+    from ft_datasets.my_common_dataset import PROMOT_DICT
+    if dataset not in PROMOT_DICT:
+        exit(0)
+    prompt_template = PROMOT_DICT[dataset]
 
     model.eval()
 
-    for row in pd.read_csv(prompt_file).itertuples():
-        word = row.word
-        sentence = row.prefix
+    for data in open(input_file):
+        obj = json.loads(data)
+        prompt = prompt_template.format_map(obj)
 
-        user_prompt = """
-        Given a sentence prefix, please generate the next word.
-        The next word should not be "{word}" but have similar spelling with "{word}" and start with {char},
-        and please give 3 candidates
-        sentence prefix:
-            {sentence}
-        your answer is 
-            """.format(word=word, sentence=sentence, char=word[0], format='{"candidate": []}')
-
-        batch = tokenizer(user_prompt, return_tensors="pt")
+        batch = tokenizer(prompt, return_tensors="pt")
         batch = {k: v.to("cuda") for k, v in batch.items()}
         start = time.perf_counter()
         with torch.no_grad():
