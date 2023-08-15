@@ -40,8 +40,8 @@ class my_grammar_dataset:
     dataset: str = "my_grammar_dataset"
     train_split: str = "train"
     test_split: str = "val"
-    train_data_path: str = f"{root}/data/train.txt"
-    valid_data_path: str = f"{root}/data/valid.txt"
+    train_data_path: str = f"{root}/datas/train.txt"
+    valid_data_path: str = f"{root}/datas/valid.txt"
 
 
 class my_clickbait_dataset:

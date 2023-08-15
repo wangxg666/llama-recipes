@@ -23,7 +23,6 @@ def main(
     quantization: bool=False,
     max_new_tokens = 100, #The maximum numbers of tokens to generate
     input_file: str=None,
-    output_file: str=None,
     seed: int=42, #seed value for reproducibility
     do_sample: bool=True, #Whether or not to use sampling ; use greedy decoding otherwise.
     min_length: int=None, #The minimum length of the sequence to be generated, input prompt + min_new_tokens
@@ -59,8 +58,6 @@ def main(
     model.eval()
 
     datas = [data.strip() for data in open(input_file)]
-    sout = open(output_file, 'w')
-
     for iid, data in enumerate(datas):
         obj = json.loads(data)
         prompt = prompt_template.format_map(obj)
@@ -87,15 +84,11 @@ def main(
         # print(f"the inference time is {e2e_inference_time} ms")
         output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-        pred = output_text.replace(prompt, '')
-        real = obj['description']
         print(iid)
-        print(f'pred = {pred}')
-        print(f'real = {real}')
+        print(output_text.replace(prompt, ''))
+        print(obj['description'])
         print('*' * 35)
 
-        sout.write(f'{pred}\t{real}\n')
-    sout.close()
 
 if __name__ == "__main__":
     fire.Fire(main)
