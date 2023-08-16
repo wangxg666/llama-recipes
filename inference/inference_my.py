@@ -51,7 +51,14 @@ def main(
     if peft_model:
         model = load_peft_model(model, peft_model)
 
-    from ft_datasets.my_clickbait_dataset import PROMPT
+    from ft_datasets import (
+        get_my_clickbait_dataset,
+        get_my_grammar_dataset
+    )
+    DATASET_PREPROC = {
+        "my_grammar_dataset": get_my_grammar_dataset,
+        "my_clickbait_dataset": get_my_clickbait_dataset,
+    }
 
     model.eval()
 
@@ -60,7 +67,7 @@ def main(
 
     for iid, data in enumerate(datas):
         obj = json.loads(data)
-        prompt = PROMPT.format_map(obj)
+        prompt = DATASET_PREPROC[dataset].prompting(obj)
 
         batch = tokenizer(prompt, return_tensors="pt")
 

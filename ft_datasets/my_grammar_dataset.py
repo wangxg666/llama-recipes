@@ -38,13 +38,8 @@ class MyGrammarDataset(Dataset):
 
     def __getitem__(self, index):
         item = self.raw_data[index]
-        PROMOT = PROMOT_DICT[item['type']]
-
-        prompt = PROMOT.format_map(item)
-
+        prompt = MyGrammarDataset.prompting(item)
         example = prompt + item['label']
-
-        print(example)
 
         prompt = torch.tensor(
             self.tokenizer.encode(prompt), dtype=torch.int64
@@ -70,8 +65,14 @@ class MyGrammarDataset(Dataset):
         return {
             "input_ids": example,
             "labels": labels,
-            "attention_mask":example_mask,
+            "attention_mask": example_mask,
         }
+
+    @staticmethod
+    def prompting(item):
+        PROMOT = PROMOT_DICT[item['type']]
+        prompt = PROMOT.format_map(item)
+        return prompt
 
 
 if __name__ == '__main__':

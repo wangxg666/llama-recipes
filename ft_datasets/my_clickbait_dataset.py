@@ -36,7 +36,7 @@ class MyClickbaitDataset(Dataset):
 
     def __getitem__(self, index):
         item = self.raw_data[index]
-        prompt = PROMPT.format_map(item)
+        prompt = MyClickbaitDataset.prompting(item)
         example = prompt + item["description"]
 
         prompt = torch.tensor(
@@ -63,8 +63,12 @@ class MyClickbaitDataset(Dataset):
         return {
             "input_ids": example,
             "labels": labels,
-            "attention_mask":example_mask,
+            "attention_mask": example_mask,
         }
+
+    @staticmethod
+    def prompting(item):
+        return PROMPT.format_map(item)
 
 
 if __name__ == '__main__':
@@ -72,7 +76,7 @@ if __name__ == '__main__':
 
     from transformers import LlamaTokenizer
     tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
-    dataset = MyCommonDataset(my_grammar_dataset, tokenizer)
+    dataset = MyClickbaitDataset(my_grammar_dataset, tokenizer)
     for k, v in dataset[0].items():
         print(k)
         print(v)
