@@ -50,7 +50,7 @@ def main(
     if peft_model:
         model = load_peft_model(model, peft_model)
 
-    from ft_datasets.my_common_dataset import PROMOT_DICT
+    from ft_datasets.my_clickbait_dataset import PROMOT_DICT
     if dataset not in PROMOT_DICT:
         exit(0)
     prompt_template = PROMOT_DICT[dataset]

@@ -51,10 +51,7 @@ def main(
     if peft_model:
         model = load_peft_model(model, peft_model)
 
-    from ft_datasets.my_common_dataset import PROMOT_DICT
-    if dataset not in PROMOT_DICT:
-        exit(0)
-    prompt_template = PROMOT_DICT[dataset]
+    from ft_datasets.my_clickbait_dataset import PROMPT
 
     model.eval()
 
@@ -63,7 +60,7 @@ def main(
 
     for iid, data in enumerate(datas):
         obj = json.loads(data)
-        prompt = prompt_template.format_map(obj)
+        prompt = PROMPT.format_map(obj)
 
         batch = tokenizer(prompt, return_tensors="pt")
 

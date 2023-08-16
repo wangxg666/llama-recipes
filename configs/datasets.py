@@ -36,16 +36,16 @@ class hallucination_dataset:
 
 
 class my_grammar_dataset:
-    root = '/mnt/nlp/xingguang/mac_desk/husky-go/hallucination/data_scripts_grammar'
+    root = '/mnt/nlp/xingguang/mac_desk/husky-go/llama/data_scripts/grammar'
     dataset: str = "my_grammar_dataset"
     train_split: str = "train"
     test_split: str = "val"
-    train_data_path: str = f"{root}/datas/train.txt"
-    valid_data_path: str = f"{root}/datas/valid.txt"
+    train_data_path: str = f"{root}/datas/train.c4200m.txt"
+    valid_data_path: str = f"{root}/datas/valid.c4200m.txt"
 
 
 class my_clickbait_dataset:
-    root = '/mnt/nlp/xingguang/mac_desk/husky-go/hallucination/data_scripts_clickbaity'
+    root = '/mnt/nlp/xingguang/mac_desk/husky-go/llama/data_scripts/clickbaity'
     dataset: str = "my_clickbait_dataset"
     train_split: str = "train"
     test_split: str = "val"

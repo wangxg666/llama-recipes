@@ -31,6 +31,7 @@ def get_preprocessed_samsum(dataset_config, tokenizer, split):
     ).map(Concatenator(), batched=True)
     return dataset
 
+
 if __name__ == '__main__':
     from configs.datasets import samsum_dataset
 

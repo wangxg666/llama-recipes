@@ -8,52 +8,43 @@ from torch.utils.data import Dataset
 
 
 PROMOT_DICT = {
-#     "my_grammar_dataset": """
-# Here is a short text and I need your help to review are there words that are used incorrectly,
-# text: {text}
-# your review result:
-# """,
-    "my_grammar_dataset": """
-Below is an instruction that describes a task. 
-There might be some words that are not used with correct grammar or have spelling errors for some words.
-### text: {text}
-### response: 
-""",
+    "SINGLE": """Below is an instruction that describes a task. 
+The following **text** might have some grammatical errors.
+Please  read it and give your audit result whether it has grammatical errors
+### text: {source_sent}
+### response: """,
 
-    "my_clickbait_dataset": """
-Below is an instruction that describes a task. 
-The following **text** might be writen informally, which is clickbait, exaggerate, curious, firghtened or even angry.
-Please read it and give your audit result whether it's writen informally. 
-### text: {text}
-### your result: 
-"""
+    "SEQ2SEQ": """Below is an instruction that describes a task. 
+The following **text** have some grammatical errors.
+Please fix these errors and output the new text.
+### text: {source_sent}
+### new text: """,
 }
 
 
-class MyCommonDataset(Dataset):
+class MyGrammarDataset(Dataset):
     def __init__(self, dataset_config, tokenizer, partition="train", max_words=256):
         if partition == 'train':
-            # datas = [json.loads(data) for data in open(dataset_config.train_data_path)][0:16]
-            # self.raw_data = []
-            # for i in range(10):
-            #     self.raw_data.extend(datas)
             self.raw_data = [json.loads(data) for data in open(dataset_config.train_data_path)]
             random.shuffle(self.raw_data)
         else:
-            self.raw_data = [json.loads(data) for data in open(dataset_config.valid_data_path)][0:256]
+            self.raw_data = [json.loads(data) for data in open(dataset_config.valid_data_path)]
 
         self.max_words = max_words
         self.tokenizer = tokenizer
-
-        self.PROMPT = PROMOT_DICT[dataset_config.dataset]
 
     def __len__(self):
         return len(self.raw_data)
 
     def __getitem__(self, index):
         item = self.raw_data[index]
-        prompt = self.PROMPT.format_map(item)
-        example = prompt + item["description"]
+        PROMOT = PROMOT_DICT[item['type']]
+
+        prompt = PROMOT.format_map(item)
+
+        example = prompt + item['label']
+
+        print(example)
 
         prompt = torch.tensor(
             self.tokenizer.encode(prompt), dtype=torch.int64
@@ -88,7 +79,7 @@ if __name__ == '__main__':
 
     from transformers import LlamaTokenizer
     tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
-    dataset = MyCommonDataset(my_grammar_dataset, tokenizer)
+    dataset = MyGrammarDataset(my_grammar_dataset, tokenizer, partition='val')
     for k, v in dataset[0].items():
         print(k)
         print(v)
