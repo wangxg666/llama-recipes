@@ -25,10 +25,10 @@ Please fix these errors and output the new text.
 class MyGrammarDataset(Dataset):
     def __init__(self, dataset_config, tokenizer, partition="train", max_words=256, debug=False):
         if partition == 'train':
-            self.raw_data = [json.loads(data) for data in open(dataset_config.train_data_path)][0:1000]
+            self.raw_data = [json.loads(data) for data in open(dataset_config.train_data_path)]
             random.shuffle(self.raw_data)
         else:
-            self.raw_data = [json.loads(data) for data in open(dataset_config.valid_data_path)][0:50]
+            self.raw_data = [json.loads(data) for data in open(dataset_config.valid_data_path)]
 
         self.max_words = max_words
         self.tokenizer = tokenizer
