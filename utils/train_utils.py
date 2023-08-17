@@ -79,12 +79,12 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
     results = {}
     best_val_loss = float("inf")
 
-    def save_model(epoch=-1, accu_step=-1):
+    def save_model(epoch=-1, accu_step=-1, sub_dir=''):
         if epoch != -1:
             sub_dir = f'epoch_{str(1000 + epoch)[1:]}'
         elif accu_step != -1:
             sub_dir = f'step_{str(100000 + accu_step // 1000)[1:]}k'
-        else:
+        elif not sub_dir:
             return
 
         if train_config.enable_fsdp:
@@ -194,12 +194,13 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
         
         # Update the learning rate as needed
         lr_scheduler.step()
-          
+        save_model(epoch=epoch)
+
         if train_config.run_validation:
             eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)   
             checkpoint_start_time = time.perf_counter()
             if train_config.save_model and eval_epoch_loss < best_val_loss:
-                save_model(epoch=epoch)
+                save_model(sub_dir='best_model')
 
             checkpoint_end_time = time.perf_counter() - checkpoint_start_time
             checkpoint_times.append(checkpoint_end_time)

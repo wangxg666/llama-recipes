@@ -68,6 +68,7 @@ def main(
     for iid, data in enumerate(datas):
         obj = json.loads(data)
         prompt = DATASET_PREPROC[dataset].prompting(obj)
+        print(prompt)
 
         batch = tokenizer(prompt, return_tensors="pt")
 
@@ -92,7 +93,7 @@ def main(
         output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
         pred = output_text.replace(prompt, '')
-        real = obj['description']
+        real = obj['label']
         print(iid)
         print(f'pred = {pred}')
         print(f'real = {real}')

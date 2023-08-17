@@ -41,11 +41,21 @@ class MyGrammarDataset(Dataset):
         prompt = MyGrammarDataset.prompting(item)
         example = prompt + item['label']
 
+        print(prompt)
+        print(example)
+
         prompt = torch.tensor(
             self.tokenizer.encode(prompt), dtype=torch.int64
         )
         example = self.tokenizer.encode(example)
+
+        print(len(prompt))
+        print(len(example))
+
         example.append(self.tokenizer.eos_token_id)
+        print(len(prompt))
+        print(len(example))
+
         example = torch.tensor(
             example, dtype=torch.int64
         )
@@ -81,6 +91,7 @@ if __name__ == '__main__':
     from transformers import LlamaTokenizer
     tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
     dataset = MyGrammarDataset(my_grammar_dataset, tokenizer, partition='val')
-    for k, v in dataset[0].items():
-        print(k)
-        print(v)
+    for i in range(10):
+        for k, v in dataset[i].items():
+            print(k)
+            print(v)
