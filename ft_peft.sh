@@ -12,7 +12,7 @@ CUDA_VISIBLE_DEVICES="2,3" torchrun \
   --dist_checkpoint_folder fine-tuned  \
   --pure_bf16 \
   --output_dir ./llama-2-7b-grammar-peft/ \
-  --batch_size_training 16 \
+  --batch_size_training 4 \
   --micro_batch_size 4 \
   --num_epochs 5 \
   --check_point_steps 1000

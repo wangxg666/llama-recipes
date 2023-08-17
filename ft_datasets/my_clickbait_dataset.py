@@ -12,7 +12,7 @@ Below is an instruction that describes a task.
 The following **text** might be writen informally, which is clickbait, exaggerate, curious, firghtened or even angry.
 Please read it and give your audit result whether it's writen informally. 
 ### text: {text}
-### your result: 
+### your result:
 """
 
 

@@ -12,26 +12,27 @@ PROMOT_DICT = {
 The following **text** might have some grammatical errors.
 Please  read it and give your audit result whether it has grammatical errors
 ### text: {source_sent}
-### response: """,
+### response:""",
 
     "SEQ2SEQ": """Below is an instruction that describes a task. 
 The following **text** have some grammatical errors.
 Please fix these errors and output the new text.
 ### text: {source_sent}
-### new text: """,
+### response:""",
 }
 
 
 class MyGrammarDataset(Dataset):
-    def __init__(self, dataset_config, tokenizer, partition="train", max_words=256):
+    def __init__(self, dataset_config, tokenizer, partition="train", max_words=256, debug=False):
         if partition == 'train':
-            self.raw_data = [json.loads(data) for data in open(dataset_config.train_data_path)]
+            self.raw_data = [json.loads(data) for data in open(dataset_config.train_data_path)][0:1000]
             random.shuffle(self.raw_data)
         else:
-            self.raw_data = [json.loads(data) for data in open(dataset_config.valid_data_path)]
+            self.raw_data = [json.loads(data) for data in open(dataset_config.valid_data_path)][0:50]
 
         self.max_words = max_words
         self.tokenizer = tokenizer
+        self.debug = debug
 
     def __len__(self):
         return len(self.raw_data)
@@ -41,24 +42,17 @@ class MyGrammarDataset(Dataset):
         prompt = MyGrammarDataset.prompting(item)
         example = prompt + item['label']
 
-        print(prompt)
-        print(example)
+        prompt = self.tokenizer.encode(prompt)
+        example = self.tokenizer.encode(example) + [self.tokenizer.eos_token_id]
 
-        prompt = torch.tensor(
-            self.tokenizer.encode(prompt), dtype=torch.int64
-        )
-        example = self.tokenizer.encode(example)
+        if self.debug:
+            n = len(prompt) - 3
+            print(len(prompt), prompt[n:])
+            print(len(example), example[n:])
 
-        print(len(prompt))
-        print(len(example))
+        prompt = torch.tensor(prompt, dtype=torch.int64)
+        example = torch.tensor(example, dtype=torch.int64)
 
-        example.append(self.tokenizer.eos_token_id)
-        print(len(prompt))
-        print(len(example))
-
-        example = torch.tensor(
-            example, dtype=torch.int64
-        )
         padding = self.max_words - example.shape[0]
         if padding > 0:
             example = torch.cat((example, torch.zeros(padding, dtype=torch.int64) - 1))
@@ -90,8 +84,9 @@ if __name__ == '__main__':
 
     from transformers import LlamaTokenizer
     tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
-    dataset = MyGrammarDataset(my_grammar_dataset, tokenizer, partition='val')
+    dataset = MyGrammarDataset(my_grammar_dataset, tokenizer, partition='val', debug=True)
     for i in range(10):
-        for k, v in dataset[i].items():
-            print(k)
-            print(v)
+        dataset[i]
+        # for k, v in dataset[i].items():
+        #     print(k)
+        #     print(v)
