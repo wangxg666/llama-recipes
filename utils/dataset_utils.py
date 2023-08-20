@@ -10,8 +10,9 @@ from ft_datasets import (
     get_alpaca_dataset,
     get_samsum_dataset,
     get_hallucination_dataset,
+    get_my_grammar_dataset,
     get_my_clickbait_dataset,
-    get_my_grammar_dataset
+    get_my_allin_one_dataset,
 )
 from typing import Optional
 
@@ -23,6 +24,7 @@ DATASET_PREPROC = {
     "hallucination_dataset": get_hallucination_dataset,
     "my_grammar_dataset": get_my_grammar_dataset,
     "my_clickbait_dataset": get_my_clickbait_dataset,
+    'my_allin_one_dataset': get_my_allin_one_dataset,
 }
 
 
