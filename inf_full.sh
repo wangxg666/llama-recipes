@@ -1,4 +1,11 @@
+DATA_DIR="/mnt/nlp/xingguang/llama/datasets/nb_training/clickbait"
+DATA_DIR="/mnt/nlp/xingguang/llama/datasets/nb_training/grammar_c4200m_seq2seq"
+
+WORK_DIR="/home/cpp/xingguang/llama/model_checkpoints"
+DATASET_NAME="my_allin_one_dataset"
+
 python inference/inference_my.py \
-  --model_name llama-2-7b-grammar-full-hf \
-  --dataset my_grammar_dataset \
-  --input_file /mnt/nlp/xingguang/mac_desk/husky-go/hallucination/data_scripts_grammar/datas/valid.txt
+  --model_name ${WORK_DIR}/${DATASET_NAME}-hf/ \
+  --dataset my_allin_one_dataset \
+  --input_file ${DATA_DIR}/valid.txt \
+  --output_file ${DATA_DIR}/valid.txt.pred

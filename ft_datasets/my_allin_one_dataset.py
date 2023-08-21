@@ -39,6 +39,7 @@ class MyAllInOneDataset(Dataset):
             f'{dataset_config.root}/{sub_dir}/{partition}.txt'
             for sub_dir in os.listdir(dataset_config.root)
             if os.path.exists(f'{dataset_config.root}/{sub_dir}/{partition}.txt')
+            and sub_dir == 'grammar_c4200m_seq2seq'
         ]
         self.raw_data = [[json.loads(data) for data in open(input_file)] for input_file in input_files]
         if debug:
@@ -47,8 +48,7 @@ class MyAllInOneDataset(Dataset):
             for datas in self.raw_data:
                 for data in datas:
                     type = data['type']
-                    if len(type2data[type]) < 10:
-                        type2data[type].append(data)
+                    type2data[type].append(data)
             self.raw_data = list(type2data.values())
 
         self.raw_data = list(itertools.chain(*self.raw_data))
@@ -73,13 +73,14 @@ class MyAllInOneDataset(Dataset):
         example = self.tokenizer.encode(example) + [self.tokenizer.eos_token_id]
 
         if self.debug:
-            n = len(prompt) - 3
-            print(item['type'])
-            print(len(prompt), prompt[n:])
-            print(MyAllInOneDataset.prompting(item))
-            print(len(example), example[n:])
-            print(MyAllInOneDataset.prompting(item) + ' ' + item['label'])
-            print('**' * 20)
+            if len(prompt) + 3 >= len(example):
+                n = len(prompt) - 3
+                print(item['type'])
+                print(len(prompt), prompt[n:])
+                print(len(example), example[n:])
+                print(MyAllInOneDataset.prompting(item) + ' ' + item['label'])
+                print('**' * 20)
+                print('\n')
 
         prompt = torch.tensor(prompt, dtype=torch.int64)
         example = torch.tensor(example, dtype=torch.int64)
@@ -114,7 +115,7 @@ if __name__ == '__main__':
     from transformers import LlamaTokenizer
 
     tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
-    dataset = MyAllInOneDataset(my_allin_one_dataset, tokenizer, partition='valid', debug=True)
+    dataset = MyAllInOneDataset(my_allin_one_dataset, tokenizer, partition='train', debug=True)
     print(len(dataset))
     for i in range(len(dataset)):
         dataset[i]

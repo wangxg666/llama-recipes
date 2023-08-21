@@ -26,9 +26,9 @@ class PredictionWriter:
         if type not in self.type2sout:
             self.type2sout[type] = open(self.output_file + '.' + type, 'w')
 
-        if type == "SINGLE":
-            line = f'{type}\t{real}\t{pred}\t{obj["source_sent"]}'
-        elif type == "SEQ2SEQ":
+        if 'SINGLE' in type:
+            line = f'type: {type}\treal: {real}\tpred: {pred}\t{obj["source_sent"]}'
+        elif 'SEQ2SEQ' in type:
             line = f'type: {type}\ninput: {obj["source_sent"]}\nreal: {real}\npred: {pred}\n\n'
         else:
             return
