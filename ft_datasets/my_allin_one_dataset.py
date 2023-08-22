@@ -13,9 +13,8 @@ PROMPT_DICT = {
 The following **text** might have some grammatical errors.
 Please read it and give your audit result whether it has grammatical errors.
 Your answer should be one of the following
-- No, no grammatical error
-- One, has only one grammatical error
-- Multi, has more than one grammatical error
+- No Grammatical Error, no grammatical error
+- One or More Grammatical Errors, has more than one grammatical error
 ### text: {source_sent}
 ### response:""",
 
@@ -33,14 +32,33 @@ Please read it and give your audit result whether it's writen informally.
 }
 
 
+PROMPT_DICT = {
+    "GRAMMAR_SINGLE": """
+The following **text** might have some grammatical errors, give your judgement.
+### text: {source_sent}
+### response:""",
+
+    "GRAMMAR_SEQ2SEQ": """Below is an instruction that describes a task. 
+The following **text** have some grammatical errors, please correct these errors. 
+### text: {source_sent}
+### response:""",
+
+    "CLICKBAIT_SINGLE": """Below is an instruction that describes a task. 
+The following **text** might be writen informally, give your judgement.
+### text: {source_sent}
+### response:"""
+}
+
+
 class MyAllInOneDataset(Dataset):
     def __init__(self, dataset_config, tokenizer, partition="train", max_words=256, debug=False):
         input_files = [
             f'{dataset_config.root}/{sub_dir}/{partition}.txt'
             for sub_dir in os.listdir(dataset_config.root)
             if os.path.exists(f'{dataset_config.root}/{sub_dir}/{partition}.txt')
-            and sub_dir == 'grammar_c4200m_seq2seq'
+            and sub_dir == 'grammar_c4200m_single'
         ]
+        print(json.dumps(input_files, indent=4))
         self.raw_data = [[json.loads(data) for data in open(input_file)] for input_file in input_files]
         if debug:
             from collections import defaultdict
@@ -73,14 +91,13 @@ class MyAllInOneDataset(Dataset):
         example = self.tokenizer.encode(example) + [self.tokenizer.eos_token_id]
 
         if self.debug:
-            if len(prompt) + 3 >= len(example):
-                n = len(prompt) - 3
-                print(item['type'])
-                print(len(prompt), prompt[n:])
-                print(len(example), example[n:])
-                print(MyAllInOneDataset.prompting(item) + ' ' + item['label'])
-                print('**' * 20)
-                print('\n')
+            n = len(prompt) - 3
+            print(item['type'])
+            print(len(prompt), prompt[n:])
+            print(len(example), example[n:])
+            print(MyAllInOneDataset.prompting(item) + ' ' + item['label'])
+            print('**' * 20)
+            print('\n')
 
         prompt = torch.tensor(prompt, dtype=torch.int64)
         example = torch.tensor(example, dtype=torch.int64)

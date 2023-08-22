@@ -8,3 +8,4 @@ from .hallucination_dataset import HallucinationDataset as get_hallucination_dat
 from .my_clickbait_dataset import MyClickbaitDataset as get_my_clickbait_dataset
 from .my_grammar_dataset import MyGrammarDataset as get_my_grammar_dataset
 from .my_allin_one_dataset import MyAllInOneDataset as get_my_allin_one_dataset
+from .my_pre_train_dataset import get_my_pre_train_dataset as get_my_pre_train_dataset

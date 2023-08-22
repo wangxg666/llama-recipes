@@ -59,3 +59,11 @@ class my_allin_one_dataset:
     test_split: str = "valid"
     train_data_path: str = f""
     valid_data_path: str = f""
+
+class my_pre_train_dataset:
+    root = '/mnt/nlp/xingguang/llama/datasets/nb_training'
+    dataset: str = "my_pre_train_dataset"
+    train_split: str = "train"
+    test_split: str = "valid"
+    train_data_path: str = f""
+    valid_data_path: str = f""

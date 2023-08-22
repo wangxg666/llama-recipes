@@ -13,6 +13,7 @@ from ft_datasets import (
     get_my_grammar_dataset,
     get_my_clickbait_dataset,
     get_my_allin_one_dataset,
+    get_my_pre_train_dataset,
 )
 from typing import Optional
 
@@ -25,6 +26,7 @@ DATASET_PREPROC = {
     "my_grammar_dataset": get_my_grammar_dataset,
     "my_clickbait_dataset": get_my_clickbait_dataset,
     'my_allin_one_dataset': get_my_allin_one_dataset,
+    'my_pre_train_dataset': get_my_pre_train_dataset,
 }
 
 

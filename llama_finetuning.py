@@ -222,6 +222,9 @@ def main(**kwargs):
             model.parameters(),
             lr=train_config.lr,
             weight_decay=0.0,
+            eps=1e-8,
+            betas=(0.9, 0.999),
+
         )
     scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
 

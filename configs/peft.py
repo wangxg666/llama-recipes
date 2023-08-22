@@ -8,7 +8,8 @@ from typing import ClassVar, List
 class lora_config:
      r: int=8
      lora_alpha: int=32
-     target_modules: ClassVar[List[str]]= ["q_proj", "v_proj"]
+     # target_modules: ClassVar[List[str]]= ["q_proj", "v_proj"]
+     target_modules: ClassVar[List[str]]= ["gate_proj", "down_proj", 'up_proj']
      bias= "none"
      task_type: str= "CAUSAL_LM"
      lora_dropout: float=0.05

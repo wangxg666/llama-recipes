@@ -1,7 +1,7 @@
 WORK_DIR="/home/cpp/xingguang/llama/model_checkpoints"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
-DATASET_NAME="my_allin_one_dataset"
-TAG="grammar-single"
+DATASET_NAME="my_pre_train_dataset"
+TAG="pt-yelp-ny"
 
 CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --nnodes 1 \

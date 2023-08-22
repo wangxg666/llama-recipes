@@ -12,7 +12,7 @@ class train_config:
     batch_size_training: int=1
     num_epochs: int=3
     num_workers_dataloader: int=1
-    lr: float=1e-4
+    lr: float=1e-3
     weight_decay: float=0.0
     gamma: float= 0.85
     seed: int=42
