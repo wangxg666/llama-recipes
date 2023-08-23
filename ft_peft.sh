@@ -22,9 +22,9 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --save_model \
   --pure_bf16 \
   --output_dir ${WORK_DIR}/${MODEL_NAME}/${DATASET_NAME}/${TAG}-peft/ \
-  --batch_size_training 8 \
-  --micro_batch_size 4 \
-  --num_epochs 3 \
+  --batch_size_training 16 \
+  --micro_batch_size 8 \
+  --num_epochs 10 \
   --check_point_steps 3000 \
   > ${LOG_FILE} &
 
