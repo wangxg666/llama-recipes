@@ -51,7 +51,7 @@ from peft import (
     PeftModel, PeftConfig,
     get_peft_model, TaskType, prepare_model_for_int8_training
 )
-from peft.tuners.lora import
+
 import configs
 from torch.distributed.fsdp import (
     FullyShardedDataParallel as FSDP,
@@ -63,7 +63,6 @@ from policies import AnyPrecisionAdamW
 from configs import fsdp_config, train_config
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
-from pkg_resources import packaging
 import torch
 import torch.cuda.nccl as nccl
 import torch.distributed as dist
