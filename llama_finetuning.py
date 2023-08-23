@@ -47,7 +47,11 @@ from utils.config_utils import (
     generate_peft_config,
     generate_dataset_config,
 )
-from peft import get_peft_model, TaskType, prepare_model_for_int8_training
+from peft import (
+    PeftModel, PeftConfig,
+    get_peft_model, TaskType, prepare_model_for_int8_training
+)
+from peft.tuners.lora import
 import configs
 from torch.distributed.fsdp import (
     FullyShardedDataParallel as FSDP,
@@ -123,7 +127,15 @@ def main(**kwargs):
                 "pad_token": "<PAD>",
             }
         )
-    if train_config.use_peft:
+
+    if train_config.peft_model:
+        model = PeftModel.from_pretrained(model, train_config.peft_model)
+        for name, param in model.named_parameters():
+            if 'lora' in name or 'Lora' in name:
+                param.requires_grad = True
+        model.print_trainable_parameters()
+
+    elif train_config.use_peft:
         peft_config = generate_peft_config(train_config, kwargs)
         model = get_peft_model(model, peft_config)
         model.print_trainable_parameters()

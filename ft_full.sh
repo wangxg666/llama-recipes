@@ -1,7 +1,7 @@
 WORK_DIR="/home/cpp/xingguang/llama/model_checkpoints"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_allin_one_dataset"
-TAG="grammar-single"
+TAG="grammar-seq2seq"
 
 ts=`date +"%Y-%m-%d_%H-%M-%S"`
 LOG_FILE="./logs/full-${DATASET_NAME}-${TAG}-${ts}.txt"

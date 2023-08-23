@@ -11,43 +11,44 @@ from torch.utils.data import Dataset
 PROMPT_DICT = {
     "GRAMMAR_SINGLE": """Below is an instruction that describes a task. 
 The following **text** might have some grammatical errors.
-Please read it and give your audit result whether it has grammatical errors.
-Your answer should be one of the following
-- No Grammatical Error, no grammatical error
-- One or More Grammatical Errors, has more than one grammatical error
+Kindly review it and provide your assessment of whether there are any grammatical errors. 
+Your response should be "Good." if there are no grammatical errors and "Poor." if there are.
 ### text: {source_sent}
 ### response:""",
 
     "GRAMMAR_SEQ2SEQ": """Below is an instruction that describes a task. 
-The following **text** have some grammatical errors.
-Please fix these errors and output the new text.
+The following **text** might have some grammatical errors.
+Please correct these errors and provide the revised text if it contains any mistakes, 
+or simply provide the text as is if it is correct.
 ### text: {source_sent}
 ### response:""",
 
     "CLICKBAIT_SINGLE": """Below is an instruction that describes a task. 
-The following **text** might be writen informally, which is clickbait, over-describing, exaggerating, intimidating, curious, frightened or even angry.
-Please read it and give your audit result whether it's writen informally. 
+The following **text** might be writen in an informal style, 
+characterized by clickbait tendencies, excessive elaboration, hyperbole, a confrontational tone, curiosity, fear, or even anger. 
+Please review it and provide your assessment of whether it is composed informally.
+Your response should be "Good." if it is writen formally and "Poor." if it is not.
 ### text: {source_sent}
 ### response:"""
 }
 
 
-PROMPT_DICT = {
-    "GRAMMAR_SINGLE": """
-The following **text** might have some grammatical errors, give your judgement.
-### text: {source_sent}
-### response:""",
-
-    "GRAMMAR_SEQ2SEQ": """Below is an instruction that describes a task. 
-The following **text** have some grammatical errors, please correct these errors. 
-### text: {source_sent}
-### response:""",
-
-    "CLICKBAIT_SINGLE": """Below is an instruction that describes a task. 
-The following **text** might be writen informally, give your judgement.
-### text: {source_sent}
-### response:"""
-}
+# PROMPT_DICT = {
+#     "GRAMMAR_SINGLE": """
+# The following **text** might have some grammatical errors, give your judgement.
+# ### text: {source_sent}
+# ### response:""",
+#
+#     "GRAMMAR_SEQ2SEQ": """Below is an instruction that describes a task.
+# The following **text** have some grammatical errors, please correct these errors.
+# ### text: {source_sent}
+# ### response:""",
+#
+#     "CLICKBAIT_SINGLE": """Below is an instruction that describes a task.
+# The following **text** might be writen informally, give your judgement.
+# ### text: {source_sent}
+# ### response:"""
+# }
 
 
 class MyAllInOneDataset(Dataset):
@@ -56,7 +57,7 @@ class MyAllInOneDataset(Dataset):
             f'{dataset_config.root}/{sub_dir}/{partition}.txt'
             for sub_dir in os.listdir(dataset_config.root)
             if os.path.exists(f'{dataset_config.root}/{sub_dir}/{partition}.txt')
-            and sub_dir == 'grammar_c4200m_single'
+            and sub_dir == 'grammar_c4200m_seq2seq'
         ]
         print(json.dumps(input_files, indent=4))
         self.raw_data = [[json.loads(data) for data in open(input_file)] for input_file in input_files]
@@ -132,7 +133,14 @@ if __name__ == '__main__':
     from transformers import LlamaTokenizer
 
     tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
-    dataset = MyAllInOneDataset(my_allin_one_dataset, tokenizer, partition='train', debug=True)
-    print(len(dataset))
-    for i in range(len(dataset)):
-        dataset[i]
+    # dataset = MyAllInOneDataset(my_allin_one_dataset, tokenizer, partition='train', debug=True)
+    # print(len(dataset))
+    # for i in range(len(dataset)):
+    #     dataset[i]
+
+    sent = "On 7th March, Dr Fontanelli delivered a presentation for the first regional launch of an online course on the right to property prepared in the framework of the HELP project of the Council of Europe (European Programme for Human Rights Education for Legal Professionals)"
+    print(tokenizer.tokenize(sent))
+
+    sent = "On 7th March, Dr Fontanelli delivered a presentation for the first regional launch of an online course on the right to propert prepared in the framework of the HELP project of the Council of Europe (European Programme for Human Rights Education for Legal Professionals)"
+    print(tokenizer.tokenize(sent))
+

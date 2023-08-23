@@ -73,6 +73,8 @@ def main(
         }
     )
 
+    print(model)
+
     if peft_model:
         model = load_peft_model(model, peft_model)
 

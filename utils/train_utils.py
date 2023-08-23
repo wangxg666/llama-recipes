@@ -36,6 +36,26 @@ from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from policies import bfSixteen, fpSixteen,bfSixteen_mixed, get_llama_wrapper
+import wandb
+
+
+class WanDBWriter:
+    def __init__(self, name, rank):
+        if rank == 0:
+            wandb.init(
+                project="llama",
+                entity="canon",
+                name=name
+            )
+
+            wandb.define_metric('step')
+            wandb.define_metric('step_loss', step_metric='step')
+            wandb.define_metric('valid_loss', step_metric='step')
+
+    def log(self, rank, info):
+        if rank == 0:
+            wandb.log(info)
+
 
 def set_tokenizer_params(tokenizer: LlamaTokenizer):
     tokenizer.pad_token_id = 0
@@ -78,6 +98,8 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
     checkpoint_times = []
     results = {}
     best_val_loss = float("inf")
+
+    wandb_writer = WanDBWriter(train_config.wandb_name, rank)
 
     def save_model(epoch=-1, accu_step=-1, sub_dir=''):
         if epoch != -1:
@@ -164,6 +186,17 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
 
                 if accu_step % train_config.check_point_steps == 0:
                     save_model(accu_step=accu_step)
+                    if train_config.run_validation:
+                        eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)
+                        wandb_writer.log(rank, {
+                            'step': accu_step,
+                            'valid_loss': eval_epoch_loss
+                        })
+
+                wandb_writer.log(rank, {
+                    'step': accu_step,
+                    'step_loss': loss.detach().float()
+                })
 
         epoch_end_time = time.perf_counter()-epoch_start_time
         epoch_times.append(epoch_end_time)    
@@ -211,14 +244,20 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
                         print(f"best eval loss on epoch {epoch} is {best_val_loss}")
                 else:
                     print(f"best eval loss on epoch {epoch} is {best_val_loss}")
+
             val_loss.append(best_val_loss)
             val_prep.append(eval_ppl)
+            wandb_writer.log(rank, {
+                'step': accu_step,
+                'valid_loss': eval_epoch_loss
+            })
         
         if train_config.enable_fsdp:
             if rank==0:
                 print(f"Epoch {epoch+1}: train_perplexity={train_perplexity:.4f}, train_epoch_loss={train_epoch_loss:.4f}, epcoh time {epoch_end_time}s")
         else:
             print(f"Epoch {epoch+1}: train_perplexity={train_perplexity:.4f}, train_epoch_loss={train_epoch_loss:.4f}, epcoh time {epoch_end_time}s")
+
     avg_epoch_time = sum(epoch_times)/ len(epoch_times) 
     avg_checkpoint_time = sum(checkpoint_times)/ len(checkpoint_times)   
     avg_train_prep = sum(train_prep)/len(train_prep)

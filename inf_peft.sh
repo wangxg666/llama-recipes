@@ -2,12 +2,14 @@
 set -x
 
 DATA_DIR="/mnt/nlp/xingguang/llama/datasets/nb_training/clickbait"
-DATA_DIR="/mnt/nlp/xingguang/llama/datasets/nb_training/grammar_c4200m_single"
+DATA_DIR="/mnt/nlp/xingguang/llama/datasets/nb_training/grammar_c4200m_seq2seq"
+#DATA_DIR="/mnt/nlp/xingguang/llama/datasets/nb_training/grammar_c4200m_single"
 
 WORK_DIR="/home/cpp/xingguang/llama/model_checkpoints.peft"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_allin_one_dataset"
-TAG="grammar-single"
+TAG="grammar-seq2seq"
+#TAG="grammar-single"
 
 CUDA_VISIBLE_DEVICES="0,1,2,3" python inference/inference_my.py \
   --length_penalty 3 \
