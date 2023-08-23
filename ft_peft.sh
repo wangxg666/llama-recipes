@@ -6,6 +6,10 @@ MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_allin_one_dataset"
 TAG="grammar-single"
 
+ts=`date +"%Y-%m-%d_%H-%M-%S"`
+LOG_FILE="./logs/peft-${DATASET_NAME}-${TAG}-${ts}.txt"
+echo "" > "${LOG_FILE}"
+
 CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --nnodes 1 \
   --nproc_per_node 4  \
@@ -21,4 +25,8 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --batch_size_training 8 \
   --micro_batch_size 4 \
   --num_epochs 3 \
-  --check_point_steps 3000
+  --check_point_steps 3000 \
+  > ${LOG_FILE} &
+
+echo ${LOG_FILE}
+tail -f ${LOG_FILE}
