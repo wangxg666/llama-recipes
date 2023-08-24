@@ -9,6 +9,8 @@ from torch.distributed.algorithms._checkpoint.checkpoint_wrapper import (
     CheckpointImpl,
     apply_activation_checkpointing,
 )
+from transformers.models.llama.modeling_llama import LlamaModel
+
 
 from transformers.models.t5.modeling_t5 import T5Block
 from transformers.models.llama.modeling_llama import LlamaDecoderLayer
@@ -19,7 +21,8 @@ non_reentrant_wrapper = partial(
     checkpoint_impl=CheckpointImpl.NO_REENTRANT,
 )
 
-check_fn = lambda submodule: isinstance(submodule, LlamaDecoderLayer)
+check_fn = lambda submodule: isinstance(submodule, LlamaModel)
+# check_fn = lambda submodule: isinstance(submodule, LlamaDecoderLayer)
 
 
 def apply_fsdp_checkpointing(model):

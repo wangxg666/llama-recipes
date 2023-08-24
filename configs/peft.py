@@ -2,7 +2,7 @@
 # This software may be used and distributed according to the terms of the Llama 2 Community License Agreement.
 
 from dataclasses import dataclass, field
-from typing import ClassVar, List
+from typing import ClassVar, List, Tuple
 
 
 @dataclass
@@ -10,8 +10,8 @@ class lora_config:
     r: int = 16
     lora_alpha: int = 32
     # target_modules: ClassVar[List[str]]= ["q_proj", "v_proj", "k_proj", "o_proj"]
-    target_modules: ClassVar[List[str]] = ["gate_proj", "down_proj", 'up_proj']
-    bias = "none"
+    target_modules: Tuple[str] = ("gate_proj", "down_proj", 'up_proj')
+    bias: str = "none"
     task_type: str = "CAUSAL_LM"
     lora_dropout: float = 0.05
     inference_mode: bool = False
