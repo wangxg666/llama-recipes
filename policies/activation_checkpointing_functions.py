@@ -21,8 +21,8 @@ non_reentrant_wrapper = partial(
     checkpoint_impl=CheckpointImpl.NO_REENTRANT,
 )
 
-check_fn = lambda submodule: isinstance(submodule, LlamaModel)
-# check_fn = lambda submodule: isinstance(submodule, LlamaDecoderLayer)
+# check_fn = lambda submodule: isinstance(submodule, LlamaModel)
+check_fn = lambda submodule: isinstance(submodule, LlamaDecoderLayer)
 
 
 def apply_fsdp_checkpointing(model):
