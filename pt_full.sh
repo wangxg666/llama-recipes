@@ -1,7 +1,7 @@
 WORK_DIR="/home/cpp/xingguang/llama/model_checkpoints"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_pre_train_dataset"
-TAG="pt-yelp-ny"
+TAG="pt-yelp-ca-25w"
 
 CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --nnodes 1 \
@@ -14,9 +14,11 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --dist_checkpoint_root_folder ${WORK_DIR} \
   --dist_checkpoint_folder ${DATASET_NAME}/${TAG}  \
   --pure_bf16 \
-  --batch_size_training 4 \
+  --batch_size_training 2 \
   --micro_batch_size 2 \
-  --check_point_steps 10000
+  --max_grad_norm 1.0 \
+  --check_point_steps 3000 \
+  --wandb_name ${DATASET_NAME}-${TAG}-${ts}
 
 python inference/checkpoint_converter_fsdp_hf.py \
   --fsdp_checkpoint_path ${WORK_DIR}/${DATASET_NAME}/${TAG}-${MODEL_NAME}/ \

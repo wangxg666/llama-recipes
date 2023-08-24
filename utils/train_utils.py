@@ -30,6 +30,7 @@ from torch.distributed.fsdp import StateDictType
 import torch.distributed as dist
 from pkg_resources import packaging
 from .memory_utils import MemoryTrace
+from torch import nn
 import model_checkpointing
 import torch.cuda.nccl as nccl
 from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
@@ -169,6 +170,8 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
                     # if fp16 is enabled, use gradient scaler to handle gradient update
                     scaler.scale(loss).backward()
                     if (step + 1) % gradient_accumulation_steps == 0 or step == len(train_dataloader) - 1:
+                        nn.utils.clip_grad_norm_(model.parameters(), train_config.max_grad_norm)
+
                         scaler.step(optimizer)
                         scaler.update()
                         optimizer.zero_grad()
@@ -176,6 +179,17 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
                     # regular backpropagation when fp16 is not used
                     loss.backward()
                     if (step + 1) % gradient_accumulation_steps == 0 or step == len(train_dataloader) - 1:
+                        if hasattr(model, "clip_grad_norm_"):
+                            # Some models (like FullyShardedDDP) have a specific way to do gradient clipping
+                            model.clip_grad_norm_(train_config.max_grad_norm)
+                            print('use model clip norm')
+                        else:
+                            # Revert to normal clipping otherwise, handling Apex or full precision
+                            nn.utils.clip_grad_norm_(
+                                model.parameters(), train_config.max_grad_norm,
+                            )
+                            print('user nn.util clip norm')
+
                         optimizer.step()
                         optimizer.zero_grad()
                 if train_config.enable_fsdp:
@@ -230,7 +244,7 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
         save_model(epoch=epoch)
 
         if train_config.run_validation:
-            eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)   
+            eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)
             checkpoint_start_time = time.perf_counter()
             if train_config.save_model and eval_epoch_loss < best_val_loss:
                 save_model(sub_dir='best_model')

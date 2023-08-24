@@ -36,3 +36,4 @@ class train_config:
     check_point_steps: int=3000
     wandb_name: str = 'default'
     peft_model: str = ''
+    max_grad_norm: float = 1.0
