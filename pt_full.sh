@@ -2,6 +2,7 @@ WORK_DIR="/home/cpp/xingguang/llama/model_checkpoints"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_pre_train_dataset"
 TAG="pt-yelp-ca-25w"
+ts=`date +"%Y-%m-%d_%H-%M-%S"`
 
 CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --nnodes 1 \

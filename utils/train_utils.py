@@ -182,14 +182,11 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
                         if hasattr(model, "clip_grad_norm_"):
                             # Some models (like FullyShardedDDP) have a specific way to do gradient clipping
                             model.clip_grad_norm_(train_config.max_grad_norm)
-                            print('use model clip norm')
                         else:
                             # Revert to normal clipping otherwise, handling Apex or full precision
                             nn.utils.clip_grad_norm_(
                                 model.parameters(), train_config.max_grad_norm,
                             )
-                            print('user nn.util clip norm')
-
                         optimizer.step()
                         optimizer.zero_grad()
                 if train_config.enable_fsdp:
