@@ -20,7 +20,7 @@ class _MyPreTrainDataset(Dataset):
 
         self.raw_datas = []
         for input_file in input_files:
-            self.raw_datas.extend([x.strip() for x in open(input_file)])
+            self.raw_datas.extend([x.strip().replace('__N__', '') for x in open(input_file)])
 
         self.tokenizer = tokenizer
 
