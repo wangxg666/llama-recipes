@@ -29,7 +29,7 @@ class PredictionWriter:
         if 'SINGLE' in type:
             line = f'type: {type}\treal: {real}\tpred: {pred}\t{obj["source_sent"]}'
         elif 'SEQ2SEQ' in type:
-            line = f'type: {type}\ninput: {obj["source_sent"]}\nreal: {real}\npred: {pred}\n\n'
+            line = f'type: {type}\ninput: {obj["source_sent"]}\nreal:  {real}\npred:  {pred}\n\n'
         else:
             return
 

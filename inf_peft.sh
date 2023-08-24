@@ -14,7 +14,7 @@ TAG="grammar-seq2seq"
 CUDA_VISIBLE_DEVICES="0,1,2,3" python inference/inference_my.py \
   --length_penalty 3 \
   --model_name ${MODEL_NAME} \
-  --peft_model ${WORK_DIR}/${MODEL_NAME}/${DATASET_NAME}/${TAG}-peft/best_model \
+  --peft_model ${WORK_DIR}/${MODEL_NAME}/${DATASET_NAME}/${TAG}-peft/step_00002k \
   --dataset my_allin_one_dataset \
-  --input_file ${DATA_DIR}/train.txt \
-  --output_file ${DATA_DIR}/train.txt.pred
+  --input_file ${DATA_DIR}/valid.txt \
+  --output_file ${DATA_DIR}/valid.txt.pred
