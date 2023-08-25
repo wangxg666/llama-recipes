@@ -1,5 +1,3 @@
--f https://download.pytorch.org/whl/torch_stable.html
-torch==2.0.1+cu114
 accelerate
 appdirs
 loralib
@@ -14,3 +12,7 @@ sentencepiece
 py7zr
 scipy
 optimum
+wandb
+torch
+torchvision
+torchaudio
