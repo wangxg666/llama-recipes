@@ -7,9 +7,9 @@ ts=`date +"%Y-%m-%d_%H-%M-%S"`
 MODEL_NAME_OR_PATH=""
 OPTIMIZER_CHECKPOINT_PATH=""
 
-CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
+CUDA_VISIBLE_DEVICES="0,1" torchrun \
   --nnodes 1 \
-  --nproc_per_node 4 \
+  --nproc_per_node 2 \
   ./llama_finetuning.py \
   --enable_fsdp  \
   --model_name "${MODEL_NAME}" \
