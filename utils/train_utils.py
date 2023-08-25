@@ -61,12 +61,24 @@ class WanDBWriter:
 def set_tokenizer_params(tokenizer: LlamaTokenizer):
     tokenizer.pad_token_id = 0
     tokenizer.padding_side = "left"
-    
+
+
 # Converting Bytes to Megabytes
 def byte2mb(x):
     return int(x / 2**20)
 
-def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_scheduler, gradient_accumulation_steps, train_config, fsdp_config=None, local_rank=None, rank=None):
+
+def train(model,
+          train_dataloader,
+          eval_dataloader,
+          tokenizer,
+          optimizer,
+          lr_scheduler,
+          gradient_accumulation_steps,
+          train_config,
+          fsdp_config = None,
+          local_rank = None,
+          rank = None):
     """
     Trains the model on the given dataloader
     
@@ -132,18 +144,19 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
                     model, optimizer, rank, train_config, epoch=epoch
                 )
             elif not train_config.use_peft and fsdp_config.checkpoint_type == StateDictType.SHARDED_STATE_DICT:
-                print(" Saving the FSDP model checkpoints using SHARDED_STATE_DICT")
-                print("=====================================================")
 
-                model_checkpointing.save_model_and_optimizer_sharded(model, rank, train_config)
                 if train_config.save_optimizer:
-                    model_checkpointing.save_model_and_optimizer_sharded(model, rank, train_config, optim=optimizer)
                     print(" Saving the FSDP model checkpoints and optimizer using SHARDED_STATE_DICT")
                     print("=====================================================")
+                    model_checkpointing.save_model_and_optim_sharded(model, rank, train_config, None, accu_step)
+                else:
+                    print(" Saving the FSDP model checkpoints using SHARDED_STATE_DICT")
+                    print("=====================================================")
+                    model_checkpointing.save_model_and_optim_sharded(model, rank, train_config, None, accu_step)
 
             if not train_config.use_peft and train_config.save_optimizer:
                 model_checkpointing.save_optimizer_checkpoint(
-                    model, optimizer, rank, train_config, epoch=epoch
+                    model, optimizer, rank, train_config, accu_step=accu_step
                 )
                 print(" Saving the FSDP model checkpoints and optimizer using FULL_STATE_DICT")
                 print("=====================================================")
@@ -195,7 +208,7 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
                 else:
                     print(f"\n step {step} is completed and loss is {loss.detach().float()}")
 
-                if accu_step % train_config.check_point_steps == 0:
+                if accu_step % train_config.check_point_steps == 0 and not torch.isnan(loss).any():
                     save_model(accu_step=accu_step)
                     if train_config.run_validation:
                         eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)
@@ -238,12 +251,14 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
         
         # Update the learning rate as needed
         lr_scheduler.step()
-        save_model(epoch=epoch)
+
+        if train_config.use_peft:
+            save_model(epoch=epoch, accu_step=accu_step)
 
         if train_config.run_validation:
             eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)
             checkpoint_start_time = time.perf_counter()
-            if train_config.save_model and eval_epoch_loss < best_val_loss:
+            if train_config.use_peft and train_config.save_model and eval_epoch_loss < best_val_loss:
                 save_model(sub_dir='best_model')
 
             checkpoint_end_time = time.perf_counter() - checkpoint_start_time
@@ -469,11 +484,10 @@ def save_train_params(train_config, fsdp_config, rank):
 
     save_dir = Path.cwd() / folder_name
     # If the directory does not exist, create it
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
+    os.makedirs(save_dir, exist_ok=True)
     # Convert the dictionary to a YAML string
     config_yaml = yaml.dump(train_params_dict, indent=4)
-    file_name = os.path.join(save_dir,'train_params.yaml')
+    file_name = os.path.join(save_dir, 'train_params.yaml')
 
     # Check if there's a directory with the same name as the file
     if os.path.isdir(file_name):

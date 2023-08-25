@@ -7,7 +7,8 @@ from typing import ClassVar
 @dataclass
 class train_config:
     model_name: str="PATH/to/LLAMA/7B"
-    enable_fsdp: bool= False 
+    model_name_or_path: str=""
+    enable_fsdp: bool= False
     run_validation: bool=True
     batch_size_training: int=1
     num_epochs: int=3
@@ -25,6 +26,7 @@ class train_config:
     use_peft: bool=False
     output_dir: str = "PATH/to/save/PEFT/model"
     freeze_layers: bool = False
+    optimizer_checkpoint_path: str = ''
     num_freeze_layers: int = 1
     quantization: bool = False
     one_gpu: bool = False
@@ -33,7 +35,7 @@ class train_config:
     dist_checkpoint_folder: str="fine-tuned" # will be used if using FSDP
     save_optimizer: bool=False # will be used if using FSDP
     use_fast_kernels: bool = False, # Enable using SDPA from PyTroch Accelerated Transformers, make use Flash Attention and Xformer memory-efficient kernels
-    check_point_steps: int=3000
+    check_point_steps: int = 1
     wandb_name: str = 'default'
     peft_model: str = ''
     max_grad_norm: float = 1.0

@@ -3,6 +3,7 @@
 
 import os
 import sys
+import time
 from typing import List, Union
 
 import fire
@@ -67,6 +68,7 @@ import torch
 import torch.cuda.nccl as nccl
 import torch.distributed as dist
 from transformers.models.llama.modeling_llama import LlamaDecoderLayer
+from model_checkpointing import load_optimizer_checkpoint
 
 
 def main(**kwargs):
@@ -91,10 +93,16 @@ def main(**kwargs):
     
     # Calculate gradient accumulation steps
     gradient_accumulation_steps = train_config.batch_size_training // train_config.micro_batch_size
-     
+
+    model_name = train_config.model_name_or_path if train_config.model_name_or_path else train_config.model_name
+    # gpu3 cpu memory is not enough, lazy loading with 20s after
+    if train_config.model_name_or_path:
+        if rank == 0 or rank == 1:
+            time.sleep(20)
+
     # Load the pre-trained model and setup its configuration
     model = LlamaForCausalLM.from_pretrained(
-        train_config.model_name,
+        model_name,
         load_in_8bit=True if train_config.quantization else None,
         device_map="auto" if train_config.quantization else None,
     )
@@ -120,7 +128,7 @@ def main(**kwargs):
         model.to(torch.bfloat16)
 
     # Load the tokenizer and add special tokens
-    tokenizer = LlamaTokenizer.from_pretrained(train_config.model_name)
+    tokenizer = LlamaTokenizer.from_pretrained(model_name)
     tokenizer.add_special_tokens(
             {
                 "pad_token": "<PAD>",
@@ -235,8 +243,17 @@ def main(**kwargs):
             weight_decay=0.0,
             eps=1e-8,
             betas=(0.9, 0.999),
-
         )
+
+    if train_config.optimizer_checkpoint_path:
+        from pathlib import Path
+        path = Path(train_config.optimizer_checkpoint_path)
+        if path.exists():
+            optimx = load_optimizer_checkpoint(model, Path(train_config.optimizer_checkpoint_path), rank)
+            optimizer.load_state_dict(optimx)
+            del optimx
+            torch.cuda.empty_cache()
+
     scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
 
     # Start the training process

@@ -58,6 +58,7 @@ def main(
     tokenizer = LlamaTokenizer.from_pretrained(HF_model_path_or_name)
     tokenizer.save_pretrained(consolidated_model_path)
     # save the FSDP sharded checkpoints in HF format
+    model.half()
     model.save_pretrained(consolidated_model_path)
     print(f"HuggingFace model checkpoints has been saved in {consolidated_model_path}")
 
