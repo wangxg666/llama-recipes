@@ -249,9 +249,9 @@ def main(**kwargs):
         from pathlib import Path
         path = Path(train_config.optimizer_checkpoint_path)
         if path.exists():
-            optimx = load_optimizer_checkpoint(model, Path(train_config.optimizer_checkpoint_path), rank)
-            optimizer.load_state_dict(optimx)
-            del optimx
+            sharded_osd = load_optimizer_checkpoint(model, Path(train_config.optimizer_checkpoint_path), rank)
+            optimizer.load_state_dict(sharded_osd)
+            del sharded_osd
             torch.cuda.empty_cache()
 
     scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
