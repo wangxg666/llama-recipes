@@ -2,6 +2,7 @@
 # This software may be used and distributed according to the terms of the Llama 2 Community License Agreement.
 
 from dataclasses import dataclass
+import os
 
     
 @dataclass
@@ -36,7 +37,10 @@ class hallucination_dataset:
 
 
 class my_grammar_dataset:
-    root = '/mnt/nlp/xingguang/mac_desk/husky-go/llama/data_scripts/grammar'
+    if os.environ['NO_MNT'] == 'TRUE':
+        root = '/home/cpp/xingguang/datasets'
+    else:
+        root = '/mnt/nlp/xingguang/mac_desk/husky-go/llama/data_scripts/grammar'
     dataset: str = "my_grammar_dataset"
     train_split: str = "train"
     test_split: str = "val"
@@ -45,7 +49,11 @@ class my_grammar_dataset:
 
 
 class my_clickbait_dataset:
-    root = '/mnt/nlp/xingguang/mac_desk/husky-go/llama/data_scripts/clickbaity'
+    if os.environ['NO_MNT'] == 'TRUE':
+        root = '/home/cpp/xingguang/datasets'
+    else:
+        root = '/mnt/nlp/xingguang/mac_desk/husky-go/llama/data_scripts/clickbaity'
+
     dataset: str = "my_clickbait_dataset"
     train_split: str = "train"
     test_split: str = "val"
@@ -53,7 +61,11 @@ class my_clickbait_dataset:
     valid_data_path: str = f"{root}/datas/valid.txt"
 
 class my_allin_one_dataset:
-    root = '/mnt/nlp/xingguang/llama/datasets/nb_training'
+    if os.environ['NO_MNT'] == 'TRUE':
+        root = '/home/cpp/xingguang/datasets'
+    else:
+        root = '/mnt/nlp/xingguang/llama/datasets/nb_training'
+
     dataset: str = "my_allin_one_dataset"
     train_split: str = "train"
     test_split: str = "valid"
@@ -61,7 +73,11 @@ class my_allin_one_dataset:
     valid_data_path: str = f""
 
 class my_pre_train_dataset:
-    root = '/mnt/nlp/xingguang/llama/datasets/nb_training'
+    if os.environ['NO_MNT'] == 'TRUE':
+        root = '/home/cpp/xingguang/datasets'
+    else:
+        root = '/mnt/nlp/xingguang/llama/datasets/nb_training'
+
     dataset: str = "my_pre_train_dataset"
     train_split: str = "train"
     test_split: str = "valid"
