@@ -2,6 +2,7 @@
 # This software may be used and distributed according to the terms of the Llama 2 Community License Agreement.
 
 import os
+import pathlib
 import sys
 import time
 from typing import List, Union
@@ -94,11 +95,13 @@ def main(**kwargs):
     # Calculate gradient accumulation steps
     gradient_accumulation_steps = train_config.batch_size_training // train_config.micro_batch_size
 
-    model_name = train_config.model_name_or_path if train_config.model_name_or_path else train_config.model_name
+    model_name = train_config.model_name
     # gpu3 cpu memory is not enough, lazy loading with 20s after
-    if train_config.model_name_or_path:
+    if train_config.model_name_or_path and pathlib.Path(train_config.model_name_or_path).exists():
         if rank == 0 or rank == 1:
             time.sleep(20)
+        model_name = train_config.model_name_or_path
+    print(f'{"x" * 20}    {model_name}    {"x" * 20}')
 
     # Load the pre-trained model and setup its configuration
     model = LlamaForCausalLM.from_pretrained(

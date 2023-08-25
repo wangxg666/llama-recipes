@@ -12,12 +12,12 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --nproc_per_node 4 \
   ./llama_finetuning.py \
   --enable_fsdp  \
-  --model_name ${MODEL_NAME} \
-  --model_name_or_path ${MODEL_NAME_OR_PATH} \
+  --model_name "${MODEL_NAME}" \
+  --model_name_or_path "${MODEL_NAME_OR_PATH}" \
   --dataset ${DATASET_NAME} \
   --save_model \
-  --dist_checkpoint_root_folder ${WORK_DIR} \
-  --dist_checkpoint_folder ${DATASET_NAME}/${TAG}  \
+  --dist_checkpoint_root_folder "${WORK_DIR}" \
+  --dist_checkpoint_folder "${DATASET_NAME}/${TAG}"  \
   --pure_bf16 \
   --num_epochs 10 \
   --batch_size_training 1 \
@@ -25,8 +25,8 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --max_grad_norm 1.0 \
   --check_point_steps 2000 \
   --save_optimizer \
-  --optimizer_checkpoint_path ${OPTIMIZER_CHECKPOINT_PATH} \
-  --wandb_name ${DATASET_NAME}-${TAG}-${ts}
+  --optimizer_checkpoint_path "${OPTIMIZER_CHECKPOINT_PATH}" \
+  --wandb_name "${DATASET_NAME}-${TAG}-${ts}"
 
 #python inference/checkpoint_converter_fsdp_hf.py \
 #  --fsdp_checkpoint_path ${WORK_DIR}/${DATASET_NAME}/${TAG}-${MODEL_NAME}/ \
