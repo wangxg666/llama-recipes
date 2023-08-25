@@ -20,10 +20,10 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --dist_checkpoint_folder ${DATASET_NAME}/${TAG}  \
   --pure_bf16 \
   --num_epochs 10 \
-  --batch_size_training 2 \
-  --micro_batch_size 2 \
+  --batch_size_training 1 \
+  --micro_batch_size 1 \
   --max_grad_norm 1.0 \
-  --check_point_steps 30 \
+  --check_point_steps 2000 \
   --save_optimizer \
   --optimizer_checkpoint_path ${OPTIMIZER_CHECKPOINT_PATH} \
   --wandb_name ${DATASET_NAME}-${TAG}-${ts}
