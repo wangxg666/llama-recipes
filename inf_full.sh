@@ -5,7 +5,7 @@ WORK_DIR="/home/cpp/xingguang/llama/model_checkpoints"
 DATASET_NAME="my_allin_one_dataset"
 TAG="grammar-seq2seq"
 
-python inference/inference_my.py \
+python llama_inf.py \
   --model_name ${WORK_DIR}/${DATASET_NAME}/${TAG}-hf/ \
   --dataset my_allin_one_dataset \
   --input_file ${DATA_DIR}/valid.txt \

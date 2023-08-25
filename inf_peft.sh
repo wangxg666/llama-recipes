@@ -11,7 +11,7 @@ DATASET_NAME="my_allin_one_dataset"
 TAG="grammar-seq2seq"
 #TAG="grammar-single"
 
-CUDA_VISIBLE_DEVICES="0,1,2,3" python inference/inference_my.py \
+CUDA_VISIBLE_DEVICES="0,1,2,3" python llama_inf.py \
   --length_penalty 3 \
   --model_name ${MODEL_NAME} \
   --peft_model ${WORK_DIR}/${MODEL_NAME}/${DATASET_NAME}/${TAG}-peft/step_00002k \
