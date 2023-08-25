@@ -1,6 +1,6 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # This software may be used and distributed according to the terms of the Llama 2 Community License Agreement.
-
+import pathlib
 from dataclasses import dataclass
 import os
 
@@ -36,36 +36,20 @@ class hallucination_dataset:
     data_path: str = "ft_datasets/hallucination_data.json"
 
 
-class my_grammar_dataset:
-    if os.environ['NO_MNT'] == 'TRUE':
-        root = '/home/cpp/xingguang/datasets'
-    else:
-        root = '/mnt/nlp/xingguang/mac_desk/husky-go/llama/data_scripts/grammar'
-    dataset: str = "my_grammar_dataset"
-    train_split: str = "train"
-    test_split: str = "val"
-    train_data_path: str = f"{root}/datas/train.c4200m.txt"
-    valid_data_path: str = f"{root}/datas/valid.c4200m.txt"
 
+def get_data_root():
+    for path in [
+        '/mnt/nlp/xingguang/llama/datasets/nb_training',
+        '/home/cpp/xingguang/datasets',
+        '/home/paperspace/datasets',
+    ]:
+        if os.path.exists(path):
+            return path
+    return ""
 
-class my_clickbait_dataset:
-    if os.environ['NO_MNT'] == 'TRUE':
-        root = '/home/cpp/xingguang/datasets'
-    else:
-        root = '/mnt/nlp/xingguang/mac_desk/husky-go/llama/data_scripts/clickbaity'
-
-    dataset: str = "my_clickbait_dataset"
-    train_split: str = "train"
-    test_split: str = "val"
-    train_data_path: str = f"{root}/datas/train.txt"
-    valid_data_path: str = f"{root}/datas/valid.txt"
 
 class my_allin_one_dataset:
-    if os.environ['NO_MNT'] == 'TRUE':
-        root = '/home/cpp/xingguang/datasets'
-    else:
-        root = '/mnt/nlp/xingguang/llama/datasets/nb_training'
-
+    root: str = get_data_root()
     dataset: str = "my_allin_one_dataset"
     train_split: str = "train"
     test_split: str = "valid"
@@ -73,11 +57,7 @@ class my_allin_one_dataset:
     valid_data_path: str = f""
 
 class my_pre_train_dataset:
-    if os.environ['NO_MNT'] == 'TRUE':
-        root = '/home/cpp/xingguang/datasets'
-    else:
-        root = '/mnt/nlp/xingguang/llama/datasets/nb_training'
-
+    root: str = get_data_root()
     dataset: str = "my_pre_train_dataset"
     train_split: str = "train"
     test_split: str = "valid"

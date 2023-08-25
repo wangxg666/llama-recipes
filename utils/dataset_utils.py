@@ -10,8 +10,6 @@ from ft_datasets import (
     get_alpaca_dataset,
     get_samsum_dataset,
     get_hallucination_dataset,
-    get_my_grammar_dataset,
-    get_my_clickbait_dataset,
     get_my_allin_one_dataset,
     get_my_pre_train_dataset,
 )
@@ -23,8 +21,6 @@ DATASET_PREPROC = {
     "grammar_dataset": get_grammar_dataset,
     "samsum_dataset": get_samsum_dataset,
     "hallucination_dataset": get_hallucination_dataset,
-    "my_grammar_dataset": get_my_grammar_dataset,
-    "my_clickbait_dataset": get_my_clickbait_dataset,
     'my_allin_one_dataset': get_my_allin_one_dataset,
     'my_pre_train_dataset': get_my_pre_train_dataset,
 }
