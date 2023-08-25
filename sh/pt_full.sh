@@ -7,6 +7,8 @@ ts=`date +"%Y-%m-%d_%H-%M-%S"`
 MODEL_NAME_OR_PATH=""
 OPTIMIZER_CHECKPOINT_PATH=""
 
+cd ..
+
 CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --nnodes 1 \
   --nproc_per_node 4 \

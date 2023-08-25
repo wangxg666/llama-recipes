@@ -11,6 +11,8 @@ DATASET_NAME="my_allin_one_dataset"
 TAG="grammar-seq2seq"
 #TAG="grammar-single"
 
+cd ..
+
 CUDA_VISIBLE_DEVICES="0,1,2,3" python llama_inf.py \
   --length_penalty 3 \
   --model_name ${MODEL_NAME} \
