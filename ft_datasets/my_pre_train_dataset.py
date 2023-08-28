@@ -27,7 +27,6 @@ class _MyPreTrainDataset(Dataset):
         if split != 'train':
             self.raw_datas = self.raw_datas[0:100]
         else:
-            self.raw_datas = self.raw_datas[0:100]
             random.shuffle(self.raw_datas)
 
         self.tokenizer = tokenizer

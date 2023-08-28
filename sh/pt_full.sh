@@ -5,7 +5,7 @@ TAG="pt-yelp-ca-25w-continue"
 ts=`date +"%Y-%m-%d_%H-%M-%S"`
 
 MODEL_NAME_OR_PATH="/home/cpp/xingguang/llama/model_checkpoints/my_pre_train_dataset/pt-yelp-ca-25w-meta-llama-30k-hf"
-OPTIMIZER_CHECKPOINT_PATH="/home/cpp/xingguang/llama/model_checkpoints/my_pre_train_dataset/pt-yelp-ca-25w-meta-llama/Llama-2-7b-hf-step_030000/optimizer.pt"
+OPTIMIZER_CHECKPOINT_PATH="./optimizer.pt"
 
 cd ..
 

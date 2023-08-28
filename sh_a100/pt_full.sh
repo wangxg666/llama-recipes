@@ -7,6 +7,7 @@ ts=`date +"%Y-%m-%d_%H-%M-%S"`
 MODEL_NAME_OR_PATH=""
 OPTIMIZER_CHECKPOINT_PATH=""
 
+cd ../
 CUDA_VISIBLE_DEVICES="0,1" torchrun \
   --nnodes 1 \
   --nproc_per_node 2 \
@@ -21,7 +22,7 @@ CUDA_VISIBLE_DEVICES="0,1" torchrun \
   --pure_bf16 \
   --num_epochs 10 \
   --batch_size_training 16 \
-  --micro_batch_size 8 \
+  --micro_batch_size 16 \
   --max_grad_norm 1.0 \
   --check_point_steps 2000 \
   --save_optimizer \
