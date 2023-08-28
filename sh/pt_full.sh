@@ -1,11 +1,11 @@
 WORK_DIR="/home/cpp/xingguang/llama/model_checkpoints"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_pre_train_dataset"
-TAG="pt-yelp-ca-25w"
+TAG="pt-yelp-ca-25w-continue"
 ts=`date +"%Y-%m-%d_%H-%M-%S"`
 
-MODEL_NAME_OR_PATH=""
-OPTIMIZER_CHECKPOINT_PATH=""
+MODEL_NAME_OR_PATH="/home/cpp/xingguang/llama/model_checkpoints/my_pre_train_dataset/pt-yelp-ca-25w-meta-llama-30k-hf"
+OPTIMIZER_CHECKPOINT_PATH="/home/cpp/xingguang/llama/model_checkpoints/my_pre_train_dataset/pt-yelp-ca-25w-meta-llama/Llama-2-7b-hf-step_030000/optimizer.pt"
 
 cd ..
 
