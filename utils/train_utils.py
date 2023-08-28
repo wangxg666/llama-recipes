@@ -185,7 +185,6 @@ def train(model,
 
                 # 如果 loss 出现nan，放弃这一步更新
                 if torch.isnan(loss).any():
-                    optimizer.zero_grad()
                     continue
 
                 total_loss += loss.detach().float()
