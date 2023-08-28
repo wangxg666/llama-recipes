@@ -115,7 +115,7 @@ def main(
         output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
         type = obj['type']
-        pred = output_text.replace(prompt, '')
+        pred = output_text.replace(prompt, '').strip()
         real = obj['label']
 
         writer.write(type, real, pred, obj)

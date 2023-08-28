@@ -1,3 +1,4 @@
+import os
 from collections import defaultdict
 
 def load(input_file):
@@ -30,5 +31,9 @@ def load(input_file):
 
 
 if __name__ == '__main__':
-    input_file = '/home/paperspace/datasets/grammar_c4200m_seq2seq/valid.txt.pred.GRAMMAR_SEQ2SEQ'
-    load(input_file)
+    if os.path.exists('/mnt/nlp/xingguang/llama/datasets/nb_training/grammar_c4200m_seq2seq/valid.txt.pred.GRAMMAR_SEQ2SEQ'):
+        load('/mnt/nlp/xingguang/llama/datasets/nb_training/grammar_c4200m_seq2seq/valid.txt.pred.GRAMMAR_SEQ2SEQ')
+    elif os.path.exists('/home/paperspace/datasets/grammar_c4200m_seq2seq/valid.txt.pred.GRAMMAR_SEQ2SEQ'):
+        load('/home/paperspace/datasets/grammar_c4200m_seq2seq/valid.txt.pred.GRAMMAR_SEQ2SEQ')
+    else:
+        print('no input')

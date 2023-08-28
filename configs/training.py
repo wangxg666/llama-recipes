@@ -36,6 +36,7 @@ class train_config:
     save_optimizer: bool=False # will be used if using FSDP
     use_fast_kernels: bool = False, # Enable using SDPA from PyTroch Accelerated Transformers, make use Flash Attention and Xformer memory-efficient kernels
     check_point_steps: int = 1
+    evaluation_steps: int = 100
     wandb_name: str = 'default'
     peft_model: str = ''
     max_grad_norm: float = 1.0

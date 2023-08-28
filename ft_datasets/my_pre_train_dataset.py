@@ -14,21 +14,15 @@ from ft_datasets.utils import ConcatDataset
 class _MyPreTrainDataset(Dataset):
     def __init__(self, dataset_config, tokenizer, split, debug=False):
         input_files = [
-            f'{dataset_config.root}/{sub_dir}/train.txt'
+            f'{dataset_config.root}/{sub_dir}/{split}.txt'
             for sub_dir in os.listdir(dataset_config.root)
-            if os.path.exists(f'{dataset_config.root}/{sub_dir}/train.txt')
-               and sub_dir == 'pre_train_yelp_ca'
+            if os.path.exists(f'{dataset_config.root}/{sub_dir}/{split}.txt')
+               and sub_dir == 'pre_train_yelp_ca.v01'
         ]
 
         self.raw_datas = []
         for input_file in input_files:
             self.raw_datas.extend([x.strip().replace('__N__', '') for x in open(input_file)])
-
-        if split != 'train':
-            self.raw_datas = self.raw_datas[0:100]
-        else:
-            random.shuffle(self.raw_datas)
-
         self.tokenizer = tokenizer
 
     def __len__(self):

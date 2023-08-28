@@ -20,7 +20,7 @@ from model_utils import load_model, load_peft_model, load_llama_from_config
 def main(
     model_name,
     quantization: bool=False,
-    max_new_tokens = 100, #The maximum numbers of tokens to generate
+    max_new_tokens = 1000, #The maximum numbers of tokens to generate
     seed: int=42, #seed value for reproducibility
     do_sample: bool=True, #Whether or not to use sampling ; use greedy decoding otherwise.
     min_length: int=None, #The minimum length of the sequence to be generated, input prompt + min_new_tokens

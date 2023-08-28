@@ -226,6 +226,15 @@ def train(model,
                             'valid_loss': eval_epoch_loss
                         })
 
+                if accu_step % train_config.evaluation_steps == 0:
+                    eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)
+                    val_loss.append(best_val_loss)
+                    val_prep.append(eval_ppl)
+                    wandb_writer.log(rank, {
+                        'step': accu_step,
+                        'valid_loss': eval_epoch_loss
+                    })
+
                 wandb_writer.log(rank, {
                     'step': accu_step,
                     'step_loss': loss.detach().float()

@@ -24,7 +24,8 @@ CUDA_VISIBLE_DEVICES="0,1" torchrun \
   --batch_size_training 16 \
   --micro_batch_size 16 \
   --max_grad_norm 1.0 \
-  --check_point_steps 2000 \
+  --evaluation_steps 100 \
+  --check_point_steps 1000 \
   --save_optimizer \
   --optimizer_checkpoint_path "${OPTIMIZER_CHECKPOINT_PATH}" \
   --wandb_name "${DATASET_NAME}-${TAG}-${ts}"
