@@ -25,7 +25,7 @@ CUDA_VISIBLE_DEVICES="0,1" torchrun \
   --val_batch_size 16 \
   --micro_batch_size 16 \
   --max_grad_norm 1.0 \
-  --evaluation_steps 100 \
+  --evaluation_steps 200 \
   --check_point_steps 1000 \
   --save_optimizer \
   --optimizer_checkpoint_path "${OPTIMIZER_CHECKPOINT_PATH}" \
