@@ -23,6 +23,7 @@ class _MyPreTrainDataset(Dataset):
         self.raw_datas = []
         for input_file in input_files:
             self.raw_datas.extend([x.strip() for x in open(input_file)])
+        # self.raw_datas = self.raw_datas[0:1000]
         self.tokenizer = tokenizer
 
     def __len__(self):
