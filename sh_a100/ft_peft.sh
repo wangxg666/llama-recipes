@@ -8,7 +8,7 @@ DATASET_NAME="my_allin_one_dataset"
 TAG="grammar-seq2seq-a100"
 #TAG="grammar-single"
 
-ts=`date +"%Y-%m-%d_%H-%M-%S"`
+ts=$(date +"%Y-%m-%d_%H-%M-%S")
 LOG_FILE="./logs/peft-${DATASET_NAME}-${TAG}-${ts}.txt"
 echo "" > "${LOG_FILE}"
 
@@ -34,3 +34,5 @@ CUDA_VISIBLE_DEVICES="0,1" torchrun \
 
 echo ${LOG_FILE}
 tail -f ${LOG_FILE}
+
+
