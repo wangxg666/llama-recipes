@@ -10,7 +10,7 @@ DATA_DIR="/home/paperspace/datasets/grammar_c4200m_seq2seq"
 WORK_DIR="/home/paperspace/llama/ckpt.peft"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_allin_one_dataset"
-TAG="grammar-seq2seq"
+TAG="grammar-seq2seq-a100"
 #TAG="grammar-single"
 
 cd ../

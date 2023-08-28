@@ -1,7 +1,7 @@
 WORK_DIR="/home/paperspace/llama/ckpt.full"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_pre_train_dataset"
-TAG="pt-yelp-ny"
+TAG="pt-yelp-ny-a100"
 
 cd ../
 python inference/inference_pt.py \
