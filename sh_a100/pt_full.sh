@@ -19,11 +19,12 @@ CUDA_VISIBLE_DEVICES="0,1" torchrun \
   --save_model \
   --dist_checkpoint_root_folder "${WORK_DIR}" \
   --dist_checkpoint_folder "${DATASET_NAME}/${TAG}"  \
+  --lr 0.0003 \
   --pure_bf16 \
   --num_epochs 5 \
-  --batch_size_training 16 \
+  --batch_size_training 8 \
   --val_batch_size 16 \
-  --micro_batch_size 16 \
+  --micro_batch_size 8 \
   --max_grad_norm 1.0 \
   --evaluation_steps 200 \
   --check_point_steps 1000 \
