@@ -22,6 +22,7 @@ CUDA_VISIBLE_DEVICES="0,1" torchrun \
   --pure_bf16 \
   --num_epochs 5 \
   --batch_size_training 16 \
+  --val_batch_size 16 \
   --micro_batch_size 16 \
   --max_grad_norm 1.0 \
   --evaluation_steps 100 \
