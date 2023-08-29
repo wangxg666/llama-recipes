@@ -40,6 +40,17 @@ class PredictionWriter:
             sout.close()
 
 
+def get_input_file_abs_path(input_file):
+    if os.path.exists(f'/home/cpp/xingguang/datasets/{input_file}'):
+        return f'/home/cpp/xingguang/datasets/{input_file}'
+    if os.path.exists(f'/home/paperspace/datasets/{input_file}'):
+        return f'/home/paperspace/datasets/{input_file}'
+    if os.path.exists(f'/mnt/nlp/xingguang/llama/datasets/nb_training/{input_file}'):
+        return f'/mnt/nlp/xingguang/llama/datasets/nb_training/{input_file}'
+    print(f'{input_file} is not valid, exit(0)')
+    exit(0)
+
+
 def main(
     model_name,
     peft_model: str=None,
@@ -47,7 +58,6 @@ def main(
     quantization: bool=False,
     max_new_tokens = 100, #The maximum numbers of tokens to generate
     input_file: str=None,
-    output_file: str=None,
     seed: int=42, #seed value for reproducibility
     do_sample: bool=True, #Whether or not to use sampling ; use greedy decoding otherwise.
     min_length: int=None, #The minimum length of the sequence to be generated, input prompt + min_new_tokens
@@ -83,13 +93,14 @@ def main(
     DATASET_PREPROC = {
         "my_allin_one_dataset": get_my_allin_one_dataset,
     }
+    input_file_abs_path = get_input_file_abs_path(input_file=input_file)
 
     model.eval()
 
-    datas = [json.loads(data) for data in open(input_file)]
+    datas = [json.loads(data) for data in open(input_file_abs_path)]
     datas = sorted(datas, key=lambda x:x['label'])
 
-    writer = PredictionWriter(output_file)
+    writer = PredictionWriter(input_file_abs_path + '.pred')
 
     for iid, obj in enumerate(datas):
         prompt = DATASET_PREPROC[dataset].prompting(obj)

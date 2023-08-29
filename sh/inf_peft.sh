@@ -1,10 +1,10 @@
 #!/bin/bash
 set -x
 
-#DATA_DIR="/mnt/nlp/xingguang/llama/datasets/nb_training/clickbait"
-#DATA_DIR="/mnt/nlp/xingguang/llama/datasets/nb_training/grammar_c4200m_seq2seq"
-#DATA_DIR="/mnt/nlp/xingguang/llama/datasets/nb_training/grammar_c4200m_single"
-DATA_DIR="/mnt/nlp/xingguang/llama/datasets/nb_training/hallucination"
+#INPUT_FILE="clickbait/valid.txt"
+#INPUT_FILE="grammar_c4200m_single/valid.txt"
+#INPUT_FILE="grammar_c4200m_seq2seq/valid.txt"
+INPUT_FILE="hallucination/valid.txt"
 
 WORK_DIR="/home/cpp/xingguang/llama/model_checkpoints.peft"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
@@ -20,5 +20,4 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" python llama_inf.py \
   --model_name ${MODEL_NAME} \
   --peft_model ${WORK_DIR}/${MODEL_NAME}/${DATASET_NAME}/${TAG}-peft/best_model \
   --dataset my_allin_one_dataset \
-  --input_file ${DATA_DIR}/valid.txt \
-  --output_file ${DATA_DIR}/valid.txt.pred
+  --input_file ${INPUT_FILE}
