@@ -238,7 +238,6 @@ def train(model,
                         'valid_loss': eval_epoch_loss
                     })
 
-                print(lr_scheduler.get_lr())
                 wandb_writer.log(rank, {
                     'step': accu_step,
                     'step_loss': loss.detach().float(),
