@@ -27,8 +27,8 @@ CUDA_VISIBLE_DEVICES="2,3" torchrun \
   --output_dir ${WORK_DIR}/${MODEL_NAME}/${DATASET_NAME}/${TAG}-peft/ \
   --lr 0.00005 \
   --val_batch_size 4 \
-  --batch_size_training 4 \
-  --micro_batch_size 1 \
+  --batch_size_training 8 \
+  --micro_batch_size 8 \
   --num_epochs 3 \
   --check_point_steps 1000 \
   --wandb_name ${DATASET_NAME}-${TAG}-${ts}

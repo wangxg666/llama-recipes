@@ -64,12 +64,22 @@ class my_pre_train_dataset:
     test_split: str = "valid"
     train_data_path: str = f""
     valid_data_path: str = f""
-    target_sub_dir: str = 'pre_train_yelp_ca.v02.instruction'
+    target_sub_dir: str = 'pre_train_yelp_ca.v02.context'
 
 
 class my_pre_train_dataset_padding:
     root: str = get_data_root()
     dataset: str = "my_pre_train_dataset"
+    train_split: str = "train"
+    test_split: str = "valid"
+    train_data_path: str = f""
+    valid_data_path: str = f""
+    target_sub_dir: str = 'pre_train_yelp_ca.v02.instruction'
+
+
+class my_pre_train_yelp_ins_dataset:
+    root: str = get_data_root()
+    dataset: str = "my_pre_train_yelp_ins_dataset"
     train_split: str = "train"
     test_split: str = "valid"
     train_data_path: str = f""
