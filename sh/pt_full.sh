@@ -1,8 +1,9 @@
 WORK_DIR="/home/cpp/xingguang/llama/model_checkpoints"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_pre_train_yelp_ins_dataset"
-TAG="pt-yelp-ca-25w-v02-ins"
-ts=$(date +"%Y-%m-%d_%H-%M-%S")
+TAG="pt-yelp-ca-25w-v02-mask-ins-a100"
+WANDB_TAG="fullCA"
+ts=$(date +"%Y-%m-%d")
 
 MODEL_NAME_OR_PATH=""
 OPTIMIZER_CHECKPOINT_PATH="./optimizer.pt"
@@ -23,13 +24,13 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --pure_bf16 \
   --num_epochs 5 \
   --lr 0.00001 \
-  --batch_size_training 1 \
+  --batch_size_training 2 \
   --micro_batch_size 1 \
   --max_grad_norm 1.0 \
   --check_point_steps 2000 \
   --save_optimizer \
   --optimizer_checkpoint_path "${OPTIMIZER_CHECKPOINT_PATH}" \
-  --wandb_name "${DATASET_NAME}-${TAG}-${ts}"
+  --wandb_name "${ts}-${TAG}-${WANDB_TAG}"
 
 #python inference/checkpoint_converter_fsdp_hf.py \
 #  --fsdp_checkpoint_path ${WORK_DIR}/${DATASET_NAME}/${TAG}-${MODEL_NAME}/ \

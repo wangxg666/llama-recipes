@@ -49,12 +49,12 @@ class _MyPreTrainDataset(Dataset):
 
 def get_my_pre_train_dataset(dataset_config, tokenizer, split):
     dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, max_words=-1, padding=False)
-    dataset = ConcatDataset(dataset, chunk_size=2048)
+    dataset = ConcatDataset(dataset, chunk_size=512)
     return dataset
 
 
-def get_my_pre_train_dataset_padding(dataset_config, tokenizer, split):
-    dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, max_words=512, padding=True)
+def get_my_pre_train_pad_dataset(dataset_config, tokenizer, split):
+    dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, max_words=256, padding=True)
     return dataset
 
 
@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     from transformers import LlamaTokenizer
     tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
-    dataset = get_my_pre_train_dataset_padding(my_pre_train_dataset, tokenizer, 'valid')
+    dataset = get_my_pre_train_pad_dataset(my_pre_train_dataset, tokenizer, 'valid')
     for i in range(10):
         for k, v in dataset[i].items():
             print(k)

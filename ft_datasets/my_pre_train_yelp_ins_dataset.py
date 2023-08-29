@@ -94,12 +94,12 @@ class _MyPreTrainDataset(Dataset):
 
 def get_my_pre_train_dataset(dataset_config, tokenizer, split):
     dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, max_words=-1, padding=False)
-    dataset = ConcatDataset(dataset, chunk_size=2048)
+    dataset = ConcatDataset(dataset, chunk_size=1024)
     return dataset
 
 
-def get_my_pre_train_dataset_padding(dataset_config, tokenizer, split):
-    dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, max_words=512, padding=True)
+def get_my_pre_train_pad_dataset(dataset_config, tokenizer, split):
+    dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, max_words=1024, padding=True)
     return dataset
 
 
