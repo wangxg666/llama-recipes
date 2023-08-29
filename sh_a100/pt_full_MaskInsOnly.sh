@@ -9,9 +9,9 @@ MODEL_NAME_OR_PATH=""
 OPTIMIZER_CHECKPOINT_PATH=""
 
 cd ../
-CUDA_VISIBLE_DEVICES="0" torchrun \
+CUDA_VISIBLE_DEVICES="0,1" torchrun \
   --nnodes 1 \
-  --nproc_per_node 1 \
+  --nproc_per_node 2 \
   ./llama_finetuning.py \
   --enable_fsdp  \
   --model_name "${MODEL_NAME}" \
