@@ -64,6 +64,7 @@ class my_pre_train_dataset:
     test_split: str = "valid"
     train_data_path: str = f""
     valid_data_path: str = f""
+    target_sub_dir: str = 'pre_train_yelp_ca.v02.instruction'
 
 
 class my_pre_train_dataset_padding:
@@ -73,3 +74,4 @@ class my_pre_train_dataset_padding:
     test_split: str = "valid"
     train_data_path: str = f""
     valid_data_path: str = f""
+    target_sub_dir: str = 'pre_train_yelp_ca.v02.instruction'

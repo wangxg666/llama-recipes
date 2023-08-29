@@ -17,7 +17,7 @@ class _MyPreTrainDataset(Dataset):
             f'{dataset_config.root}/{sub_dir}/{split}.txt'
             for sub_dir in os.listdir(dataset_config.root)
             if os.path.exists(f'{dataset_config.root}/{sub_dir}/{split}.txt')
-               and sub_dir == 'pre_train_yelp_ca.v01'
+               and dataset_config.target_sub_dir in sub_dir
         ]
 
         self.raw_datas = []

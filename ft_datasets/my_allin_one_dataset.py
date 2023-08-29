@@ -139,14 +139,14 @@ if __name__ == '__main__':
     from transformers import LlamaTokenizer
 
     tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
-    # dataset = MyAllInOneDataset(my_allin_one_dataset, tokenizer, partition='train', debug=True)
-    # print(len(dataset))
-    # for i in range(len(dataset)):
-    #     dataset[i]
+    dataset = MyAllInOneDataset(my_allin_one_dataset, tokenizer, partition='valid', debug=True)
+    print(len(dataset))
+    for i in range(len(dataset)):
+        dataset[i]
 
-    sent = "On 7th March, Dr Fontanelli delivered a presentation for the first regional launch of an online course on the right to property prepared in the framework of the HELP project of the Council of Europe (European Programme for Human Rights Education for Legal Professionals)"
-    print(tokenizer.tokenize(sent))
-
-    sent = "On 7th March, Dr Fontanelli delivered a presentation for the first regional launch of an online course on the right to propert prepared in the framework of the HELP project of the Council of Europe (European Programme for Human Rights Education for Legal Professionals)"
-    print(tokenizer.tokenize(sent))
+    # sent = "On 7th March, Dr Fontanelli delivered a presentation for the first regional launch of an online course on the right to property prepared in the framework of the HELP project of the Council of Europe (European Programme for Human Rights Education for Legal Professionals)"
+    # print(tokenizer.tokenize(sent))
+    #
+    # sent = "On 7th March, Dr Fontanelli delivered a presentation for the first regional launch of an online course on the right to propert prepared in the framework of the HELP project of the Council of Europe (European Programme for Human Rights Education for Legal Professionals)"
+    # print(tokenizer.tokenize(sent))
 
