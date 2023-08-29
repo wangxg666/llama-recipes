@@ -260,11 +260,10 @@ def main(**kwargs):
             torch.cuda.empty_cache()
 
     from transformers import get_scheduler
-    num_training_steps = train_config.num_epochs * len(train_dataloader) // world_size
+    num_training_steps = train_config.num_epochs * len(train_dataloader)
     if rank == 0:
         print(f'num training steps = {num_training_steps}')
         print(f'num data batches = {len(train_dataloader)}')
-        print(f'world size = {world_size}')
 
     scheduler = get_scheduler(
         "linear",
