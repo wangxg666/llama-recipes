@@ -385,7 +385,7 @@ def evaluation(model, train_config, eval_dataloader, local_rank, tokenizer):
             print(f" {eval_ppl=} {eval_epoch_loss=}")
     else:
         print(f" {eval_ppl=} {eval_epoch_loss=}")
-
+    model.train()
     return eval_ppl, eval_epoch_loss
 
 

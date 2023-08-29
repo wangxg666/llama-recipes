@@ -97,7 +97,7 @@ def get_my_pre_train_dataset(dataset_config, tokenizer, split):
 
 
 def get_my_pre_train_pad_dataset(dataset_config, tokenizer, split):
-    dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, max_words=1024, padding=True)
+    dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, max_words=256, padding=True)
     return dataset
 
 

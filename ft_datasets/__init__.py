@@ -7,4 +7,4 @@ from .samsum_dataset import get_preprocessed_samsum as get_samsum_dataset
 from .hallucination_dataset import HallucinationDataset as get_hallucination_dataset
 from .my_allin_one_dataset import MyAllInOneDataset as get_my_allin_one_dataset
 from .my_pre_train_dataset import get_my_pre_train_dataset, get_my_pre_train_pad_dataset
-from .my_pre_train_yelp_ins_dataset import get_my_pre_train_dataset as get_my_pre_train_yelp_ins_dataset
+from .my_pre_train_yelp_ins_dataset import get_my_pre_train_pad_dataset as get_my_pre_train_yelp_ins_dataset

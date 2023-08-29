@@ -24,9 +24,11 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --pure_bf16 \
   --num_epochs 5 \
   --lr 0.00001 \
-  --batch_size_training 2 \
-  --micro_batch_size 2 \
+  --val_batch_size 8 \
+  --batch_size_training 8 \
+  --micro_batch_size 8 \
   --max_grad_norm 1.0 \
+  --evaluation_steps 200 \
   --check_point_steps 2000 \
   --save_optimizer \
   --optimizer_checkpoint_path "${OPTIMIZER_CHECKPOINT_PATH}" \
