@@ -56,7 +56,17 @@ class my_allin_one_dataset:
     train_data_path: str = f""
     valid_data_path: str = f""
 
+
 class my_pre_train_dataset:
+    root: str = get_data_root()
+    dataset: str = "my_pre_train_dataset"
+    train_split: str = "train"
+    test_split: str = "valid"
+    train_data_path: str = f""
+    valid_data_path: str = f""
+
+
+class my_pre_train_dataset_padding:
     root: str = get_data_root()
     dataset: str = "my_pre_train_dataset"
     train_split: str = "train"

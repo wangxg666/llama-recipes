@@ -57,6 +57,11 @@ def get_my_pre_train_dataset(dataset_config, tokenizer, split):
     return dataset
 
 
+def get_my_pre_train_dataset_padding(dataset_config, tokenizer, split):
+    dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, max_words=1536, padding=True)
+    return dataset
+
+
 if __name__ == '__main__':
     from configs.datasets import my_pre_train_dataset
 
