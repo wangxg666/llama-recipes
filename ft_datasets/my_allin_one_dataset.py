@@ -29,6 +29,12 @@ characterized by clickbait tendencies, excessive elaboration, hyperbole, a confr
 Please review it and provide your assessment of whether it is composed informally.
 Your response should be "Good." if it is writen formally and "Poor." if it is not.
 ### text: {source_sent}
+### response:""",
+
+    "HALLUCINATION": """Below is an instruction that describes a task. 
+The following text B is rewritten from text A, but text B might be inconsistent with text A in content.
+Please help to check does text B is rewritten properly with text A.
+### {source_sent}
 ### response:"""
 }
 
@@ -52,12 +58,12 @@ Your response should be "Good." if it is writen formally and "Poor." if it is no
 
 
 class MyAllInOneDataset(Dataset):
-    def __init__(self, dataset_config, tokenizer, partition="train", max_words=256, debug=False):
+    def __init__(self, dataset_config, tokenizer, partition="train", max_words=2048, debug=False):
         input_files = [
             f'{dataset_config.root}/{sub_dir}/{partition}.txt'
             for sub_dir in os.listdir(dataset_config.root)
             if os.path.exists(f'{dataset_config.root}/{sub_dir}/{partition}.txt')
-            and sub_dir == 'grammar_c4200m_seq2seq'
+            and sub_dir == 'hallucination'
         ]
         print(json.dumps(input_files, indent=4))
         self.raw_data = [[json.loads(data) for data in open(input_file)] for input_file in input_files]

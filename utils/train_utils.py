@@ -52,6 +52,7 @@ class WanDBWriter:
             )
 
             wandb.define_metric('step')
+            wandb.define_metric('learning_rate', step_metric='step')
             wandb.define_metric('step_loss', step_metric='step')
             wandb.define_metric('valid_loss', step_metric='step')
 
@@ -211,6 +212,8 @@ def train(model,
                             )
                         optimizer.step()
                         optimizer.zero_grad()
+                        lr_scheduler.step()
+
                 if train_config.enable_fsdp:
                     if rank == 0:
                         print(f"\n step {step} is completed and loss is {loss.detach().float()}")
@@ -235,9 +238,11 @@ def train(model,
                         'valid_loss': eval_epoch_loss
                     })
 
+                print(lr_scheduler.get_lr())
                 wandb_writer.log(rank, {
                     'step': accu_step,
-                    'step_loss': loss.detach().float()
+                    'step_loss': loss.detach().float(),
+                    'learning_rate': lr_scheduler.get_lr()[0]
                 })
 
         epoch_end_time = time.perf_counter() - epoch_start_time
@@ -270,7 +275,7 @@ def train(model,
                 f"CPU Total Peak Memory consumed during the train (max): {memtrace.cpu_peaked + memtrace.cpu_begin} GB")
 
         # Update the learning rate as needed
-        lr_scheduler.step()
+        # lr_scheduler.step()
 
         if train_config.use_peft:
             save_model(epoch=epoch, accu_step=accu_step)

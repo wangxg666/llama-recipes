@@ -12,7 +12,7 @@ from ft_datasets.utils import ConcatDataset
 
 
 class _MyPreTrainDataset(Dataset):
-    def __init__(self, dataset_config, tokenizer, split, debug=False):
+    def __init__(self, dataset_config, tokenizer, split, max_words=-1, padding=False, debug=False):
         input_files = [
             f'{dataset_config.root}/{sub_dir}/{split}.txt'
             for sub_dir in os.listdir(dataset_config.root)
@@ -25,16 +25,24 @@ class _MyPreTrainDataset(Dataset):
             self.raw_datas.extend([x.strip() for x in open(input_file)])
         # self.raw_datas = self.raw_datas[0:1000]
         self.tokenizer = tokenizer
+        self.max_words = max_words
+        self.padding = padding
 
     def __len__(self):
         return len(self.raw_datas)
 
     def __getitem__(self, item):
         example = self.tokenizer.encode(self.raw_datas[item]) + [self.tokenizer.eos_token_id]
-        example = example
+
+        if self.padding and self.max_words > 0:
+            padding_size = self.max_words - len(example)
+            if padding_size > 0:
+                example = example + [0 for _ in range(padding_size)]
+            elif padding_size < 0:
+                example = example[: self.max_words]
 
         labels = copy.deepcopy(example)
-        example_mask = [1.0 for _ in range(len(labels))]
+        example_mask = [int(x > 0) for x in example]
 
         return {
             "input_ids": example,
@@ -44,8 +52,13 @@ class _MyPreTrainDataset(Dataset):
 
 
 def get_my_pre_train_dataset(dataset_config, tokenizer, split):
-    dataset = _MyPreTrainDataset(dataset_config, tokenizer, split)
+    dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, max_words=-1, padding=False)
     dataset = ConcatDataset(dataset, chunk_size=1536)
+    return dataset
+
+
+def get_my_pre_train_dataset_padding(dataset_config, tokenizer, split):
+    dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, max_words=1536, padding=True)
     return dataset
 
 

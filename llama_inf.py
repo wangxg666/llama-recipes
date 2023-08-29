@@ -30,7 +30,7 @@ class PredictionWriter:
         elif 'SEQ2SEQ' in type:
             line = f'type: {type}\ninput: {obj["source_sent"]}\nreal:  {real}\npred:  {pred}\n\n'
         else:
-            return
+            line = f'type: {type}\treal: {real}\tpred: {pred}'
 
         self.type2sout[type].write(f'{line}\n')
         self.type2sout[type].flush()
@@ -86,12 +86,12 @@ def main(
 
     model.eval()
 
-    datas = [data.strip() for data in open(input_file)]
+    datas = [json.loads(data) for data in open(input_file)]
+    datas = sorted(datas, key=lambda x:x['label'])
 
     writer = PredictionWriter(output_file)
 
-    for iid, data in enumerate(datas):
-        obj = json.loads(data)
+    for iid, obj in enumerate(datas):
         prompt = DATASET_PREPROC[dataset].prompting(obj)
         batch = tokenizer(prompt, return_tensors="pt")
         batch = {k: v.to("cuda") for k, v in batch.items()}

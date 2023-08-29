@@ -87,6 +87,8 @@ def main(**kwargs):
         local_rank = int(os.environ["LOCAL_RANK"])
         rank = int(os.environ["RANK"])
         world_size = int(os.environ["WORLD_SIZE"])
+    else:
+        world_size = 1.
 
     if torch.distributed.is_initialized():
         torch.cuda.set_device(rank)
@@ -257,7 +259,15 @@ def main(**kwargs):
             del sharded_osd
             torch.cuda.empty_cache()
 
-    scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
+    from transformers import get_scheduler
+    num_training_steps = int(train_config.num_epochs * (len(train_dataloader) / world_size / train_dataloader.batch_size))
+    scheduler = get_scheduler(
+        "cosine",
+        optimizer=optimizer,
+        num_warmup_steps=int(0.01 * num_training_steps),
+        num_training_steps=num_training_steps,
+    )
+    # scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
 
     # Start the training process
     results = train(

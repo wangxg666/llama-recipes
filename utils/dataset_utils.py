@@ -12,6 +12,7 @@ from ft_datasets import (
     get_hallucination_dataset,
     get_my_allin_one_dataset,
     get_my_pre_train_dataset,
+    get_my_pre_train_dataset_padding,
 )
 from typing import Optional
 
@@ -23,6 +24,7 @@ DATASET_PREPROC = {
     "hallucination_dataset": get_hallucination_dataset,
     'my_allin_one_dataset': get_my_allin_one_dataset,
     'my_pre_train_dataset': get_my_pre_train_dataset,
+    'get_my_pre_train_dataset_padding': get_my_pre_train_dataset_padding,
 }
 
 
