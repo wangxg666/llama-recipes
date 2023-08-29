@@ -1,7 +1,7 @@
 WORK_DIR="/home/paperspace/llama/ckpt.full"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_pre_train_dataset"
-TAG="pt-yelp-ca-25w-v01-a100"
+TAG="pt-yelp-ca-25w-v02-a100"
 ts=$(date +"%Y-%m-%d_%H-%M-%S")
 
 MODEL_NAME_OR_PATH=""
@@ -19,14 +19,14 @@ CUDA_VISIBLE_DEVICES="0,1" torchrun \
   --save_model \
   --dist_checkpoint_root_folder "${WORK_DIR}" \
   --dist_checkpoint_folder "${DATASET_NAME}/${TAG}"  \
-  --lr 0.00005 \
+  --lr 0.00001 \
   --pure_bf16 \
   --num_epochs 5 \
   --batch_size_training 8 \
   --val_batch_size 16 \
   --micro_batch_size 8 \
   --max_grad_norm 1.0 \
-  --evaluation_steps 200 \
+  --evaluation_steps 100 \
   --check_point_steps 1000 \
   --save_optimizer \
   --optimizer_checkpoint_path "${OPTIMIZER_CHECKPOINT_PATH}" \
