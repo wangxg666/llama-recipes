@@ -55,6 +55,8 @@ class _MyPreTrainDataset(Dataset):
             key, pos = key_pos_list[i]
             end = key_pos_list[i+1][1]
             val = text[pos: end].replace(key, '')
+            if not val:
+                continue
 
             # print(f'[{item}]: key = {key}, val = {val}')
 
@@ -62,7 +64,7 @@ class _MyPreTrainDataset(Dataset):
             val_ids = self.tokenizer.encode(val)
 
             # 跳过 bos token id
-            if i != 0:
+            if example:
                 key_ids = key_ids[1:]
             val_ids = val_ids[1:]
 
