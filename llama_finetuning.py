@@ -262,7 +262,7 @@ def main(**kwargs):
     from transformers import get_scheduler
     num_training_steps = int(train_config.num_epochs * (len(train_dataloader) / world_size / train_dataloader.batch_size))
     scheduler = get_scheduler(
-        "cosine",
+        "linear",
         optimizer=optimizer,
         num_warmup_steps=int(0.01 * num_training_steps),
         num_training_steps=num_training_steps,
