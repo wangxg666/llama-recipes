@@ -68,17 +68,15 @@ class _MyPreTrainDataset(Dataset):
                 key_ids = key_ids[1:]
             val_ids = val_ids[1:]
 
-            example.extend(key_ids)
-            labels.extend([-100 for _ in key_ids])  # no loss for key
-            example_mask.extend([1. for _ in key_ids])
-
-            example.extend(val_ids)
-            labels.extend(val_ids)
-            example_mask.extend([1. for _ in val_ids])
+            example.extend(key_ids + val_ids)
+            if key == 'Name: ':
+                labels.extend([-100 for _ in key_ids + val_ids])  # no loss for key
+            else:
+                labels.extend([-100 for _ in key_ids] + val_ids)
 
         example.append(self.tokenizer.eos_token_id)
         labels.append(self.tokenizer.eos_token_id)
-        example_mask.append(1.)
+        example_mask = [1. for _ in range(len(example))]
 
         if self.padding and self.max_words > 0:
             example = (example + [0 for _ in range(self.max_words)])[0:self.max_words]
@@ -94,7 +92,7 @@ class _MyPreTrainDataset(Dataset):
 
 def get_my_pre_train_dataset(dataset_config, tokenizer, split):
     dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, max_words=-1, padding=False)
-    dataset = ConcatDataset(dataset, chunk_size=1024)
+    dataset = ConcatDataset(dataset, chunk_size=512)
     return dataset
 
 
@@ -104,11 +102,11 @@ def get_my_pre_train_pad_dataset(dataset_config, tokenizer, split):
 
 
 if __name__ == '__main__':
-    from configs.datasets import my_pre_train_dataset
+    from configs.datasets import my_pre_train_yelp_ins_dataset
 
     from transformers import LlamaTokenizer
     tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
-    dataset = _MyPreTrainDataset(my_pre_train_dataset, tokenizer, 'valid', max_words=-1, padding=False)
+    dataset = _MyPreTrainDataset(my_pre_train_yelp_ins_dataset, tokenizer, 'valid', max_words=-1, padding=False)
     for i in range(10):
         for k, v in dataset[i].items():
             print(k)
