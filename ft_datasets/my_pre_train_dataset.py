@@ -35,14 +35,9 @@ class _MyPreTrainDataset(Dataset):
         example = self.tokenizer.encode(self.raw_datas[item]) + [self.tokenizer.eos_token_id]
 
         if self.padding and self.max_words > 0:
-            padding_size = self.max_words - len(example)
-            if padding_size > 0:
-                example = example + [0 for _ in range(padding_size)]
-            elif padding_size < 0:
-                example = example[: self.max_words]
-
+            example = (example + [0 for _ in range(self.max_words)])[0:self.max_words]
         labels = copy.deepcopy(example)
-        example_mask = [int(x > 0) for x in example]
+        example_mask = [1. if x > 0 else 0. for x in example]
 
         return {
             "input_ids": example,
@@ -53,12 +48,12 @@ class _MyPreTrainDataset(Dataset):
 
 def get_my_pre_train_dataset(dataset_config, tokenizer, split):
     dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, max_words=-1, padding=False)
-    dataset = ConcatDataset(dataset, chunk_size=1536)
+    dataset = ConcatDataset(dataset, chunk_size=4096 - 512)
     return dataset
 
 
 def get_my_pre_train_dataset_padding(dataset_config, tokenizer, split):
-    dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, max_words=1536, padding=True)
+    dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, max_words=512, padding=True)
     return dataset
 
 
@@ -67,7 +62,7 @@ if __name__ == '__main__':
 
     from transformers import LlamaTokenizer
     tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
-    dataset = get_my_pre_train_dataset(my_pre_train_dataset, tokenizer, 'train')
+    dataset = get_my_pre_train_dataset_padding(my_pre_train_dataset, tokenizer, 'valid')
     for i in range(10):
         for k, v in dataset[i].items():
             print(k)
