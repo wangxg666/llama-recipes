@@ -67,7 +67,7 @@ class my_pre_train_dataset:
     target_sub_dir: str = 'pre_train_yelp_ca.v02.context'
 
 
-class my_pre_train_dataset_padding:
+class my_pre_train_pad_dataset:
     root: str = get_data_root()
     dataset: str = "my_pre_train_dataset"
     train_split: str = "train"

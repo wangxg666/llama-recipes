@@ -25,7 +25,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --num_epochs 5 \
   --lr 0.00001 \
   --batch_size_training 2 \
-  --micro_batch_size 1 \
+  --micro_batch_size 2 \
   --max_grad_norm 1.0 \
   --check_point_steps 2000 \
   --save_optimizer \
