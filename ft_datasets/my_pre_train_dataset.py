@@ -23,6 +23,7 @@ class _MyPreTrainDataset(Dataset):
         self.raw_datas = []
         for input_file in input_files:
             self.raw_datas.extend([x.strip() for x in open(input_file)])
+        self.raw_datas = [x for x in self.raw_datas if len(x.split(' ')) >= 3]
         # self.raw_datas = self.raw_datas[0:1000]
         self.tokenizer = tokenizer
         self.max_words = max_words
