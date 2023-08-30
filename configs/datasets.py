@@ -62,14 +62,14 @@ class my_allin_one_dataset(my_common_dataset_config):
 
 class my_pre_train_dataset(my_common_dataset_config):
     dataset: str = "my_pre_train_dataset"
-    target_sub_dir: str = 'pre_train_yelp_ca.v02.instruction'
+    sub_dir_prefix: str = 'pre_train_yelp_ca.v02.instruction'
 
 
 class my_pre_train_pad_dataset(my_common_dataset_config):
     dataset: str = "my_pre_train_dataset"
-    target_sub_dir: str = 'pre_train_yelp_ca.v02.instruction'
+    sub_dir_prefix: str = 'pre_train_yelp_ca.v02.instruction'
 
 
 class my_pre_train_yelp_ins_dataset(my_common_dataset_config):
     dataset: str = "my_pre_train_yelp_ins_dataset"
-    target_sub_dir: str = 'pre_train_yelp_ca.v02.instruction'
+    sub_dir_prefix: str = 'pre_train_yelp_ca.v02.instruction'

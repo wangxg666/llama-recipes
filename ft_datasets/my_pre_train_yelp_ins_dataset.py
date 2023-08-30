@@ -16,8 +16,10 @@ class _MyPreTrainDataset(Dataset):
         input_files = [
             f'{dataset_config.root}/{sub_dir}/{split}.txt'
             for sub_dir in os.listdir(dataset_config.root)
-            if os.path.exists(f'{dataset_config.root}/{sub_dir}/{split}.txt')
-               and dataset_config.target_sub_dir in sub_dir
+            if (
+                os.path.exists(f'{dataset_config.root}/{sub_dir}/{split}.txt')
+                and sub_dir.startswith(dataset_config.sub_dir_prefix)
+            )
         ]
 
         self.raw_datas = []
