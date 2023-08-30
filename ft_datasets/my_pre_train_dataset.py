@@ -39,6 +39,8 @@ class _MyPreTrainDataset(Dataset):
 
         if self.padding and self.max_words > 0:
             example = (example + [0 for _ in range(self.max_words)])[0:self.max_words]
+        # padding 部分不计算梯度
+        # labels = [x if x > 0 else -100 for x in example]
         labels = copy.deepcopy(example)
         example_mask = [1. if x > 0 else 0. for x in example]
 

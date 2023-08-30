@@ -29,7 +29,6 @@ CUDA_VISIBLE_DEVICES="0,1" torchrun \
   --max_grad_norm 1.0 \
   --evaluation_steps 100 \
   --check_point_steps 1000 \
-  --save_optimizer \
   --optimizer_checkpoint_path "${OPTIMIZER_CHECKPOINT_PATH}" \
   --wandb_name "${ts}-${TAG}-${WANDB_TAG}"
 
