@@ -42,46 +42,34 @@ def get_data_root():
         '/mnt/nlp/xingguang/llama/datasets/nb_training',
         '/home/cpp/xingguang/datasets',
         '/home/paperspace/datasets',
+        '/home/paperspace/xingguang/datasets',
     ]:
         if os.path.exists(path):
             return path
     return ""
 
 
-class my_allin_one_dataset:
+class my_common_dataset_config:
     root: str = get_data_root()
+    train_split: str = "train"
+    test_split: str = "valid"
+    train_data_path: str = f""
+    valid_data_path: str = f""
+
+class my_allin_one_dataset(my_common_dataset_config):
     dataset: str = "my_allin_one_dataset"
-    train_split: str = "train"
-    test_split: str = "valid"
-    train_data_path: str = f""
-    valid_data_path: str = f""
 
 
-class my_pre_train_dataset:
-    root: str = get_data_root()
+class my_pre_train_dataset(my_common_dataset_config):
     dataset: str = "my_pre_train_dataset"
-    train_split: str = "train"
-    test_split: str = "valid"
-    train_data_path: str = f""
-    valid_data_path: str = f""
-    target_sub_dir: str = 'pre_train_yelp_ca.v02.context'
-
-
-class my_pre_train_pad_dataset:
-    root: str = get_data_root()
-    dataset: str = "my_pre_train_dataset"
-    train_split: str = "train"
-    test_split: str = "valid"
-    train_data_path: str = f""
-    valid_data_path: str = f""
     target_sub_dir: str = 'pre_train_yelp_ca.v02.instruction'
 
 
-class my_pre_train_yelp_ins_dataset:
-    root: str = get_data_root()
+class my_pre_train_pad_dataset(my_common_dataset_config):
+    dataset: str = "my_pre_train_dataset"
+    target_sub_dir: str = 'pre_train_yelp_ca.v02.instruction'
+
+
+class my_pre_train_yelp_ins_dataset(my_common_dataset_config):
     dataset: str = "my_pre_train_yelp_ins_dataset"
-    train_split: str = "train"
-    test_split: str = "valid"
-    train_data_path: str = f""
-    valid_data_path: str = f""
     target_sub_dir: str = 'pre_train_yelp_ca.v02.instruction'
