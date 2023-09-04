@@ -35,6 +35,18 @@ Your response should be "Good." if it is writen formally and "Poor." if it is no
 The following text B is rewritten from text A, but text B might be inconsistent with text A in content.
 Please help to check does text B is rewritten properly with text A.
 ### {source_sent}
+### response:""",
+
+    "FAQ_ANSWER_EXTRACT": """
+You are an excellent linguist, and I need your help to complete the following task.
+Give you a user query and some background knowledge, 
+the knowledge is not the directly answer for the query, but it might be used to answer the query.
+Please read the query and knowledge carefully, 
+and then try extracting and summarizing the useful information from these knowledge to answer the query.
+If you think the knowledge is not relevant with the query, please give a default answer "Sorry, the query can not be answered.".
+Your answer should be in json format like {{"answer": xxx}}
+### query:{query}
+### knowledge:{knowledge},
 ### response:"""
 }
 
@@ -63,7 +75,7 @@ class MyAllInOneDataset(Dataset):
             f'{dataset_config.root}/{sub_dir}/{partition}.txt'
             for sub_dir in os.listdir(dataset_config.root)
             if os.path.exists(f'{dataset_config.root}/{sub_dir}/{partition}.txt')
-            and sub_dir == 'hallucination'
+            and sub_dir == 'answer_extractor'
         ]
         print(json.dumps(input_files, indent=4))
         self.raw_data = [[json.loads(data) for data in open(input_file)] for input_file in input_files]
@@ -92,7 +104,7 @@ class MyAllInOneDataset(Dataset):
     def __getitem__(self, index):
         item = self.raw_data[index]
         prompt = MyAllInOneDataset.prompting(item)
-        example = prompt + ' ' + item['label']
+        example = prompt + ' ' + str(item['label'])
 
         prompt = self.tokenizer.encode(prompt)
         example = self.tokenizer.encode(example) + [self.tokenizer.eos_token_id]

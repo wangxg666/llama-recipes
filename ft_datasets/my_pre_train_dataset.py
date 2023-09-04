@@ -38,7 +38,11 @@ class _MyPreTrainDataset(Dataset):
         example = self.tokenizer.encode(self.raw_datas[item]) + [self.tokenizer.eos_token_id]
 
         if self.padding and self.max_words > 0:
-            example = (example + [0 for _ in range(self.max_words)])[0:self.max_words]
+            padding_size = self.max_words - len(example)
+            # example = (example + [0 for _ in range(self.max_words)])[0:self.max_words]
+            example.extend([0 for _ in range(padding_size)])
+            example = example[0:self.max_words]
+
         # padding 部分不计算梯度
         # labels = [x if x > 0 else -100 for x in example]
         labels = copy.deepcopy(example)
@@ -67,7 +71,8 @@ if __name__ == '__main__':
 
     from transformers import LlamaTokenizer
     tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
-    dataset = get_my_pre_train_dataset(my_pre_train_dataset, tokenizer, 'valid')
+    # dataset = get_my_pre_train_dataset(my_pre_train_dataset, tokenizer, 'valid')
+    dataset = get_my_pre_train_pad_dataset(my_pre_train_pad_dataset, tokenizer, 'valid')
     for i in range(10):
         for k, v in dataset[i].items():
             print(k)
