@@ -45,6 +45,8 @@ def get_input_file_abs_path(input_file):
         return f'/home/cpp/xingguang/datasets/{input_file}'
     if os.path.exists(f'/home/paperspace/datasets/{input_file}'):
         return f'/home/paperspace/datasets/{input_file}'
+    if os.path.exists(f'/home/paperspace/xingguang/datasets/{input_file}'):
+        return f'/home/paperspace/xingguang/datasets/{input_file}'
     if os.path.exists(f'/mnt/nlp/xingguang/llama/datasets/nb_training/{input_file}'):
         return f'/mnt/nlp/xingguang/llama/datasets/nb_training/{input_file}'
     print(f'{input_file} is not valid, exit(0)')

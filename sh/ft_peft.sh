@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x
 
-WORK_DIR="/home/cpp/xingguang/llama/model_checkpoints.peft"
+WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_allin_one_dataset"
 #TAG="grammar-seq2seq"
@@ -14,7 +14,7 @@ echo "" > "${LOG_FILE}"
 
 cd ..
 
-CUDA_VISIBLE_DEVICES="2,3" torchrun \
+CUDA_VISIBLE_DEVICES="0,1" torchrun \
   --nnodes 1 \
   --nproc_per_node 2 \
   ./llama_finetuning.py \
