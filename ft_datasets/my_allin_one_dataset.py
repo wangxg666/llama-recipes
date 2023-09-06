@@ -85,7 +85,7 @@ class MyAllInOneDataset(Dataset):
                     obj = json.loads(data)
                     self.raw_data.append(obj)
                 except:
-                    print(data)
+                    pass
         if debug:
             from collections import defaultdict
             type2datas = defaultdict(list)
@@ -95,8 +95,7 @@ class MyAllInOneDataset(Dataset):
             for type, datas in type2datas.items():
                 self.raw_data.extend(datas)
 
-        self.raw_data = list(itertools.chain(*self.raw_data))
-
+        # self.raw_data = list(itertools.chain(*self.raw_data))
         print(f'load {len(self.raw_data)} {partition} datas')
         if partition == 'train':
             random.shuffle(self.raw_data)
