@@ -18,6 +18,7 @@ from inference.model_utils import load_model, load_peft_model, load_llama_from_c
 
 def main(
     model_name,
+    port: int=1201,
     peft_model: str=None,
     dataset: str=None,
     quantization: bool=False,
@@ -82,7 +83,7 @@ def main(
     from aiohttp import web
     app = web.Application()
     app.add_routes([web.post('/do', encode)])
-    web.run_app(app, port=1201, access_log=None)
+    web.run_app(app, port=port, access_log=None)
 
 
 if __name__ == "__main__":
