@@ -24,7 +24,8 @@ def main(
     max_new_tokens = 100, #The maximum numbers of tokens to generate
     input_file: str=None,
     seed: int=42, #seed value for reproducibility
-    do_sample: bool=True, #Whether or not to use sampling ; use greedy decoding otherwise.
+    do_sample: bool=False, # Whether or not to use sampling ; use greedy decoding otherwise.
+    num_beams: int=4,
     min_length: int=None, #The minimum length of the sequence to be generated, input prompt + min_new_tokens
     use_cache: bool=True,  #[optional] Whether or not the model should use the past last key/values attentions Whether or not the model should use the past last key/values attentions (if applicable to the model) to speed up decoding.
     top_p: float=1.0, # [optional] If set to float < 1, only the smallest set of most probable tokens with probabilities that add up to top_p or higher are kept for generation.
@@ -63,6 +64,7 @@ def main(
                 **batch,
                 max_new_tokens=max_new_tokens,
                 do_sample=do_sample,
+                num_beams=num_beams,
                 top_p=top_p,
                 temperature=temperature,
                 min_length=min_length,
@@ -74,6 +76,7 @@ def main(
             )
         output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
         pred = output_text.replace(input, '').strip()
+        print(pred, '\n\n')
         return web.json_response(data={'pred': pred})
 
     from aiohttp import web

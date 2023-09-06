@@ -6,11 +6,8 @@ MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_allin_one_dataset"
 #TAG="grammar-seq2seq"
 #TAG="grammar-single"
-TAG="answer_extractor"
-
+TAG="answer_extractor.v002"
 ts=$(date +"%Y-%m-%d")
-LOG_FILE="./logs/peft-${DATASET_NAME}-${TAG}-${ts}.txt"
-echo "" > "${LOG_FILE}"
 
 cd ..
 
@@ -36,5 +33,3 @@ CUDA_VISIBLE_DEVICES="0,1" torchrun \
 
 cd ../
 
-#echo ${LOG_FILE}
-#tail -f ${LOG_FILE}
