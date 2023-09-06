@@ -6,7 +6,6 @@ set -x
 #INPUT_FILE="grammar_c4200m_seq2seq/valid.txt"
 INPUT_FILE="answer_extractor/valid.txt"
 
-WORK_DIR="/home/cpp/xingguang/llama/model_checkpoints.peft"
 WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_allin_one_dataset"
