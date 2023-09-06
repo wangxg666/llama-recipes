@@ -1,4 +1,5 @@
 WORK_DIR="/home/cpp/xingguang/llama/model_checkpoints"
+WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_pre_train_dataset"
 TAG="pt-yelp-ny"
