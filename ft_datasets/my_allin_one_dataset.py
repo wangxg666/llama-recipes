@@ -78,15 +78,22 @@ class MyAllInOneDataset(Dataset):
             and sub_dir == 'answer_extractor.v002'
         ]
         print(json.dumps(input_files, indent=4))
-        self.raw_data = [[json.loads(data) for data in open(input_file)] for input_file in input_files]
+        self.raw_data = []
+        for input_file in input_files:
+            for data in open(input_file):
+                try:
+                    obj = json.loads(data)
+                    self.raw_data.append(obj)
+                except:
+                    print(data)
         if debug:
             from collections import defaultdict
-            type2data = defaultdict(list)
-            for datas in self.raw_data:
-                for data in datas:
-                    type = data['type']
-                    type2data[type].append(data)
-            self.raw_data = list(type2data.values())
+            type2datas = defaultdict(list)
+            for data in self.raw_data:
+                type = data['type']
+                type2datas[type].append(data)
+            for type, datas in type2datas.items():
+                self.raw_data.extend(datas)
 
         self.raw_data = list(itertools.chain(*self.raw_data))
 
