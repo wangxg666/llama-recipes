@@ -24,10 +24,10 @@ CUDA_VISIBLE_DEVICES="0,1" torchrun \
   --pure_bf16 \
   --output_dir ${WORK_DIR}/${MODEL_NAME}/${DATASET_NAME}/${TAG}-peft/ \
   --lr 0.00005 \
-  --val_batch_size 4 \
-  --batch_size_training 4 \
-  --micro_batch_size 1 \
-  --num_epochs 3 \
+  --val_batch_size 16 \
+  --batch_size_training 16 \
+  --micro_batch_size 16 \
+  --num_epochs 5 \
   --check_point_steps 1000 \
   --wandb_name ${DATASET_NAME}-${TAG}-${ts}
 

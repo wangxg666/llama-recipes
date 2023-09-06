@@ -75,7 +75,7 @@ class MyAllInOneDataset(Dataset):
             f'{dataset_config.root}/{sub_dir}/{partition}.txt'
             for sub_dir in os.listdir(dataset_config.root)
             if os.path.exists(f'{dataset_config.root}/{sub_dir}/{partition}.txt')
-            and sub_dir == 'answer_extractor.v002'
+            and sub_dir.startswith(dataset_config.sub_dir_prefix)
         ]
         print(json.dumps(input_files, indent=4))
         self.raw_data = []
