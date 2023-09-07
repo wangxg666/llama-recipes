@@ -6,7 +6,7 @@ MODEL_NAME="meta-llama/Llama-2-13b-hf"
 DATASET_NAME="my_allin_one_dataset"
 #TAG="grammar-seq2seq"
 #TAG="grammar-single"
-TAG="answer_extractor.v006"
+TAG="answer_extractor.v007"
 ts=$(date +"%Y-%m-%d")
 
 cd ..

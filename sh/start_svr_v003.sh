@@ -1,3 +1,6 @@
+#!/bin/bash
+set -x
+
 cd ../
 
 CUDA_VISIBLE_DEVICES=2,3 \
