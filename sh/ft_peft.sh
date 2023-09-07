@@ -6,12 +6,12 @@ MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_allin_one_dataset"
 #TAG="grammar-seq2seq"
 #TAG="grammar-single"
-TAG="answer_extractor.v005"
+TAG="answer_extractor.v006"
 ts=$(date +"%Y-%m-%d")
 
 cd ..
 
-CUDA_VISIBLE_DEVICES="0,1" torchrun \
+CUDA_VISIBLE_DEVICES="3,4" torchrun \
   --nnodes 1 \
   --nproc_per_node 2 \
   ./llama_finetuning.py \

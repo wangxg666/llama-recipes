@@ -41,8 +41,8 @@ def get_data_root():
     for path in [
         '/mnt/nlp/xingguang/llama/datasets/nb_training',
         '/home/cpp/xingguang/datasets',
-        '/home/paperspace/datasets',
         '/home/paperspace/xingguang/datasets',
+        '/home/paperspace/datasets',
     ]:
         if os.path.exists(path):
             return path
@@ -58,7 +58,7 @@ class my_common_dataset_config:
 
 class my_allin_one_dataset(my_common_dataset_config):
     dataset: str = "my_allin_one_dataset"
-    sub_dir_prefix: str = 'answer_extractor.v005'
+    sub_dir_prefix: str = 'answer_extractor.v006'
 
 
 class my_pre_train_dataset(my_common_dataset_config):

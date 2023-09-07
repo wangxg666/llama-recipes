@@ -1,9 +1,9 @@
 cd ../
 
-CUDA_VISIBLE_DEVICES=2,3 \
+CUDA_VISIBLE_DEVICES=0,1 \
 python llama_svr.py \
-  --port 1202 \
-	--length_penalty 1 \
+  --port 1201 \
+	--length_penalty 0.5 \
 	--num_beams 5 \
 	--do_sample 0 \
 	--model_name meta-llama/Llama-2-7b-hf \

@@ -4,14 +4,14 @@ set -x
 #INPUT_FILE="clickbait/valid.txt"
 #INPUT_FILE="grammar_c4200m_single/valid.txt"
 #INPUT_FILE="grammar_c4200m_seq2seq/valid.txt"
-INPUT_FILE="answer_extractor.v005/valid.txt"
+INPUT_FILE="answer_extractor.v006/valid.txt"
 
 WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_allin_one_dataset"
 #TAG="grammar-seq2seq"
 #TAG="grammar-single"
-TAG="answer_extractor.v005"
+TAG="answer_extractor.v006"
 
 cd ..
 
