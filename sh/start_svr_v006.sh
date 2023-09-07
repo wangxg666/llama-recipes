@@ -4,7 +4,7 @@ CUDA_VISIBLE_DEVICES=0,1 \
 python llama_svr.py \
   --port 1201 \
 	--length_penalty 0.5 \
-	--num_beams 5 \
+	--num_beams 1 \
 	--do_sample 0 \
 	--model_name meta-llama/Llama-2-7b-hf \
-	--peft_model /mnt/nlp/xingguang/llama/answer_extractor.v005-peft/best_model
+	--peft_model /mnt/nlp/xingguang/llama/answer_extractor.v005-peft/epoch_004

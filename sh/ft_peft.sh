@@ -2,7 +2,7 @@
 set -x
 
 WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft"
-MODEL_NAME="meta-llama/Llama-2-7b-hf"
+MODEL_NAME="meta-llama/Llama-2-13b-hf"
 DATASET_NAME="my_allin_one_dataset"
 #TAG="grammar-seq2seq"
 #TAG="grammar-single"
@@ -29,7 +29,7 @@ CUDA_VISIBLE_DEVICES="3,4" torchrun \
   --micro_batch_size 16 \
   --num_epochs 5 \
   --check_point_steps 1000 \
-  --wandb_name ${DATASET_NAME}-${TAG}-${ts}
+  --wandb_name ${MODEL_NAME}-${DATASET_NAME}-${TAG}-${ts}
 
 cd ../
 
