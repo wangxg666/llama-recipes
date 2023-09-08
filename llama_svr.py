@@ -20,10 +20,8 @@ def main(
     model_name,
     port: int=1201,
     peft_model: str=None,
-    dataset: str=None,
     quantization: bool=False,
     max_new_tokens = 100, #The maximum numbers of tokens to generate
-    input_file: str=None,
     seed: int=42, #seed value for reproducibility
     do_sample: bool=False, # Whether or not to use sampling ; use greedy decoding otherwise.
     num_beams: int=4,

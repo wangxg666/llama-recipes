@@ -58,7 +58,7 @@ class my_common_dataset_config:
 
 class my_allin_one_dataset(my_common_dataset_config):
     dataset: str = "my_allin_one_dataset"
-    sub_dir_prefix: str = 'answer_extractor.v007'
+    sub_dir_prefix: str = 'answer_extractor.v008'
 
 
 class my_pre_train_dataset(my_common_dataset_config):
