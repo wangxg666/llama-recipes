@@ -4,9 +4,7 @@ set -x
 WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_allin_one_dataset"
-#TAG="grammar-seq2seq"
-#TAG="grammar-single"
-TAG="answer_extractor.v008"
+TAG="answer_extractor.v009.2e-5"
 ts=$(date +"%Y-%m-%d")
 
 cd ..
@@ -23,11 +21,12 @@ CUDA_VISIBLE_DEVICES="3,4" torchrun \
   --save_model \
   --pure_bf16 \
   --output_dir ${WORK_DIR}/${MODEL_NAME}/${DATASET_NAME}/${TAG}-peft/ \
-  --lr 0.00005 \
+  --lr 0.00002 \
   --val_batch_size 16 \
   --batch_size_training 16 \
   --micro_batch_size 16 \
-  --num_epochs 5 \
+  --num_epochs 10 \
+  --evaluation_steps 50 \
   --check_point_steps 1000 \
   --wandb_name ${MODEL_NAME}-${DATASET_NAME}-${TAG}-${ts}
 
