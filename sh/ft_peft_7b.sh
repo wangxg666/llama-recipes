@@ -9,9 +9,9 @@ ts=$(date +"%Y-%m-%d")
 
 cd ..
 
-CUDA_VISIBLE_DEVICES="4,5,6,7" torchrun \
+CUDA_VISIBLE_DEVICES="2,3" torchrun \
   --nnodes 1 \
-  --nproc_per_node 4 \
+  --nproc_per_node 2 \
   ./llama_finetuning.py \
   --enable_fsdp  \
   --use_peft \
