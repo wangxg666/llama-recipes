@@ -21,18 +21,13 @@ class PredictionWriter:
         self.output_file = output_file
         self.type2sout = {}
 
-    def write(self, type, real, pred, obj):
-        if type not in self.type2sout:
-            self.type2sout[type] = open(self.output_file + '.' + type, 'w')
-
-        if 'SINGLE' in type:
-            line = f'type: {type}\treal: {real}\tpred: {pred}\t{obj["source_sent"]}'
-        elif 'SEQ2SEQ' in type:
-            line = f'type: {type}\ninput: {obj["source_sent"]}\nreal:  {real}\npred:  {pred}\n\n'
-        else:
-            line = f'type: {type}\treal: {real}\tpred: {pred}'
-
-        self.type2sout[type].write(f'{line}\n')
+    def write(self, type, real, pred):
+        obj = {
+            'type': type,
+            'real': real,
+            'pred': pred,
+        }
+        self.type2sout[type].write(f'{json.dumps(obj)}\n')
         self.type2sout[type].flush()
 
     def close(self):
@@ -134,7 +129,7 @@ def main(
         pred = output_text.replace(prompt, '').strip()
         real = obj['label']
 
-        writer.write(type, real, pred, obj)
+        writer.write(type, real, pred)
 
         print(iid)
         print(f'pred = {pred}')
