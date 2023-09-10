@@ -22,6 +22,8 @@ class PredictionWriter:
         self.type2sout = {}
 
     def write(self, type, real, pred):
+        if type not in self.type2sout:
+            self.type2sout[type] = open(self.output_file + '.' + type, 'w')
         obj = {
             'type': type,
             'real': real,
