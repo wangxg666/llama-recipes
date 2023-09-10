@@ -44,6 +44,6 @@ if __name__ == '__main__':
             pass
 
     print(classification_report(y_real, y_pred, target_names=['has_answer', 'default_answer']))
-    print(f'avg_blue = {np.average(blue_scores)}')
-    print(f'avg_real length = {np.mean(real_lengths)}')
-    print(f'avg_pred length = {np.mean(pred_lengths)}')
+    print(f'avg_blue = {round(np.average(blue_scores), 5)}')
+    print(f'avg_real length = {round(np.mean(real_lengths), 5)}')
+    print(f'avg_pred length = {round(np.mean(pred_lengths), 5)}')
