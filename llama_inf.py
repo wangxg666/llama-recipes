@@ -89,6 +89,7 @@ def main(
 
     if peft_model:
         model = load_peft_model(model, peft_model)
+        print(model)
 
     from ft_datasets import (
         get_my_allin_one_dataset
