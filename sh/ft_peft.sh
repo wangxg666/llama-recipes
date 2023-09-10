@@ -2,14 +2,14 @@
 set -x
 
 WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft"
-MODEL_NAME="meta-llama/Llama-2-7b-hf"
+MODEL_NAME="meta-llama/Llama-2-13b-hf"
 DATASET_NAME="my_allin_one_dataset"
-TAG="answer_extractor.v009.2e-5"
+TAG="answer_extractor.v009.13b.2e-5"
 ts=$(date +"%Y-%m-%d")
 
 cd ..
 
-CUDA_VISIBLE_DEVICES="3,4" torchrun \
+CUDA_VISIBLE_DEVICES="5,6,7,8" torchrun \
   --nnodes 1 \
   --nproc_per_node 2 \
   ./llama_finetuning.py \
@@ -22,9 +22,9 @@ CUDA_VISIBLE_DEVICES="3,4" torchrun \
   --pure_bf16 \
   --output_dir ${WORK_DIR}/${MODEL_NAME}/${DATASET_NAME}/${TAG}-peft/ \
   --lr 0.00002 \
-  --val_batch_size 16 \
-  --batch_size_training 16 \
-  --micro_batch_size 16 \
+  --val_batch_size 8 \
+  --batch_size_training 8 \
+  --micro_batch_size 8 \
   --num_epochs 10 \
   --evaluation_steps 50 \
   --check_point_steps 1000 \
