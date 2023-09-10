@@ -60,6 +60,7 @@ def main(
     quantization: bool=False,
     max_new_tokens = 100, #The maximum numbers of tokens to generate
     input_file: str=None,
+    num_beams: int=10,
     seed: int=42, #seed value for reproducibility
     do_sample: bool=True, #Whether or not to use sampling ; use greedy decoding otherwise.
     min_length: int=None, #The minimum length of the sequence to be generated, input prompt + min_new_tokens
@@ -114,6 +115,7 @@ def main(
                 **batch,
                 max_new_tokens=max_new_tokens,
                 do_sample=do_sample,
+                num_beams=num_beams,
                 top_p=top_p,
                 temperature=temperature,
                 min_length=min_length,

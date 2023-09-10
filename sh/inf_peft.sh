@@ -12,7 +12,7 @@ INPUT_FILE="answer_extractor.v009/valid.txt"
 cd ..
 
 CUDA_VISIBLE_DEVICES="2,3" python llama_inf.py \
-  --length_penalty 0.5 \
+  --length_penalty 1 \
 	--num_beams 10 \
 	--do_sample 0 \
   --model_name ${MODEL_NAME} \
