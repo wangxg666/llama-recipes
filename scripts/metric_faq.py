@@ -30,21 +30,18 @@ if __name__ == '__main__':
             obj = json.loads(data)
             real = json.loads(obj['real'])['answer']
             pred = json.loads(obj['pred'])['answer']
-
             real_is_default = 'Sorry' in real and 'can not be answered' in real
             pred_is_default = 'Sorry' in pred and 'can not be answered' in pred
 
             y_real.append(real_is_default)
             y_pred.append(pred_is_default)
-
             if not real_is_default and not pred_is_default:
-                score = sentence_bleu([real], real, pred=smooth.method1)
+                score = sentence_bleu([pred], real, smoothing_function=smooth.method1)
                 blue_scores.append(score)
                 real_lengths.append(len(real.split(' ')))
                 pred_lengths.append(len(pred.split(' ')))
-
         except:
-            error += 1
+            pass
 
     print(classification_report(y_real, y_pred, target_names=['has_answer', 'default_answer']))
     print(f'avg_blue = {np.average(blue_scores)}')
