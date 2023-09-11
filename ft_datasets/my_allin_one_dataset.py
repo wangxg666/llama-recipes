@@ -50,7 +50,7 @@ Your answer should be in json format like {{"answer": xxx}}
 ### response:""",
     
     "PLATYPUS": """"
-{instruction}{label}
+{instruction}
     """
 }
 
