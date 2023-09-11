@@ -97,6 +97,7 @@ def main(
     input_file_abs_path = get_input_file_abs_path(input_file=input_file)
 
     model.eval()
+    model.half()
 
     datas = [json.loads(data) for data in open(input_file_abs_path)]
     datas = sorted(datas, key=lambda x:x['label'])

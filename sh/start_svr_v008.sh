@@ -3,7 +3,7 @@ set -x
 
 cd ../
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 \
+CUDA_VISIBLE_DEVICES=2,3 \
 python llama_svr.py \
   --port 1201 \
 	--length_penalty 0.5 \
