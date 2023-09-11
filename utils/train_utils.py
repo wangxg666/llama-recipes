@@ -121,7 +121,7 @@ def train(model,
         if epoch != -1:
             sub_dir = f'epoch_{str(1000 + epoch)[1:]}'
         elif accu_step != -1:
-            sub_dir = f'step_{str(100000 + accu_step // 1000)[1:]}k'
+            sub_dir = f'step_{str(100000 + accu_step // 100)[1:]}'
         elif not sub_dir:
             return
 
