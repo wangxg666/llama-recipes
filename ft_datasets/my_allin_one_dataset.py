@@ -47,7 +47,11 @@ If you think the knowledge is not relevant with the query, please give a default
 Your answer should be in json format like {{"answer": xxx}}
 ### query:{query}
 ### knowledge:{knowledge},
-### response:"""
+### response:""",
+    
+    "PLATYPUS": """"
+{instruction}{label}
+    """
 }
 
 

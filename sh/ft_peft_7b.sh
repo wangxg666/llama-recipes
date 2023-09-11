@@ -4,7 +4,7 @@ set -x
 WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft"
 MODEL_NAME="meta-llama/Llama-2-7b-hf"
 DATASET_NAME="my_allin_one_dataset"
-TAG="answer_extractor.v011.7b.2e-5"
+TAG="answer_extractor.v012.7b.2e-5"
 ts=$(date +"%Y-%m-%d")
 
 cd ..

@@ -5,7 +5,7 @@ set -x
 WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft"
 MODEL_NAME="meta-llama/Llama-2-13b-hf"
 DATASET_NAME="my_allin_one_dataset"
-TAG="answer_extractor.v009.13b.2e-5"
+TAG="answer_extractor.v012.13b.2e-5"
 INPUT_FILE="answer_extractor.v009/valid.txt"
 
 
