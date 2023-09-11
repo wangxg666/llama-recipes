@@ -12,6 +12,7 @@ cd ..
 CUDA_VISIBLE_DEVICES="2,3" torchrun \
   --nnodes 1 \
   --nproc_per_node 2 \
+  --master_port=1201 \
   ./llama_finetuning.py \
   --enable_fsdp  \
   --use_peft \
