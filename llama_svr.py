@@ -51,7 +51,10 @@ def main(
 
     if peft_model:
         model = load_peft_model(model, peft_model)
+        print(model)
+
     model.eval()
+    model.half()
 
     async def encode(request):
         obj = await request.json()
@@ -74,9 +77,10 @@ def main(
                 **kwargs
             )
         output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        print(output_text)
         pred = output_text.replace(input, '').strip()
-        return web.json_response(data={'pred': pred})
+        pred = pred.replace('{"answer": "', '').replace('"}', '')
+        print(output_text)
+        return web.json_response(data={'pred': {'answer': pred}})
 
     from aiohttp import web
     app = web.Application()
