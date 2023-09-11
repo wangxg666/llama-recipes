@@ -77,10 +77,9 @@ def main(
                 **kwargs
             )
         output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        pred = output_text.replace(input, '').strip()
-        pred = pred.replace('{"answer": "', '').replace('"}', '')
         print(output_text)
-        return web.json_response(data={'pred': {'answer': pred}})
+        pred = output_text.replace(input, '').strip()
+        return web.json_response(data={'pred': pred})
 
     from aiohttp import web
     app = web.Application()
