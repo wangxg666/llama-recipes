@@ -7,7 +7,7 @@ CUDA_VISIBLE_DEVICES=1 \
 python llama_svr.py \
   --port 1301 \
   --length_penalty 0 \
-  --num_beams 10 \
+  --num_beams 1 \
   --max_new_tokens 1000 \
   --do_sample 1 \
   --model_name meta-llama/Llama-2-7b-hf \

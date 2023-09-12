@@ -46,7 +46,7 @@ and then try extracting and summarizing the useful information from these knowle
 If you think the knowledge is not relevant with the query, please give a default answer "Sorry, the query can not be answered.".
 Your answer should be in json format like {{"answer": xxx}}
 ### query: {query}
-### knowledge: {knowledge},
+### knowledge: {knowledge}
 ### response:""",
     
     "PLATYPUS": """"
