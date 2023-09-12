@@ -46,7 +46,6 @@ def main(
             "pad_token": "<PAD>",
         }
     )
-
     print(model)
 
     if peft_model:
