@@ -1,10 +1,12 @@
 #!/bin/bash
 set -x
 
-WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft"
-MODEL_NAME="meta-llama/Llama-2-7b-hf"
+MODEL_TYPE="7b"
+WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft/${MODEL_TYPE}"
+MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_allin_one_dataset"
-TAG="answer_extractor.v013-new.7b.2e-5"
+DATASET_SUB_DIR="answer_extractor.v013"
+TAG="${MODEL_TYPE}.2e-5"
 ts=$(date +"%Y-%m-%d")
 
 cd ..
@@ -19,9 +21,10 @@ CUDA_VISIBLE_DEVICES="4,5,6,7" torchrun \
   --peft_method lora \
   --model_name ${MODEL_NAME} \
   --dataset ${DATASET_NAME} \
+  --dataset_sub_dir_prefix ${DATASET_SUB_DIR} \
   --save_model \
   --pure_bf16 \
-  --output_dir ${WORK_DIR}/${MODEL_NAME}/${DATASET_NAME}/${TAG}-peft/ \
+  --output_dir ${WORK_DIR}/${DATASET_SUB_DIR}-${TAG}-peft/ \
   --lr 2e-5 \
   --val_batch_size 8 \
   --batch_size_training 8 \
@@ -29,7 +32,7 @@ CUDA_VISIBLE_DEVICES="4,5,6,7" torchrun \
   --num_epochs 10 \
   --evaluation_steps 100 \
   --check_point_steps 100 \
-  --wandb_name ${MODEL_NAME}-${DATASET_NAME}-${TAG}-${ts}
+  --wandb_name ${MODEL_NAME}-${DATASET_NAME}-${DATASET_SUB_DIR}-${TAG}-${ts}
 
 cd ../
 

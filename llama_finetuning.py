@@ -175,6 +175,9 @@ def main(**kwargs):
         model.to("cuda")
 
     dataset_config = generate_dataset_config(train_config, kwargs)
+    if train_config.dataset_sub_dir_prefix != '':
+        dataset_config.sub_dir_prefix = train_config.dataset_sub_dir_prefix
+    print(dataset_config.dataset, dataset_config.sub_dir_prefix)
     
      # Load and preprocess the dataset for training and validation
     dataset_train = get_preprocessed_dataset(
