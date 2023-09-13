@@ -48,7 +48,18 @@ Your answer should be in json format like {{"answer": xxx}}
 ### query: {query}
 ### knowledge: {knowledge}
 ### response:""",
-    
+
+"FAQ_ANSWER_EXTRACT_NO_FORMAT": """
+You are an excellent linguist, and I need your help to complete the following task.
+Give you a user query and some background knowledge, 
+the knowledge is not the directly answer for the query, but it might be used to answer the query.
+Please read the query and knowledge carefully, 
+and then try extracting and summarizing the useful information from these knowledge to answer the query.
+If you think the knowledge is not relevant with the query, please give a default answer "Sorry, the query can not be answered.".
+### query: {query}
+### knowledge: {knowledge}
+### response:""",
+
     "PLATYPUS": """"
 {instruction}
     """

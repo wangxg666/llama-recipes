@@ -9,6 +9,5 @@ python llama_svr.py \
   --length_penalty 0 \
   --num_beams 1 \
   --max_new_tokens 1000 \
-  --do_sample 1 \
   --model_name meta-llama/Llama-2-7b-hf \
-  --peft_model /home/paperspace/xingguang/llama/ckpt.peft/7b/answer_extractor.v014-7b.2e-5-peft/step_000700/
+  --peft_model /home/paperspace/xingguang/llama/ckpt.peft/7b/answer_extractor.v014-7b.2e-5-peft/step_006500

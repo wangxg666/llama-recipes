@@ -6,7 +6,7 @@ MODEL_TYPE="7b"
 WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_allin_one_dataset"
-DATASET_SUB_DIR="answer_extractor.v013"
+DATASET_SUB_DIR="answer_extractor.v014"
 INPUT_FILE="${DATASET_SUB_DIR}/valid.txt"
 TAG="${MODEL_TYPE}.2e-5"
 
@@ -18,6 +18,6 @@ CUDA_VISIBLE_DEVICES="2,3" python llama_inf.py \
 	--do_sample 0 \
   --max_new_tokens 1000 \
   --model_name ${MODEL_NAME} \
-  --peft_model ${WORK_DIR}/${DATASET_SUB_DIR}-${TAG}-peft/step_005500/ \
+  --peft_model ${WORK_DIR}/${DATASET_SUB_DIR}-${TAG}-peft/step_006500/ \
   --dataset ${DATASET_NAME} \
   --input_file ${INPUT_FILE}

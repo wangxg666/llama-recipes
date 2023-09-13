@@ -35,6 +35,7 @@ def main(
     **kwargs
 ):
 
+    print(do_sample, num_beams)
     # Set the seeds for reproducibility
     torch.cuda.manual_seed(seed)
     torch.manual_seed(seed)
