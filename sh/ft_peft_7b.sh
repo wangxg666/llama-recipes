@@ -29,7 +29,7 @@ CUDA_VISIBLE_DEVICES="4,5,6,7" torchrun \
   --val_batch_size 8 \
   --batch_size_training 8 \
   --micro_batch_size 8 \
-  --num_epochs 10 \
+  --num_epochs 5 \
   --evaluation_steps 100 \
   --check_point_steps 100 \
   --wandb_name ${MODEL_NAME}-${DATASET_NAME}-${DATASET_SUB_DIR}-${TAG}-${ts}

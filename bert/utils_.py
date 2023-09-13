@@ -36,13 +36,12 @@ def encode_fn(text_list, tokenizer):
     all_input_ids = torch.cat(all_input_ids, dim=0)
     return all_input_ids
 
-labels = ['Relevant', 'Different']
+index2label = ['Relevant', 'Different']
 label2index = {
-    'Relevant': 0,
     'Same': 0,
+    'Relevant': 0,
     'Different': 1
 }
-index2label = {i: l for l, i in label2index.items()}
 
 def load_data(input_file):
     text_list = []
