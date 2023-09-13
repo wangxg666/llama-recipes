@@ -6,6 +6,28 @@ from sklearn.metrics import classification_report
 import numpy as np
 
 
+def is_default_ans(ans):
+    if 'not be ans' in ans:
+        return True
+    for mark in [
+        'the knowledge provided does not',
+        'Therefore, based on this information',
+        'information provided is limited',
+        'not mentioned in the given',
+        'not specifically mentioned in the given',
+        'not mentioned in the provided'
+        'the provided knowledge does not',
+        'is not provided in the given knowledge',
+        'is not directly provided in the given knowledge',
+        'is not specified in the provided',
+        'not be determined from the given',
+        'based on the given knowledge'
+    ]:
+        if mark in ans:
+            return True
+    return False
+
+
 if __name__ == '__main__':
     args = argparse.ArgumentParser()
     args.add_argument('--input_file', type=str)
@@ -30,8 +52,8 @@ if __name__ == '__main__':
             obj = json.loads(data)
             real = json.loads(obj['real'])['answer']
             pred = json.loads(obj['pred'])['answer']
-            real_is_default = 'Sorry' in real and 'can not be answered' in real
-            pred_is_default = 'Sorry' in pred and 'can not be answered' in pred
+            real_is_default = is_default_ans(real)
+            pred_is_default = is_default_ans(pred)
 
             y_real.append(real_is_default)
             y_pred.append(pred_is_default)

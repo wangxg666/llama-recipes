@@ -19,10 +19,10 @@ torch.backends.cudnn.deterministic = True
 
 device = torch.device('cuda')
 
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
 
 
-def encode_fn(text_list):
+
+def encode_fn(text_list, tokenizer):
     all_input_ids = []
     for text_a, text_b in text_list:
         input_ids = tokenizer.encode(
@@ -36,8 +36,12 @@ def encode_fn(text_list):
     all_input_ids = torch.cat(all_input_ids, dim=0)
     return all_input_ids
 
-labels = ['Relevant', 'Different', 'Same']
-label2index = {l: i for i, l in enumerate(labels)}
+labels = ['Relevant', 'Different']
+label2index = {
+    'Relevant': 0,
+    'Same': 0,
+    'Different': 1
+}
 index2label = {i: l for l, i in label2index.items()}
 
 def load_data(input_file):
@@ -50,14 +54,6 @@ def load_data(input_file):
         text_list.append([obj['text_a'], obj['text_b']])
         label_list.append(label2index[obj['label']])
     return text_list, label_list
-
-
-def flat_accuracy(preds, labels):
-    """A function for calculating accuracy scores"""
-
-    pred_flat = np.argmax(preds, axis=1).flatten()
-    labels_flat = labels.flatten()
-    return accuracy_score(labels_flat, pred_flat)
 
 
 class WanDBWriter:

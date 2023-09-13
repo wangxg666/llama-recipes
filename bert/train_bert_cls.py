@@ -25,7 +25,9 @@ def main(model_name: str='',
     os.makedirs(output_model_dir, exist_ok=True)
 
     text_list, label_list = load_data(input_data_file)
-    input_ids = encode_fn(text_list)
+
+    tokenizer = BertTokenizer.from_pretrained(model_name, do_lower_case=True)
+    input_ids = encode_fn(text_list, tokenizer)
     label_ids = torch.tensor(label_list)
 
     # Split data into train and validation

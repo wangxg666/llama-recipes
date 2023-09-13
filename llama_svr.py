@@ -16,6 +16,27 @@ from transformers import LlamaTokenizer
 from inference.model_utils import load_model, load_peft_model, load_llama_from_config
 
 
+def is_default_ans(ans):
+    if 'not be ans' in ans:
+        return True
+    for mark in [
+        'the knowledge provided does not',
+        'Therefore, based on this information',
+        'information provided is limited',
+        'not mentioned in the given',
+        'not specifically mentioned in the given',
+        'not mentioned in the provided'
+        'the provided knowledge does not',
+        'is not provided in the given knowledge',
+        'is not directly provided in the given knowledge',
+        'is not specified in the provided',
+        'not be determined from the given',
+        'based on the given knowledge'
+    ]:
+        if mark in ans:
+            return True
+    return False
+
 def main(
     model_name,
     port: int=1201,
@@ -79,6 +100,10 @@ def main(
         output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
         print(output_text)
         pred = output_text.replace(input, '').strip()
+
+        if is_default_ans(pred):
+            pred = json.dumps({'answer': 'Sorry, the query can not be answered'})
+
         return web.json_response(data={'pred': pred})
 
     from aiohttp import web
