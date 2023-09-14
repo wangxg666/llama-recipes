@@ -3,6 +3,15 @@ import numpy as np
 
 from utils_ import *
 
+import numpy as np
+
+
+def softmax(x):
+    """ softmax function """
+    x = np.exp(x) / np.sum(np.exp(x), axis=1, keepdims=True)
+    return x
+
+
 
 def main(model_name: str = '',
          fine_tuning_model: str = '',
@@ -27,8 +36,9 @@ def main(model_name: str = '',
         logits = logits.detach().cpu().numpy()
         pred_labels = np.argmax(logits, axis=1)
         pred_labels = [index2label[i] for i in pred_labels.tolist()]
+        pred_scores = [x[0] for x in softmax(logits).tolist()]
 
-        return web.json_response(data={'pred': pred_labels})
+        return web.json_response(data={'pred': pred_labels, 'scores': pred_scores})
 
 
     from aiohttp import web

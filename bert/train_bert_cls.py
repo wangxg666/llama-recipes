@@ -72,7 +72,7 @@ def main(model_name: str='',
                 real_labels.extend(batch[1].to('cpu').numpy().tolist())
 
         print(real_labels[0:10], pred_labels[0:10])
-        print(classification_report(real_labels, pred_labels, target_names=labels))
+        # print(classification_report(real_labels, pred_labels, target_names=labels))
         print(f'valid loss is {round(np.mean(val_losses), 5)}', flush=True)
         wandb_writer.log(0, info={
             'valid_loss': round(np.mean(val_losses), 5),
