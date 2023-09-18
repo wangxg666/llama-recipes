@@ -6,7 +6,7 @@ from sklearn.metrics import classification_report
 import numpy as np
 
 
-def is_default_ans(ans):
+def is_default_answer(ans):
     if 'not be ans' in ans:
         return True
     for mark in [
@@ -21,7 +21,8 @@ def is_default_ans(ans):
         'is not directly provided in the given knowledge',
         'is not specified in the provided',
         'not be determined from the given',
-        'based on the given knowledge'
+        'based on the given knowledge',
+        'is no relevant information in the knowledge'
     ]:
         if mark in ans:
             return True
@@ -52,8 +53,8 @@ if __name__ == '__main__':
             obj = json.loads(data)
             real = json.loads(obj['real'])['answer']
             pred = json.loads(obj['pred'])['answer']
-            real_is_default = is_default_ans(real)
-            pred_is_default = is_default_ans(pred)
+            real_is_default = is_default_answer(real)
+            pred_is_default = is_default_answer(pred)
 
             y_real.append(real_is_default)
             y_pred.append(pred_is_default)

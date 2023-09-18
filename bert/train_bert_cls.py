@@ -10,6 +10,7 @@ from sklearn.metrics import classification_report, accuracy_score
 
 def main(model_name: str='',
          input_data_file: str='',
+         input_data_qt_file: str='',
          output_model_dir: str='',
          batch_size: int=64,
          evaluation_steps: int=100,
@@ -25,6 +26,10 @@ def main(model_name: str='',
     os.makedirs(output_model_dir, exist_ok=True)
 
     text_list, label_list = load_data(input_data_file)
+    if input_data_qt_file:
+        text_list_qt, label_list_tq = load_data_qt(input_data_qt_file)
+        text_list.extend(text_list_qt)
+        label_list.extend(label_list_tq)
 
     tokenizer = BertTokenizer.from_pretrained(model_name, do_lower_case=True)
     input_ids = encode_fn(text_list, tokenizer)

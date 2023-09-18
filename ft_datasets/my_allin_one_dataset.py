@@ -49,6 +49,19 @@ Your answer should be in json format like {{"answer": xxx}}
 ### knowledge: {knowledge}
 ### response:""",
 
+    "FAQ_ANSWER_EXTRACT_NO_JSON": """
+You are an excellent linguist, and I need your help to complete the following task.
+Here is a user query and some retrieved information, the retrieved information might not be the proper for the query.
+Please read the user query and the retrieved information carefully, and then try using this information to answer the query.
+Your answer should be accurate, grammatically fluent, and avoid to output a short answer.
+Don't output any additional information that is not included in the retrieved information.
+If you think the information is not relevant to the query, please give a default answer "Sorry, the query can not be answered."
+If there is enumeration in the answer, please convert it to list format.
+Please answer the query directly, do not output your explanation.
+### Query: {query}
+### Retrieved Information: {knowledge}
+### response:""",
+
     "PLATYPUS": """"
 {instruction}
     """,
@@ -59,6 +72,13 @@ You need tell me the reason why they are correlated or not correlated.
 Please answer in JSON format {{"reason": xxx, "decision": yyy}}
 ### query: {query}
 ### title: {title}
+### response:""",
+
+    "QUERY_ANSWER_RELEVANCE": """
+Given you a question and an answer, please help me to double-check whether the answer is the proper answer for the question.
+Please answer in JSON format {{"reason": xxx, "decision": yyy}}
+### question: {question}
+### answer: {answer}
 ### response:"""
 }
 

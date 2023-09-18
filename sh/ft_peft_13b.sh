@@ -5,7 +5,7 @@ MODEL_TYPE="13b"
 WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_allin_one_dataset"
-DATASET_SUB_DIR="answer_extractor.v013"
+DATASET_SUB_DIR="answer_extractor.v019"
 TAG="${MODEL_TYPE}.2e-5"
 ts=$(date +"%Y-%m-%d")
 
@@ -29,7 +29,7 @@ CUDA_VISIBLE_DEVICES="4,5,6,7" torchrun \
   --val_batch_size 8 \
   --batch_size_training 8 \
   --micro_batch_size 8 \
-  --num_epochs 10 \
+  --num_epochs 5 \
   --evaluation_steps 100 \
   --check_point_steps 100 \
   --wandb_name ${MODEL_NAME}-${DATASET_NAME}-${DATASET_SUB_DIR}-${TAG}-${ts}

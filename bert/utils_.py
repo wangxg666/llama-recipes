@@ -20,16 +20,14 @@ torch.backends.cudnn.deterministic = True
 device = torch.device('cuda')
 
 
-
-
 def encode_fn(text_list, tokenizer):
     all_input_ids = []
-    for text_a, text_b in text_list:
+    for instruct, text_a, text_b in text_list:
         input_ids = tokenizer.encode(
-                        f'{text_a} [SEP] {text_b}',
+                        f'{instruct} [SEP] {text_a} [SEP] {text_b}',
                         add_special_tokens = True,  # 添加special tokens， 也就是CLS和SEP
                         max_length = 160,           # 设定最大文本长度
-                        padding = 'max_length',        # pad到最大的长度
+                        padding = 'max_length',     # pad到最大的长度
                         return_tensors = 'pt'       # 返回的类型为pytorch tensor
                    )
         all_input_ids.append(input_ids)
@@ -44,14 +42,33 @@ label2index = {
 }
 
 def load_data(input_file):
+    instruct = 'Determine whether the two queries are related, '
     text_list = []
     label_list = []
     for data in open(input_file):
         obj = json.loads(data)
         if obj['label'] not in label2index:
             continue
-        text_list.append([obj['text_a'], obj['text_b']])
+        text_list.append([instruct, obj['text_a'], obj['text_b']])
         label_list.append(label2index[obj['label']])
+
+    return text_list, label_list
+
+
+def load_data_qt(input_file):
+    instruct = 'Determine whether the query and the title are related, '
+
+    text_list = []
+    label_list = []
+    for data in open(input_file):
+        obj = json.loads(data)
+        text_list.append([instruct, obj['query'], obj['title']])
+        label = json.loads(obj['label'])['decision']
+        if label == 'Correlated':
+            label = 0
+        else:
+            label = 1
+        label_list.append(label)
     return text_list, label_list
 
 
