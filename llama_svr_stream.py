@@ -12,8 +12,13 @@ import time
 import json
 from typing import List
 from ft_datasets.my_allin_one_dataset import *
-from transformers import LlamaTokenizer
+from transformers import LlamaTokenizer, TextIteratorStreamer
 from inference.model_utils import load_model, load_peft_model, load_llama_from_config
+from flask import Flask, stream_with_context, request, Response
+from typing import Tuple, List
+from threading import Thread
+
+
 
 
 def is_default_ans(ans):
@@ -68,6 +73,8 @@ def main(
             "pad_token": "<PAD>",
         }
     )
+    streamer = TextIteratorStreamer(tokenizer)
+
     print(model)
 
     if peft_model:
@@ -77,14 +84,23 @@ def main(
     model.eval()
     model.half()
 
-    async def encode(request):
-        obj = await request.json()
-        input = MyAllInOneDataset.prompting(obj)
-        batch = tokenizer(input, return_tensors="pt")
-        batch = {k: v.to("cuda") for k, v in batch.items()}
-        with torch.no_grad():
-            outputs = model.generate(
-                **batch,
+    app = Flask('__llama_faq__')
+
+    @app.route('/do', methods=['GET', 'POST'])
+    def encode():
+        def generate():
+            if request.method == 'POST':
+                obj = request.form
+            else:
+                obj = request.args
+
+            input = MyAllInOneDataset.prompting(obj)
+            inputs = tokenizer(input, return_tensors="pt")
+            inputs = {k: v.to("cuda") for k, v in inputs.items()}
+
+            generation_kwargs = dict(
+                inputs,
+                streamer=streamer,
                 max_new_tokens=max_new_tokens,
                 do_sample=do_sample,
                 num_beams=num_beams,
@@ -94,23 +110,24 @@ def main(
                 use_cache=use_cache,
                 top_k=top_k,
                 repetition_penalty=repetition_penalty,
-                length_penalty=length_penalty,
-                **kwargs
+                length_penalty=length_penalty
             )
-        output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        print(output_text)
-        pred = output_text.replace(input, '').strip()
 
-        if is_default_ans(pred):
-            # pred = json.dumps({'answer': 'Sorry, the query can not be answered'})
-            pred = 'Sorry, the query can not be answered'
+            thread = Thread(target=model.generate, kwargs=generation_kwargs)
+            thread.start()
 
-        return web.json_response(data={'pred': pred})
+            print(input)
+            output = ''
+            for i, new_text in enumerate(streamer):
+                print(new_text, end='')
+                if input not in output:
+                    output += new_text
+                else:
+                    yield new_text
+            print('')
+        return app.response_class(stream_with_context(generate()))
 
-    from aiohttp import web
-    app = web.Application()
-    app.add_routes([web.post('/do', encode)])
-    web.run_app(app, port=port, access_log=None)
+    app.run(host='0.0.0.0', port=port)
 
 
 if __name__ == "__main__":
