@@ -6,8 +6,8 @@ MODEL_TYPE="13b"
 WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_allin_one_dataset"
-DATASET_SUB_DIR="answer_extractor.v018"
-INPUT_FILE="${DATASET_SUB_DIR}/valid_online.txt"
+DATASET_SUB_DIR="answer_extractor.v019"
+INPUT_FILE="${DATASET_SUB_DIR}/valid_gold.v05.online.txt"
 TAG="${MODEL_TYPE}.2e-5"
 
 cd ..

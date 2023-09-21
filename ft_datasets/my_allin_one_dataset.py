@@ -62,6 +62,22 @@ Please answer the query directly, do not output your explanation.
 ### Retrieved Information: {knowledge}
 ### response:""",
 
+    "FAQ_ANSWER_EXTRACT_NO_JSON_V4": """
+You are an excellent linguist, and I need your help to complete the following task.
+Here is a user query and some retrieved information, the retrieved information might not be the proper for the query.
+Please read the user query and the retrieved information carefully, and then try using this information to answer the query.
+The retrieved information may have duplicate content, please summarize the retrieved information with deduplication before you taking use of them.
+Your response should be accurate, grammatically fluent, and a short response is acceptable.
+But your answer should answer the query directly, and do not output any additional or furthermore guidelines in your response.
+Don't output any additional information that is not included in the retrieved information.
+If you think the information is not relevant to the query, please give a default response "Sorry, the query can not be answered."
+If there is enumeration of entities in your response, please convert it to list of entities with markdown syntax.
+Do not provide any additional response that is not relevant with the user query.
+Please answer the query directly, do not output your explanation.
+### Query: {query}
+### Retrieved Information: {knowledge}
+### response:""",
+
     "PLATYPUS": """"
 {instruction}
     """,
