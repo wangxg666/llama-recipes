@@ -62,8 +62,7 @@ Please answer the query directly, do not output your explanation.
 ### Retrieved Information: {knowledge}
 ### response:""",
 
-    "FAQ_ANSWER_EXTRACT_NO_JSON_V4": """
-You are an excellent linguist, and I need your help to complete the following task.
+    "FAQ_ANSWER_EXTRACT_NO_JSON_V4": """You are an excellent linguist, and I need your help to complete the following task.
 Here is a user query and some retrieved information, the retrieved information might not be the proper for the query.
 Please read the user query and the retrieved information carefully, and then try using this information to answer the query.
 The retrieved information may have duplicate content, please summarize the retrieved information with deduplication before you taking use of them.
@@ -78,43 +77,11 @@ Please answer the query directly, do not output your explanation.
 ### Retrieved Information: {knowledge}
 ### response:""",
 
-    "PLATYPUS": """"
-{instruction}
-    """,
+    "PLATYPUS": """{instruction}""",
+
+    "NORM_PROMPT": """{prompt}""",
     
-    "QUERY_TITLE_RELEVANCE": """
-Here is a query and news title, please help to double check whether the query and the news title is highly correlated.
-You need tell me the reason why they are correlated or not correlated. 
-Please answer in JSON format {{"reason": xxx, "decision": yyy}}
-### query: {query}
-### title: {title}
-### response:""",
-
-    "QUERY_ANSWER_RELEVANCE": """
-Given you a question and an answer, please help me to double-check whether the answer is the proper answer for the question.
-Please answer in JSON format {{"reason": xxx, "decision": yyy}}
-### question: {question}
-### answer: {answer}
-### response:"""
 }
-
-
-# PROMPT_DICT = {
-#     "GRAMMAR_SINGLE": """
-# The following **text** might have some grammatical errors, give your judgement.
-# ### text: {source_sent}
-# ### response:""",
-#
-#     "GRAMMAR_SEQ2SEQ": """Below is an instruction that describes a task.
-# The following **text** have some grammatical errors, please correct these errors.
-# ### text: {source_sent}
-# ### response:""",
-#
-#     "CLICKBAIT_SINGLE": """Below is an instruction that describes a task.
-# The following **text** might be writen informally, give your judgement.
-# ### text: {source_sent}
-# ### response:"""
-# }
 
 
 class MyAllInOneDataset(Dataset):

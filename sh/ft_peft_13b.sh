@@ -1,12 +1,12 @@
 #!/bin/bash
 set -x
 
-MODEL_TYPE="13b"
+MODEL_TYPE="13b-chat"
 WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_allin_one_dataset"
-DATASET_SUB_DIR="answer_extractor.v020"
-TAG="${MODEL_TYPE}.2e-5"
+DATASET_SUB_DIR="answer_extractor.v021"
+TAG="${MODEL_TYPE}.2e-5.chat"
 ts=$(date +"%Y-%m-%d")
 
 cd ..
