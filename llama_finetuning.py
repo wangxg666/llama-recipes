@@ -280,6 +280,7 @@ def main(**kwargs):
     results = train(
         model,
         train_dataloader,
+        train_sampler,
         eval_dataloader, 
         tokenizer,
         optimizer,

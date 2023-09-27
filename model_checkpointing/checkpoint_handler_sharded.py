@@ -34,32 +34,19 @@ import torch.distributed as dist
 fullstate_save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
 
 
-def save_model_and_optim_sharded(model, rank, cfg, optim=None, accu_step=None):
+def save_model_and_optim_sharded(model, rank, save_dir, optim=None, accu_step=None):
     """save model and optimizer via sharded_state_dict to save_dir"""
-    folder_name = (
-            cfg.dist_checkpoint_root_folder
-            + "/"
-            + cfg.dist_checkpoint_folder
-            + "-"
-            + cfg.model_name
-            + "-step_"
-            + str(accu_step + 1000000)[1:]
-    )
-
-    save_dir = Path.cwd() / folder_name
     if rank == 0:
         print(f"Saving model to {save_dir}")
 
-    distributed_writer = dist_cp.FileSystemWriter(
-        save_dir,
-    )
+    distributed_writer = dist_cp.FileSystemWriter(save_dir)
     t0 = time.perf_counter()
 
     with FSDP.state_dict_type(model, StateDictType.SHARDED_STATE_DICT):
 
         state_dict = {"model": model.state_dict()}
         if optim is not None:
-            torch.save(optim, f'{folder_name}/optim.{rank}')
+            torch.save(optim, f'{save_dir}/optim.{rank}')
             # state_dict["optim"] = FSDP.optim_state_dict(model, optim)
 
         dist_cp.save_state_dict(

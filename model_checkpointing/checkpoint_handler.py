@@ -34,7 +34,7 @@ import torch.distributed as dist
 fullstate_save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
 
 
-def save_model_checkpoint(model, optimizer, rank, cfg, epoch=1):
+def save_model_checkpoint(model, optimizer, rank, save_dir, cfg, epoch=1):
     """saving model via rank0 cpu streaming and full_state_dict"""
 
     with FSDP.state_dict_type(
@@ -47,16 +47,9 @@ def save_model_checkpoint(model, optimizer, rank, cfg, epoch=1):
     if rank == 0:
         print(f"--> saving model ...")
         # create save path
-        folder_name = (
-                cfg.dist_checkpoint_root_folder
-                + "/"
-                + cfg.dist_checkpoint_folder
-                + "-"
-                + cfg.model_name
-        )
-        save_dir = Path.cwd() / folder_name
+
         save_dir.mkdir(parents=True, exist_ok=True)
-        save_name = cfg.model_name + "-" + str(epoch) + ".pt"
+        save_name = ".pt"
         save_full_path = str(save_dir) + "/" + save_name
 
         # save model
@@ -88,7 +81,7 @@ def load_model_checkpoint(model, rank, cfg):
     print(f"model checkpoint loaded to rank0 cpu")
 
 
-def save_optimizer_checkpoint(model, optimizer, rank, cfg, accu_step=1):
+def save_optimizer_checkpoint(model, optimizer, rank, save_dir, accu_step=1):
     """save optimizer state via full state dict"""
     print(f"--> optim state call on rank {rank}\n")
 
@@ -100,16 +93,7 @@ def save_optimizer_checkpoint(model, optimizer, rank, cfg, accu_step=1):
 
     if rank != 0:
         return
-    folder_name = (
-            cfg.dist_checkpoint_root_folder
-            + "/"
-            + cfg.dist_checkpoint_folder
-            + "-"
-            + cfg.model_name
-            + "-step_"
-            + str(accu_step + 1000000)[1:]
-    )
-    save_dir = Path.cwd() / folder_name
+
     save_dir.mkdir(parents=True, exist_ok=True)
 
     opt_save_name = (

@@ -73,6 +73,7 @@ def byte2mb(x):
 
 def train(model,
           train_dataloader,
+          train_sampler,
           eval_dataloader,
           tokenizer,
           optimizer,
@@ -88,6 +89,8 @@ def train(model,
     Args:
         model: The model to be trained
         train_dataloader: The dataloader containing the training data
+        train_sampler: The sampler for the training data, used to shuffle between epoches
+        eval_dataloader: The dataloader containing the validation data
         optimizer: The optimizer used for training
         lr_scheduler: The learning rate scheduler
         gradient_accumulation_steps: The number of steps to accumulate gradients before performing a backward/update operation
@@ -125,6 +128,7 @@ def train(model,
         elif not sub_dir:
             return
 
+        save_dir = train_config.output_dir + '/' + sub_dir
         if train_config.enable_fsdp:
             dist.barrier()
         if train_config.use_peft:
@@ -133,33 +137,30 @@ def train(model,
                     print(f"we are about to save the PEFT modules")
             else:
                 print(f"we are about to save the PEFT modules")
-            model.save_pretrained(train_config.output_dir + '/' + sub_dir)
+            model.save_pretrained(save_dir)
             if train_config.enable_fsdp:
                 if rank == 0:
-                    print(f"PEFT modules are saved in {train_config.output_dir}/{sub_dir} directory")
+                    print(f"PEFT modules are saved in {save_dir} directory")
             else:
-                print(f"PEFT modules are saved in {train_config.output_dir}/{sub_dir} directory")
+                print(f"PEFT modules are saved in {save_dir} directory")
 
         else:
             if not train_config.use_peft and fsdp_config.checkpoint_type == StateDictType.FULL_STATE_DICT:
-
                 model_checkpointing.save_model_checkpoint(
-                    model, optimizer, rank, train_config, epoch=epoch
+                    model, optimizer, rank, save_dir, train_config, epoch=epoch
                 )
             elif not train_config.use_peft and fsdp_config.checkpoint_type == StateDictType.SHARDED_STATE_DICT:
 
                 if train_config.save_optimizer:
                     print(" Saving the FSDP model checkpoints and optimizer using SHARDED_STATE_DICT")
-                    print("=====================================================")
-                    model_checkpointing.save_model_and_optim_sharded(model, rank, train_config, None, accu_step)
+                    model_checkpointing.save_model_and_optim_sharded(model, rank, save_dir, None, accu_step)
                 else:
                     print(" Saving the FSDP model checkpoints using SHARDED_STATE_DICT")
-                    print("=====================================================")
-                    model_checkpointing.save_model_and_optim_sharded(model, rank, train_config, None, accu_step)
+                    model_checkpointing.save_model_and_optim_sharded(model, rank, save_dir, None, accu_step)
 
             if not train_config.use_peft and train_config.save_optimizer:
                 model_checkpointing.save_optimizer_checkpoint(
-                    model, optimizer, rank, train_config, accu_step=accu_step
+                    model, optimizer, rank, save_dir, accu_step=accu_step
                 )
                 print(" Saving the FSDP model checkpoints and optimizer using FULL_STATE_DICT")
                 print("=====================================================")
@@ -169,6 +170,7 @@ def train(model,
     accu_step = 0
     from torch import autograd
     for epoch in range(train_config.num_epochs):
+        train_sampler.set_epoch(epoch)
         epoch_start_time = time.perf_counter()
 
         with MemoryTrace() as memtrace:  # track the memory usage
@@ -276,8 +278,7 @@ def train(model,
         # Update the learning rate as needed
         # lr_scheduler.step()
 
-        if train_config.use_peft:
-            save_model(epoch=epoch, accu_step=accu_step)
+        save_model(epoch=epoch, accu_step=accu_step)
 
         if train_config.run_validation:
             eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)
@@ -328,7 +329,8 @@ def train(model,
 
     # saving the training params including fsdp setting for reference.
     if train_config.enable_fsdp and not train_config.use_peft:
-        save_train_params(train_config, fsdp_config, rank)
+        save_dir = train_config.output_dir + '/model_final'
+        save_train_params(save_dir, train_config, fsdp_config, rank)
 
     return results
 
@@ -488,7 +490,7 @@ def get_policies(cfg, rank):
     return mixed_precision_policy, wrapping_policy
 
 
-def save_train_params(train_config, fsdp_config, rank):
+def save_train_params(save_dir, train_config, fsdp_config, rank):
     """
     This function saves the train_config and FSDP config into a train_params.yaml.
     This will be used by converter script in the inference folder to fetch the HF model name or path.
@@ -501,15 +503,6 @@ def save_train_params(train_config, fsdp_config, rank):
     # Merge the two dictionaries into one
     train_params_dict = {**train_config_dict, **fsdp_config_dict}
     # Construct the folder name (follwoing FSDP checkpointing style) using properties of the train_config object
-    folder_name = (
-            train_config.dist_checkpoint_root_folder
-            + "/"
-            + train_config.dist_checkpoint_folder
-            + "-"
-            + train_config.model_name
-    )
-
-    save_dir = Path.cwd() / folder_name
     # If the directory does not exist, create it
     os.makedirs(save_dir, exist_ok=True)
     # Convert the dictionary to a YAML string
