@@ -24,6 +24,7 @@ def main(model_name: str = '',
 
     tokenizer = BertTokenizer.from_pretrained(model_name, do_lower_case=True)
     model = torch.load(fine_tuning_model)
+    model.half()
     model.eval()
 
     async def predict_relevance(request):

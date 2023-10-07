@@ -227,7 +227,7 @@ def train(model,
                     if train_config.run_validation:
                         eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)
                         wandb_writer.log(rank, {
-                            'step': accu_step,
+                            'step': accu_step // gradient_accumulation_steps,
                             'valid_loss': eval_epoch_loss
                         })
 
@@ -236,12 +236,12 @@ def train(model,
                     val_loss.append(best_val_loss)
                     val_prep.append(eval_ppl)
                     wandb_writer.log(rank, {
-                        'step': accu_step,
+                        'step': accu_step // gradient_accumulation_steps,
                         'valid_loss': eval_epoch_loss
                     })
 
                 wandb_writer.log(rank, {
-                    'step': accu_step,
+                    'step': accu_step // gradient_accumulation_steps,
                     'step_loss': loss.detach().float(),
                     'learning_rate': lr_scheduler.get_lr()[0]
                 })
@@ -299,7 +299,7 @@ def train(model,
             val_loss.append(best_val_loss)
             val_prep.append(eval_ppl)
             wandb_writer.log(rank, {
-                'step': accu_step,
+                'step': accu_step // gradient_accumulation_steps,
                 'valid_loss': eval_epoch_loss
             })
 

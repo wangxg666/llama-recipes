@@ -272,7 +272,7 @@ def main(**kwargs):
         "linear",
         optimizer=optimizer,
         num_warmup_steps=0,
-        num_training_steps=num_training_steps,
+        num_training_steps=num_training_steps // gradient_accumulation_steps,
     )
     # scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
 
