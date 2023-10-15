@@ -256,15 +256,16 @@ def main(**kwargs):
             del sharded_osd
             torch.cuda.empty_cache()
 
-    from transformers import get_scheduler
+    from transformers import get_scheduler, SchedulerType
     num_training_steps = train_config.num_epochs * len(train_dataloader)
     if rank == 0:
         print(f'num training steps = {num_training_steps}')
         print(f'num eval steps = {len(eval_dataloader)}')
         print(f'num data batches = {len(train_dataloader)}')
 
+    # pre-train 的学习率不变
     scheduler = get_scheduler(
-        "linear",
+        SchedulerType.CONSTANT,
         optimizer=optimizer,
         num_warmup_steps=0,
         num_training_steps=num_training_steps // gradient_accumulation_steps,

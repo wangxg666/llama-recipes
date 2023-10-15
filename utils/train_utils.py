@@ -177,6 +177,7 @@ def train(model,
             model.train()
             total_loss = 0.0
             for step, batch in enumerate(tqdm(train_dataloader, colour="blue", desc=f"Training Epoch{epoch}")):
+                step_start_time = time.perf_counter()
                 accu_step += 1
                 for key in batch.keys():
                     if train_config.enable_fsdp:

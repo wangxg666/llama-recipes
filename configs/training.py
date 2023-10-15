@@ -41,3 +41,4 @@ class train_config:
     peft_model: str = ''
     max_grad_norm: float = 1.0
     dataset_sub_dir_prefix: str = ''
+    dataset_tag: str = ''

@@ -77,6 +77,36 @@ Please answer the query directly, do not output your explanation.
 ### Retrieved Information: {knowledge}
 ### response:""",
 
+    "FAQ_ANSWER_EXTRACT_NO_JSON_V5_FAQ": """You are an excellent linguist, and I need your help to complete the following task.
+Here is a user query and some retrieved information, the retrieved information might not be the proper for the query.
+Please read the user query and the retrieved information carefully, and then try using this information to answer the query.
+The retrieved information may have duplicate content, please summarize the retrieved information with deduplication before you taking use of them.
+Your response should be accurate, grammatically fluent.
+But your answer should answer the query directly, and do not output any additional or furthermore guidelines in your response.
+Don't output any additional information that is not included in the retrieved information.
+If you think the information is not relevant to the query, please give a default response "Sorry, the query can not be answered."
+If there is enumeration of entities in your response, please convert it to list of entities with markdown syntax.
+Do not provide any additional response that is not relevant with the user query.
+Please answer the query directly, do not output your explanation.
+### Query: {query}
+### Retrieved Information: {prompt_answer}
+### response:""",
+
+    "FAQ_ANSWER_EXTRACT_NO_JSON_V5_AIGC": """You are an excellent linguist, and I need your help to complete the following task.
+Here is a user query and some retrieved ariticles, the retrieved ariticles might not be the proper for the query.
+Please read the user query and the retrieved ariticles carefully, and then try using this ariticles to answer the query.
+The retrieved ariticles may have duplicate content, please summarize the retrieved ariticles with deduplication before you taking use of them.
+Your response should be accurate, grammatically fluent.
+But your answer should answer the query directly, and do not output any additional or furthermore guidelines in your response.
+Don't output any additional ariticles that is not included in the retrieved ariticles.
+If you think the ariticles is not relevant to the query, please give a default response "Sorry, the query can not be answered."
+If there is enumeration of entities in your response, please convert it to list of entities with markdown syntax.
+Do not provide any additional response that is not relevant with the user query.
+Please answer the query directly, do not output your explanation.
+### Query: {query}
+### Retrieved Information: {prompt_answer}
+### response:""",
+
     "PLATYPUS": """{instruction}""",
 
     "NORM_PROMPT": """{prompt}""",
@@ -112,8 +142,8 @@ class MyAllInOneDataset(Dataset):
 
         # self.raw_data = list(itertools.chain(*self.raw_data))
         print(f'load {len(self.raw_data)} {partition} datas')
-        if partition == 'train':
-            random.shuffle(self.raw_data)
+        # if partition == 'train':
+        #     random.shuffle(self.raw_data)
 
         self.max_words = max_words
         self.tokenizer = tokenizer

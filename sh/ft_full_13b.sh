@@ -5,11 +5,12 @@ MODEL_TYPE="13b"
 WORK_DIR="/home/paperspace/xingguang/llama/ckpt.full/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_allin_one_dataset"
-DATASET_SUB_DIR="answer_extractor.v023"
+DATASET_TYPE=""
+DATASET_SUB_DIR="answer_extractor.v024"
 
-LR=1.5e-5
+LR=3e-5
 BATCH_SIZE=4
-EPOCH=5
+EPOCH=2
 
 TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}"
 ts=$(date +"%Y-%m-%d")
@@ -22,12 +23,13 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --master_port=1201 \
   ./llama_finetuning.py \
   --enable_fsdp  \
-  --model_name ${MODEL_NAME} \
-  --dataset ${DATASET_NAME} \
-  --dataset_sub_dir_prefix ${DATASET_SUB_DIR} \
+  --model_name "${MODEL_NAME}" \
+  --dataset "${DATASET_NAME}" \
+  --dataset_tag "${DATASET_TYPE}" \
+  --dataset_sub_dir_prefix "${DATASET_SUB_DIR}" \
   --save_model \
   --pure_bf16 \
-  --output_dir ${WORK_DIR}/${DATASET_SUB_DIR}-${TAG}/ \
+  --output_dir "${WORK_DIR}/${DATASET_SUB_DIR}-${TAG}"/ \
   --lr ${LR} \
   --val_batch_size ${BATCH_SIZE} \
   --batch_size_training ${BATCH_SIZE} \

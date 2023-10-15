@@ -25,7 +25,7 @@ from model_checkpointing import load_sharded_model_single_gpu
 def main(
         fsdp_checkpoint_path="",  # Path to FSDP Sharded model checkpoints
         consolidated_model_path="",  # Path to save the HF converted model checkpoints
-        HF_model_path_or_name="" # Path/ name of the HF model that include config.json and tokenizer_config.json (e.g. meta-llama/Llama-2-7b-chat-hf)
+        HF_model_path_or_name="meta-llama/Llama-2-13b-hf" # Path/ name of the HF model that include config.json and tokenizer_config.json (e.g. meta-llama/Llama-2-7b-chat-hf)
 ):
     if not HF_model_path_or_name:
         try:
@@ -56,6 +56,8 @@ def main(
     print("model is loaded from FSDP checkpoints")
     # loading the tokenizer form the  model_path
     tokenizer = LlamaTokenizer.from_pretrained(HF_model_path_or_name)
+    if not consolidated_model_path:
+        consolidated_model_path = fsdp_checkpoint_path + '.hf'
     tokenizer.save_pretrained(consolidated_model_path)
     # save the FSDP sharded checkpoints in HF format
     model.half()
