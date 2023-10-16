@@ -9,6 +9,11 @@ TAG="${MODEL_TYPE}.2e-5"
 ts=$(date +"%Y-%m-%d")
 
 
+#python ../inference/hf-text-generation-inference/merge_lora_weights.py \
+#  --base_model "meta-llama/Llama-2-${MODEL_TYPE}-hf" \
+#  --peft_model /home/paperspace/xingguang/llama/ckpt.peft/13b/answer_extractor.v021-13b.2e-5-peft/epoch_004/ \
+#  --output_dir /home/paperspace/xingguang/llama/ckpt.peft/13b/answer_extractor.v021-13b.2e-5-peft/epoch_004_merged
+
 sudo docker run \
   --gpus "device=0" \
   --shm-size 4g -p 1308:80 -v ${HOME_DIR}:/data ghcr.io/huggingface/text-generation-inference:1.0.3 \

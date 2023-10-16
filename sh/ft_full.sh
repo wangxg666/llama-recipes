@@ -1,32 +1,45 @@
-WORK_DIR="/home/cpp/xingguang/llama/model_checkpoints"
-MODEL_NAME="meta-llama/Llama-2-7b-hf"
-DATASET_NAME="my_allin_one_dataset"
-TAG="grammar-seq2seq"
+#!/bin/bash
+set -x
 
-ts=$(date +"%Y-%m-%d_%H-%M-%S")
-LOG_FILE="./logs/full-${DATASET_NAME}-${TAG}-${ts}.txt"
-echo "" > "${LOG_FILE}"
+MODEL_TYPE="13b"
+WORK_DIR="/home/paperspace/xingguang/llama/ckpt.full/${MODEL_TYPE}"
+MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
+DATASET_NAME="my_allin_one_dataset"
+DATASET_TYPE=""
+DATASET_SUB_DIR="answer_extractor.v024"
+
+LR=3e-5
+BATCH_SIZE=4
+EPOCH=2
+
+TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}"
+ts=$(date +"%Y-%m-%d")
 
 cd ..
 
-CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
+CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --nnodes 1 \
-  --nproc_per_node 4 \
+  --nproc_per_node 8 \
+  --master_port=1201 \
   ./llama_finetuning.py \
   --enable_fsdp  \
-  --model_name ${MODEL_NAME} \
-  --dataset ${DATASET_NAME} \
+  --model_name "${MODEL_NAME}" \
+  --dataset "${DATASET_NAME}" \
+  --dataset_tag "${DATASET_TYPE}" \
+  --dataset_sub_dir_prefix "${DATASET_SUB_DIR}" \
   --save_model \
-  --dist_checkpoint_root_folder ${WORK_DIR} \
-  --dist_checkpoint_folder ${DATASET_NAME}/${TAG}  \
   --pure_bf16 \
-  --batch_size_training 4 \
-  --micro_batch_size 2 \
-  --check_point_steps 10000 \
-  > ${LOG_FILE} &
+  --output_dir "${WORK_DIR}/${DATASET_SUB_DIR}-${TAG}"/ \
+  --lr ${LR} \
+  --val_batch_size ${BATCH_SIZE} \
+  --batch_size_training ${BATCH_SIZE} \
+  --micro_batch_size 4 \
+  --num_epochs ${EPOCH} \
+  --evaluation_steps 100 \
+  --check_point_steps 2000 \
+  --wandb_name ${MODEL_NAME}-${DATASET_NAME}-${DATASET_SUB_DIR}-${TAG}-${ts}
 
-echo ${LOG_FILE}
-tail -f ${LOG_FILE}
+cd ../
 
 python inference/checkpoint_converter_fsdp_hf.py \
   --fsdp_checkpoint_path ${WORK_DIR}/${DATASET_NAME}/${TAG}-${MODEL_NAME}/ \

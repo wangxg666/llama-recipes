@@ -7,12 +7,13 @@ MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_allin_one_dataset"
 DATASET_TYPE=""
 DATASET_SUB_DIR="answer_extractor.v024"
+PRE_TRAIN_MODEL="${WORK_DIR}/pre-training-ariticle/tokenized.13b-13b.3e-5.full.B4.E1/epoch_000.hf"
 
 LR=3e-5
 BATCH_SIZE=4
 EPOCH=2
 
-TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}"
+TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}.withPreTrain"
 ts=$(date +"%Y-%m-%d")
 
 cd ..
@@ -23,7 +24,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --master_port=1201 \
   ./llama_finetuning.py \
   --enable_fsdp  \
-  --model_name "${MODEL_NAME}" \
+  --model_name "${PRE_TRAIN_MODEL}" \
   --dataset "${DATASET_NAME}" \
   --dataset_tag "${DATASET_TYPE}" \
   --dataset_sub_dir_prefix "${DATASET_SUB_DIR}" \
