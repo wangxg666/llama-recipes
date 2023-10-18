@@ -1,8 +1,8 @@
 #!/bin/bash
 set -x
 
-MODEL_TYPE="13b"
-WORK_DIR="/home/paperspace/xingguang/llama/ckpt.full/${MODEL_TYPE}"
+MODEL_TYPE="7b"
+WORK_DIR="/home/paperspace/xingguang/models/"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_pre_train_dataset"
 DATASET_TAG=""
@@ -12,7 +12,7 @@ LR=3e-5
 BATCH_SIZE=4
 EPOCH=1
 
-TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}"
+TAG="${MODEL_TYPE}.${LR}.B${BATCH_SIZE}.E${EPOCH}.full"
 ts=$(date +"%Y-%m-%d")
 
 cd ..
@@ -21,7 +21,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --nnodes 1 \
   --nproc_per_node 8 \
   --master_port=1201 \
-  ./llama_finetuning_pre_train.py \
+  ./llama_pre_training.py \
   --enable_fsdp  \
   --model_name "${MODEL_NAME}" \
   --dataset "${DATASET_NAME}" \
@@ -29,7 +29,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --dataset_sub_dir_prefix "${DATASET_SUB_DIR}" \
   --save_model \
   --pure_bf16 \
-  --output_dir "${WORK_DIR}/${DATASET_SUB_DIR}-${TAG}"/ \
+  --output_dir "${WORK_DIR}/${DATASET_NAME}.${TAG}"/ \
   --lr ${LR} \
   --val_batch_size ${BATCH_SIZE} \
   --batch_size_training ${BATCH_SIZE} \
@@ -37,7 +37,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --num_epochs ${EPOCH} \
   --evaluation_steps 100 \
   --check_point_steps 2000 \
-  --wandb_name ${MODEL_NAME}-${DATASET_NAME}-${DATASET_SUB_DIR}-${TAG}-${ts}
+  --wandb_name ${DATASET_NAME}-${DATASET_SUB_DIR}-${TAG}-${ts}
 
 cd ../
 

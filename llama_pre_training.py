@@ -17,21 +17,18 @@ from transformers import (
 )
 import torch.distributed as dist
 # Unused imports removed
-from utils.train_utils import (
-    set_tokenizer_params,
+from utils.pre_train_utils import (
+    save_train_params,
     train,
-    evaluation,
+    save_model,
     freeze_transformer_layers,
-    check_frozen_layers_peft_model,
     setup,
     setup_environ_flags,
-    cleanup,
-    clear_gpu_cache,
-    get_parameter_dtypes,
     print_model_size,
     get_policies  
 )
 
+from transformers.models.llama import modeling_llama
 from utils.dataset_utils import get_preprocessed_dataset
 
 from utils.config_utils import (
@@ -173,62 +170,6 @@ def main(**kwargs):
         dataset_config.train_split += f'_{train_config.dataset_tag}'
     print(dataset_config.dataset, dataset_config.sub_dir_prefix)
     
-     # Load and preprocess the dataset for training and validation
-    dataset_train = get_preprocessed_dataset(
-        tokenizer,
-        dataset_config,
-        split="train",
-    )
-    
-    if not train_config.enable_fsdp or rank == 0:
-        print(f"--> Training Set Length = {len(dataset_train)}")
-
-    dataset_val = get_preprocessed_dataset(
-        tokenizer,
-        dataset_config,
-        split="test",
-    )
-    if not train_config.enable_fsdp or rank == 0:
-            print(f"--> Validation Set Length = {len(dataset_val)}")
-
-    train_sampler = None
-    val_sampler = None
-    if train_config.enable_fsdp:
-        train_sampler = DistributedSampler(
-            dataset_train,
-            rank=dist.get_rank(),
-            num_replicas=dist.get_world_size(),
-            shuffle=True,
-        )
-        if train_config.run_validation:
-            val_sampler = DistributedSampler(
-                dataset_val,
-                rank=dist.get_rank(),
-                num_replicas=dist.get_world_size(),
-            )
-        
-    # Create DataLoaders for the training and validation dataset
-    train_dataloader = torch.utils.data.DataLoader(
-        dataset_train,
-        batch_size=train_config.micro_batch_size,
-        num_workers=train_config.num_workers_dataloader,
-        pin_memory=True,
-        sampler=train_sampler if train_sampler else None,
-        drop_last=True,
-        collate_fn=default_data_collator,
-    )
-
-    if train_config.run_validation:
-        eval_dataloader = torch.utils.data.DataLoader(
-            dataset_val,
-            batch_size=train_config.val_batch_size,
-            num_workers=train_config.num_workers_dataloader,
-            pin_memory=True,
-            sampler=val_sampler if val_sampler else None,
-            drop_last=True,
-            collate_fn=default_data_collator,
-        )
-        
     # Initialize the optimizer and learning rate scheduler
     if fsdp_config.pure_bf16 and fsdp_config.optimizer == "anyprecision":
         optimizer = AnyPrecisionAdamW(
@@ -257,38 +198,91 @@ def main(**kwargs):
             torch.cuda.empty_cache()
 
     from transformers import get_scheduler, SchedulerType
-    num_training_steps = train_config.num_epochs * len(train_dataloader)
-    if rank == 0:
-        print(f'num training steps = {num_training_steps}')
-        print(f'num eval steps = {len(eval_dataloader)}')
-        print(f'num data batches = {len(train_dataloader)}')
+
 
     # pre-train 的学习率不变
     scheduler = get_scheduler(
         SchedulerType.CONSTANT,
         optimizer=optimizer,
         num_warmup_steps=0,
-        num_training_steps=num_training_steps // gradient_accumulation_steps,
+        num_training_steps=-1,
     )
     # scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
 
-    # Start the training process
-    results = train(
-        model,
-        train_dataloader,
-        train_sampler,
-        eval_dataloader, 
-        tokenizer,
-        optimizer,
-        scheduler,
-        gradient_accumulation_steps,
-        train_config,
-        fsdp_config if train_config.enable_fsdp else None,
-        local_rank if train_config.enable_fsdp else None,
-        rank if train_config.enable_fsdp else None,
-    )
-    if not train_config.enable_fsdp or rank==0:
-        [print(f'Key: {k}, Value: {v}') for k, v in results.items()]
+    def build_dataset(split, shuffle=False):
+        dataset = get_preprocessed_dataset(
+            tokenizer,
+            dataset_config,
+            split=split,
+        )
+
+        if not train_config.enable_fsdp or rank == 0:
+            print(f"--> split Set Length = {len(dataset)}")
+
+        sampler = DistributedSampler(
+            dataset,
+            rank=dist.get_rank(),
+            num_replicas=dist.get_world_size(),
+            shuffle=shuffle,
+        )
+
+        dataloader = torch.utils.data.DataLoader(
+            dataset,
+            batch_size=train_config.micro_batch_size,
+            num_workers=train_config.num_workers_dataloader,
+            pin_memory=True,
+            sampler=sampler,
+            drop_last=True,
+            collate_fn=default_data_collator,
+        )
+
+        return sampler, dataloader
+
+    accu_step = 0
+    valid_sampler, valid_dataloader = build_dataset('test', False)
+
+    os.makedirs(train_config.output_dir, exist_ok=True)
+    if train_config.enable_fsdp and not train_config.use_peft:
+        save_dir = train_config.output_dir
+        save_train_params(save_dir, train_config, fsdp_config, rank)
+
+    for epoch in range(train_config.num_epochs):
+        filenames = [f for f in sorted(os.listdir(dataset_config.root + '/' + dataset_config.sub_dir_prefix))]
+        for i, filename in enumerate(filenames):
+            # 指定训练文件
+            dataset_config.input_file = filename
+            # 加载分片训练数据
+            train_sampler, train_dataloader = build_dataset('train', True)
+
+            num_training_steps = len(train_dataloader)
+            if rank == 0:
+                print(f'[{i}], input = {filename}')
+                print(f'[{i}], num training steps = {num_training_steps}')
+                print(f'[{i}], num eval steps = {len(valid_dataloader)}')
+                print(f'[{i}], num data batches = {len(train_dataloader)}')
+
+            # Start the training process
+            results, accu_step = train(
+                model,
+                train_dataloader,
+                train_sampler,
+                valid_dataloader,
+                tokenizer,
+                optimizer,
+                scheduler,
+                gradient_accumulation_steps,
+                train_config,
+                fsdp_config if train_config.enable_fsdp else None,
+                local_rank if train_config.enable_fsdp else None,
+                rank if train_config.enable_fsdp else None,
+                first_step=accu_step
+            )
+            if not train_config.enable_fsdp or rank==0:
+                [print(f'Key: {k}, Value: {v}') for k, v in results.items()]
+
+            save_model(model, train_config, fsdp_config, rank, optimizer, epoch=accu_step)
+            exit(0)
+        save_model(model, train_config, fsdp_config, rank, optimizer, epoch=accu_step)
 
 if __name__ == "__main__":
     fire.Fire(main)

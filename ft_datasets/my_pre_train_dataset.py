@@ -34,13 +34,21 @@ class _MyPreTrainDataset(Dataset):
     def get_input_files(self, dataset_config):
         input_files = []
         for input_file in os.listdir(dataset_config.root + '/' + dataset_config.sub_dir_prefix):
+            if dataset_config.input_file and input_file != dataset_config.input_file:
+                continue
             input_files.append(f'{dataset_config.root}/{dataset_config.sub_dir_prefix}/{input_file}')
-        # print(f'input files = {json.dumps(input_files, indent=2)}', flush=True)
+        print(f'load input from {len(input_files)} files', flush=True)
         return sorted(input_files)
 
     def get_input_datas(self, dataset_config, split):
         input_ids = []
         self.input_files = self.get_input_files(dataset_config)
+
+        if len(self.input_files) < 10:
+            print(f'load {split} from {json.dumps(self.input_files, indent=2)}')
+        else:
+            print(f'load {split} from {len(self.input_files)} input files')
+
         for input_file in self.input_files:
             datas = pickle.load(open(input_file, 'rb'))
             if split == 'train':
@@ -98,13 +106,6 @@ def pre_tokenize(input_file, output_file):
 
 
 if __name__ == '__main__':
-    from configs.datasets import my_pre_train_pad_dataset, my_pre_train_dataset
-    # dataset = get_my_pre_train_dataset(my_pre_train_dataset, tokenizer, 'valid')
-    # dataset = get_my_pre_train_pad_dataset(my_pre_train_pad_dataset, tokenizer, 'valid')
-    # for i in range(10):
-    #     for k, v in dataset[i].items():
-    #         print(k)
-    #         print(len(v), v)
     pool = multiprocessing.Pool(32)
     work_dir = '/home/paperspace/xingguang/datasets/pre-training-ariticle'
     for input_file in os.listdir(f'{work_dir}/text/'):

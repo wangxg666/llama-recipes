@@ -3,7 +3,7 @@ set -x
 
 
 MODEL_TYPE="13b"
-WORK_DIR="/home/paperspace/xingguang/llama/ckpt.peft/${MODEL_TYPE}"
+WORK_DIR="/home/paperspace/xingguang/models/ckpt.peft/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_allin_one_dataset"
 DATASET_SUB_DIR="answer_extractor.v021"

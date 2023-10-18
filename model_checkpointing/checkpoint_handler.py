@@ -1,6 +1,6 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # This software may be used and distributed according to the terms of the Llama 2 Community License Agreement.
-
+import os
 from pathlib import Path
 from datetime import datetime
 import torch
@@ -48,7 +48,8 @@ def save_model_checkpoint(model, optimizer, rank, save_dir, cfg, epoch=1):
         print(f"--> saving model ...")
         # create save path
 
-        save_dir.mkdir(parents=True, exist_ok=True)
+        os.makedirs(save_dir, exist_ok=True)
+        # save_dir.mkdir(parents=True, exist_ok=True)
         save_name = ".pt"
         save_full_path = str(save_dir) + "/" + save_name
 
