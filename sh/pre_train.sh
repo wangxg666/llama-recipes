@@ -9,7 +9,7 @@ DATASET_TAG=""
 DATASET_SUB_DIR="pre-training-ariticle/tokenized.${MODEL_TYPE}"
 
 LR=3e-5
-BATCH_SIZE=4
+BATCH_SIZE=8
 EPOCH=1
 
 TAG="${MODEL_TYPE}.${LR}.B${BATCH_SIZE}.E${EPOCH}.full"
@@ -33,10 +33,10 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --lr ${LR} \
   --val_batch_size ${BATCH_SIZE} \
   --batch_size_training ${BATCH_SIZE} \
-  --micro_batch_size 4 \
+  --micro_batch_size 8 \
   --num_epochs ${EPOCH} \
   --evaluation_steps 100 \
-  --check_point_steps 2000 \
+  --check_point_steps 2000000 \
   --wandb_name ${DATASET_NAME}-${DATASET_SUB_DIR}-${TAG}-${ts}
 
 cd ../

@@ -70,11 +70,31 @@ def byte2mb(x):
     return int(x / 2 ** 20)
 
 
+def remove_exist_saved_models(train_config):
+    model_dirs = []
+    for sub_dir in os.listdir(train_config.output_dir):
+        if sub_dir.startswith('step_'):
+            model_dirs.append(train_config.output_dir + '/' + sub_dir)
+    model_dirs.sort()
+    if len(model_dirs) <= train_config.max_ckpt_num:
+        return
+    remove_dirs = model_dirs[0:-train_config.max_ckpt_num]
+    for remove_dir in remove_dirs:
+        try:
+            os.system(f'rm -r {remove_dir}')
+        except:
+            print(f'delete {remove_dir} failed')
+
+
 def save_model(model, train_config, fsdp_config, rank, optimizer=None, epoch=-1, accu_step=-1, sub_dir=''):
+
     if epoch != -1:
         sub_dir = f'epoch_{str(1000 + epoch)[1:]}'
     elif accu_step != -1:
-        sub_dir = f'step_{str(1000000 + accu_step)[1:]}'
+        if optimizer:
+            sub_dir = f'optimizer_step_{str(1000000 + accu_step)[1:]}'
+        else:
+            sub_dir = f'step_{str(1000000 + accu_step)[1:]}'
     elif not sub_dir:
         return
 
@@ -104,6 +124,10 @@ def save_model(model, train_config, fsdp_config, rank, optimizer=None, epoch=-1,
             print(" Saving the FSDP model checkpoints and optimizer using FULL_STATE_DICT")
     if train_config.enable_fsdp:
         dist.barrier()
+
+    remove_exist_saved_models(train_config)
+
+    return save_dir
 
 
 def train(model,
@@ -145,14 +169,6 @@ def train(model,
         scaler = torch.cuda.amp.GradScaler()
     if train_config.enable_fsdp:
         world_size = int(os.environ["WORLD_SIZE"])
-    train_prep = []
-    train_loss = []
-    val_prep = []
-    val_loss = []
-    epoch_times = []
-    checkpoint_times = []
-    results = {}
-    best_val_loss = float("inf")
 
     wandb_writer = WanDBWriter(train_config.wandb_name, rank)
 
@@ -206,19 +222,16 @@ def train(model,
             if not train_config.enable_fsdp or rank == 0:
                 print(f"\n step {step} is completed and loss is {loss.detach().float()}")
 
-            if accu_step % train_config.check_point_steps == 0 and not torch.isnan(loss).any():
-                save_model(model, train_config, fsdp_config, rank, None, accu_step=accu_step)
-                if train_config.run_validation:
-                    eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)
-                    wandb_writer.log(rank, {
-                        'step': accu_step // gradient_accumulation_steps,
-                        'valid_loss': eval_epoch_loss
-                    })
+            # stream based pre-train eval 使用 step，不使用 accu_step
+            if (accu_step % train_config.check_point_steps == 0
+                    or (step + 1) % train_config.evaluation_steps == 0
+                    or (step + 1) == len(train_dataloader)
+            ):
+                if accu_step % train_config.check_point_steps == 0 and not torch.isnan(loss).any():
+                    save_model(model, train_config, fsdp_config, rank, None, accu_step=accu_step)
 
-            if accu_step % train_config.evaluation_steps == 0:
+                # validation
                 eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)
-                val_loss.append(best_val_loss)
-                val_prep.append(eval_ppl)
                 wandb_writer.log(rank, {
                     'step': accu_step // gradient_accumulation_steps,
                     'valid_loss': eval_epoch_loss
@@ -231,7 +244,6 @@ def train(model,
             })
 
     epoch_end_time = time.perf_counter() - epoch_start_time
-    epoch_times.append(epoch_end_time)
     # Reducing total_loss across all devices if there's more than one CUDA device
     if torch.cuda.device_count() > 1 and train_config.enable_fsdp:
         dist.all_reduce(total_loss, op=dist.ReduceOp.SUM)
@@ -239,9 +251,6 @@ def train(model,
     if train_config.enable_fsdp:
         train_epoch_loss = train_epoch_loss / world_size
     train_perplexity = torch.exp(train_epoch_loss)
-
-    train_prep.append(train_perplexity)
-    train_loss.append(train_epoch_loss)
 
     if not train_config.enable_fsdp or rank == 0:
         print(f"Max CUDA memory allocated was {memtrace.peak} GB")
@@ -253,16 +262,7 @@ def train(model,
 
     # save_model(model, train_config, fsdp_config, rank, None, accu_step=accu_step)
 
-    results['avg_train_prep'] = sum(train_prep) / len(train_prep)
-    results['avg_train_loss'] = sum(train_loss) / len(train_loss)
-    if train_config.run_validation:
-        results['avg_eval_prep'] = sum(val_prep) / len(val_prep)
-        results['avg_eval_loss'] = sum(val_loss) / len(val_loss)
-
-    # saving the training params including fsdp setting for reference.
-
-
-    return results, accu_step
+    return accu_step
 
 
 def evaluation(model, train_config, eval_dataloader, local_rank, tokenizer):

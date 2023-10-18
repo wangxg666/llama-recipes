@@ -262,7 +262,7 @@ def main(**kwargs):
                 print(f'[{i}], num data batches = {len(train_dataloader)}')
 
             # Start the training process
-            results, accu_step = train(
+            accu_step = train(
                 model,
                 train_dataloader,
                 train_sampler,
@@ -277,12 +277,14 @@ def main(**kwargs):
                 rank if train_config.enable_fsdp else None,
                 first_step=accu_step
             )
-            if not train_config.enable_fsdp or rank==0:
-                [print(f'Key: {k}, Value: {v}') for k, v in results.items()]
 
-            save_model(model, train_config, fsdp_config, rank, optimizer, epoch=accu_step)
-            exit(0)
-        save_model(model, train_config, fsdp_config, rank, optimizer, epoch=accu_step)
+            if (i+1) % 5 == 0:
+                save_dir = save_model(model, train_config, fsdp_config, rank, optimizer, accu_step=accu_step)
+            else:
+                save_dir = save_model(model, train_config, fsdp_config, rank, None, accu_step=accu_step)
+            print(f'{accu_step} {filename}', file=open(f'{save_dir}/file.txt', 'w'))
+
+        save_model(model, train_config, fsdp_config, rank, optimizer, epoch=epoch)
 
 if __name__ == "__main__":
     fire.Fire(main)

@@ -42,3 +42,4 @@ class train_config:
     max_grad_norm: float = 1.0
     dataset_sub_dir_prefix: str = ''
     dataset_tag: str = ''
+    max_ckpt_num: int = 20

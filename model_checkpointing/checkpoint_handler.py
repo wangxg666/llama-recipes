@@ -95,12 +95,12 @@ def save_optimizer_checkpoint(model, optimizer, rank, save_dir, accu_step=1):
     if rank != 0:
         return
 
-    save_dir.mkdir(parents=True, exist_ok=True)
+    os.makedirs(save_dir, exist_ok=True)
 
     opt_save_name = (
         "optimizer.pt"
     )
-    opt_save_full_path = save_dir / opt_save_name
+    opt_save_full_path = save_dir + '/' + opt_save_name
 
     print(f"--> saving optimizer state...")
     torch.save(optim_state, opt_save_full_path)
