@@ -46,7 +46,7 @@ class WanDBWriter:
     def __init__(self, name, rank):
         if rank == 0:
             wandb.init(
-                project="llama",
+                project="llama-pre-train-cmp",
                 entity="canon",
                 name=name
             )

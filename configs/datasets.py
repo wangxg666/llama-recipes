@@ -75,3 +75,10 @@ class my_pre_train_pad_dataset(my_common_dataset_config):
 class my_pre_train_yelp_ins_dataset(my_common_dataset_config):
     dataset: str = "my_pre_train_yelp_ins_dataset"
     sub_dir_prefix: str = 'pre_train_yelp_ca.v02.instruction'
+
+class my_news_comment_dataset():
+    root: str = get_data_root()
+    train_split: str = "train"
+    test_split: str = "valid"
+    train_data_path: str = f""
+    valid_data_path: str = f""

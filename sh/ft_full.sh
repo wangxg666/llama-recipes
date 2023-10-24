@@ -1,12 +1,12 @@
 #!/bin/bash
 set -x
 
-MODEL_TYPE="13b"
+MODEL_TYPE="7b"
 WORK_DIR="/home/paperspace/xingguang/models/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_allin_one_dataset"
 DATASET_TYPE=""
-DATASET_SUB_DIR="answer_extractor.v024"
+DATASET_SUB_DIR="answer_extractor.v025"
 
 LR=3e-5
 BATCH_SIZE=4
@@ -17,9 +17,9 @@ ts=$(date +"%Y-%m-%d")
 
 cd ..
 
-CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
+CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --nnodes 1 \
-  --nproc_per_node 8 \
+  --nproc_per_node 4 \
   --master_port=1201 \
   ./llama_finetuning.py \
   --enable_fsdp  \

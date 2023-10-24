@@ -25,7 +25,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   ./llama_pre_training.py \
   --enable_fsdp  \
   --model_name "${MODEL_NAME}" \
-  --model_name_or_path "${PRE_TRAIN_CKPT_PATH}"
+  --pre_train_model_path "${PRE_TRAIN_CKPT_PATH}"
   --dataset "${DATASET_NAME}" \
   --dataset_tag "${DATASET_TAG}" \
   --dataset_sub_dir_prefix "${DATASET_SUB_DIR}" \

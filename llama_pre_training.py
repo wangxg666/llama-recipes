@@ -86,10 +86,10 @@ def main(**kwargs):
 
     model_name = train_config.model_name
     # gpu3 cpu memory is not enough, lazy loading with 20s after
-    if train_config.model_name_or_path and pathlib.Path(train_config.model_name_or_path).exists():
+    if train_config.pre_train_model_path and pathlib.Path(train_config.pre_train_model_path).exists():
         if rank == 0 or rank == 1:
             time.sleep(20)
-        model_name = train_config.model_name_or_path
+        model_name = train_config.pre_train_model_path
     print(f'{"x" * 20}    {model_name}    {"x" * 20}')
 
     # Load the pre-trained model and setup its configuration

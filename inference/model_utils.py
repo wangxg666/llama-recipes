@@ -27,13 +27,13 @@ def load_peft_model_v2(peft_model_path, quantization):
 
     # load base LLM model and tokenizer
     model = LlamaForCausalLM.from_pretrained(
-        config.base_model_name_or_path,
+        config.base_pre_train_model_path,
         return_dict=True,
         load_in_8bit=quantization,
         device_map="auto",
         low_cpu_mem_usage=True,
     )
-    tokenizer = LlamaTokenizer.from_pretrained(config.base_model_name_or_path)
+    tokenizer = LlamaTokenizer.from_pretrained(config.base_pre_train_model_path)
 
     # Load the Lora model
     model = PeftModel.from_pretrained(model, peft_model_path)

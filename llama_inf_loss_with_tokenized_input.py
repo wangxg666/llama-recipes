@@ -90,8 +90,9 @@ def main(
         output['doc'].append(doc)
         with torch.no_grad():
             loss = model(**batch).loss
-        output['loss'].append(loss.detach().cpu().numpy()[0])
+        output['loss'].append(loss.detach().cpu().float().numpy())
         pd.DataFrame(output).to_csv(f'./loss.{model_name.split("/")[-1]}.csv', index=False)
+
 
 if __name__ == "__main__":
     fire.Fire(main)
