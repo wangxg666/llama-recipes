@@ -164,10 +164,6 @@ def main(**kwargs):
     dataset_config = generate_dataset_config(train_config, kwargs)
     if train_config.dataset_sub_dir_prefix != '':
         dataset_config.sub_dir_prefix = train_config.dataset_sub_dir_prefix
-    if train_config.dataset_tag != "":
-        train_config.output_dir += f'.{train_config.dataset_tag}'
-        dataset_config.test_split += f'_{train_config.dataset_tag}'
-        dataset_config.train_split += f'_{train_config.dataset_tag}'
     print(dataset_config.dataset, dataset_config.sub_dir_prefix)
     
     # Initialize the optimizer and learning rate scheduler
@@ -239,6 +235,7 @@ def main(**kwargs):
         return sampler, dataloader
 
     accu_step = 0
+    dataset_config.input_file = 'valid.bin'
     valid_sampler, valid_dataloader = build_dataset('test', False)
 
     os.makedirs(train_config.output_dir, exist_ok=True)
@@ -247,7 +244,7 @@ def main(**kwargs):
         save_train_params(save_dir, train_config, fsdp_config, rank)
 
     for epoch in range(train_config.num_epochs):
-        filenames = [f for f in sorted(os.listdir(dataset_config.root + '/' + dataset_config.sub_dir_prefix))]
+        filenames = [f for f in sorted(os.listdir(dataset_config.root + '/' + dataset_config.sub_dir_prefix)) if 'train' in f]
         for i, filename in enumerate(filenames):
             # 指定训练文件
             dataset_config.input_file = filename

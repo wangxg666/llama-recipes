@@ -166,10 +166,6 @@ def main(**kwargs):
     dataset_config = generate_dataset_config(train_config, kwargs)
     if train_config.dataset_sub_dir_prefix != '':
         dataset_config.sub_dir_prefix = train_config.dataset_sub_dir_prefix
-    if train_config.dataset_tag != "":
-        train_config.output_dir += f'.{train_config.dataset_tag}'
-        dataset_config.test_split += f'_{train_config.dataset_tag}'
-        dataset_config.train_split += f'_{train_config.dataset_tag}'
     print(dataset_config.dataset, dataset_config.sub_dir_prefix)
     
      # Load and preprocess the dataset for training and validation

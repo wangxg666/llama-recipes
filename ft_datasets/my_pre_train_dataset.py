@@ -15,6 +15,16 @@ from torch.utils.data import Dataset
 from ft_datasets.utils import ConcatDatasetNumpy
 
 
+def get_input_files(dataset_config):
+    input_files = []
+    for input_file in os.listdir(dataset_config.root + '/' + dataset_config.sub_dir_prefix):
+        if dataset_config.input_file and input_file != dataset_config.input_file:
+            continue
+        input_files.append(f'{dataset_config.root}/{dataset_config.sub_dir_prefix}/{input_file}')
+    print(f'load input from {len(input_files)} files', flush=True)
+    return sorted(input_files)
+
+
 class _MyPreTrainDataset(Dataset):
 
     def __init__(self, dataset_config, tokenizer, split, chunk_size=3998):
@@ -31,18 +41,9 @@ class _MyPreTrainDataset(Dataset):
 
         self.get_input_datas(dataset_config, split)
 
-    def get_input_files(self, dataset_config):
-        input_files = []
-        for input_file in os.listdir(dataset_config.root + '/' + dataset_config.sub_dir_prefix):
-            if dataset_config.input_file and input_file != dataset_config.input_file:
-                continue
-            input_files.append(f'{dataset_config.root}/{dataset_config.sub_dir_prefix}/{input_file}')
-        print(f'load input from {len(input_files)} files', flush=True)
-        return sorted(input_files)
-
     def get_input_datas(self, dataset_config, split):
         input_ids = []
-        self.input_files = self.get_input_files(dataset_config)
+        self.input_files = get_input_files(dataset_config)
 
         if len(self.input_files) < 10:
             print(f'load {split} from {json.dumps(self.input_files, indent=2)}')
@@ -50,16 +51,12 @@ class _MyPreTrainDataset(Dataset):
             print(f'load {split} from {len(self.input_files)} input files')
 
         for input_file in self.input_files:
-            datas = pickle.load(open(input_file, 'rb'))
-            if split == 'train':
-                datas = datas[500:]
-            else:
-                datas = datas[0:500]
-            input_ids.extend(datas)
-            # print(f'load total {len(input_ids)} after load {input_file}', flush=True)
-        print(f'load [{split}], num articles = {len(input_ids)}', flush=True)
+            input_ids.extend(pickle.load(open(input_file, 'rb')))
         self.input_token_ids = np.concatenate(input_ids)
-        print(f'load [{split}], {self.input_token_ids.shape[0]} tokens, {round(self.input_token_ids.shape[0] / 1.e9, 3)}B token')
+
+        print(f'load [{split}], num articles = {len(input_ids)}, '
+              f'{self.input_token_ids.shape[0]} tokens, '
+              f'{round(self.input_token_ids.shape[0] / (2.**30), 3)}B token', flush=True)
 
     def __len__(self):
         return self.input_token_ids.shape[0] // self.chunk_size
@@ -86,35 +83,3 @@ def get_my_pre_train_pad_dataset(dataset_config, tokenizer, split):
     return dataset
 
 
-def pre_tokenize(input_file, output_file):
-    from transformers import LlamaTokenizer
-    tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-13b-hf')
-
-    datas = []
-    for data in open(input_file):
-        obj = json.loads(data)
-        text = ''
-        if 'title' in obj:
-            text += obj['title'] + ' '
-        if 'content' in obj:
-            text += obj['content'] + ' '
-        datas.append(text)
-    tokenized_datas = []
-    for data in tqdm.tqdm(datas):
-        tokenized_datas.append(np.asarray(tokenizer.encode(data) + [tokenizer.eos_token_id], np.int64))
-    pickle.dump(tokenized_datas, open(output_file, 'wb'))
-
-
-if __name__ == '__main__':
-    pool = multiprocessing.Pool(32)
-    work_dir = '/home/paperspace/xingguang/datasets/pre-training-ariticle'
-    for input_file in os.listdir(f'{work_dir}/text/'):
-        pool.apply_async(
-            func=pre_tokenize,
-            args=(
-                f'{work_dir}/text/{input_file}',
-                f'{work_dir}/tokenized.13b/{input_file.replace(".txt", ".bin")}',
-            )
-        )
-    pool.close()
-    pool.join()

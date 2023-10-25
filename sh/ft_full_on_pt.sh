@@ -5,7 +5,6 @@ MODEL_TYPE="7b"
 WORK_DIR="/home/paperspace/xingguang/models/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_allin_one_dataset"
-DATASET_TYPE=""
 DATASET_SUB_DIR="doc_id_query.v04"
 PRE_TRAIN_MODEL="/home/paperspace/xingguang/models/my_pre_train_dataset.7b.3e-5.B8.E1.full/step_034290.hf"
 
@@ -27,7 +26,6 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --model_name "${MODEL_NAME}" \
   --pre_train_model_path "${PRE_TRAIN_MODEL}" \
   --dataset "${DATASET_NAME}" \
-  --dataset_tag "${DATASET_TYPE}" \
   --dataset_sub_dir_prefix "${DATASET_SUB_DIR}" \
   --save_model \
   --pure_bf16 \

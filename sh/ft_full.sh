@@ -5,7 +5,6 @@ MODEL_TYPE="7b"
 WORK_DIR="/home/paperspace/xingguang/models/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_allin_one_dataset"
-DATASET_TYPE=""
 DATASET_SUB_DIR="answer_extractor.v027"
 
 LR=3e-5
@@ -25,7 +24,6 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --enable_fsdp  \
   --model_name "${MODEL_NAME}" \
   --dataset "${DATASET_NAME}" \
-  --dataset_tag "${DATASET_TYPE}" \
   --dataset_sub_dir_prefix "${DATASET_SUB_DIR}" \
   --save_model \
   --pure_bf16 \

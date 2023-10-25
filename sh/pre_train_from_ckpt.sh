@@ -5,7 +5,6 @@ MODEL_TYPE="7b"
 WORK_DIR="/home/paperspace/xingguang/models/"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_pre_train_dataset"
-DATASET_TAG=""
 DATASET_SUB_DIR="pre-training-ariticle/tokenized.${MODEL_TYPE}"
 PRE_TRAIN_CKPT_PATH=""
 
@@ -25,9 +24,8 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   ./llama_pre_training.py \
   --enable_fsdp  \
   --model_name "${MODEL_NAME}" \
-  --pre_train_model_path "${PRE_TRAIN_CKPT_PATH}"
+  --pre_train_model_path "${PRE_TRAIN_CKPT_PATH}" \
   --dataset "${DATASET_NAME}" \
-  --dataset_tag "${DATASET_TAG}" \
   --dataset_sub_dir_prefix "${DATASET_SUB_DIR}" \
   --save_model \
   --pure_bf16 \
