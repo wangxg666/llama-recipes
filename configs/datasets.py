@@ -63,6 +63,7 @@ class my_allin_one_dataset(my_common_dataset_config):
 class my_pre_train_dataset(my_common_dataset_config):
     dataset: str = "my_pre_train_dataset"
     input_file: str = ''
+    sample_ratio: float = 1.
 
 
 class my_news_comment_dataset(my_common_dataset_config):

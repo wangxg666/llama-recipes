@@ -235,8 +235,7 @@ def main(**kwargs):
         return sampler, dataloader
 
     accu_step = 0
-    dataset_config.input_file = 'valid.bin'
-    valid_sampler, valid_dataloader = build_dataset('test', False)
+
 
     os.makedirs(train_config.output_dir, exist_ok=True)
     if train_config.enable_fsdp and not train_config.use_peft:
@@ -248,8 +247,14 @@ def main(**kwargs):
         for i, filename in enumerate(filenames):
             # 指定训练文件
             dataset_config.input_file = filename
+            dataset_config.sample_ratio = 1.
             # 加载分片训练数据
             train_sampler, train_dataloader = build_dataset('train', True)
+
+            # 随机加载验证集
+            dataset_config.input_file = 'valid.bin'
+            dataset_config.sample_ratio = 0.1
+            valid_sampler, valid_dataloader = build_dataset('test', False)
 
             num_training_steps = len(train_dataloader)
             if rank == 0:
