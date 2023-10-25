@@ -10,7 +10,7 @@ class train_config:
     pre_train_model_path: str=""
     enable_fsdp: bool= False
     run_validation: bool=True
-    batch_size_training: int=1
+    train_batch_size: int=1
     num_epochs: int=3
     num_workers_dataloader: int=1
     lr: float=1e-4
@@ -19,7 +19,7 @@ class train_config:
     seed: int=42
     use_fp16: bool=False
     mixed_precision: bool=True
-    val_batch_size: int=1
+    valid_batch_size: int=1
     dataset = "samsum_dataset"
     micro_batch_size: int=1
     peft_method: str = "lora" # None , llama_adapter, prefix

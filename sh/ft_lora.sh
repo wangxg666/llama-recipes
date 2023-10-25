@@ -26,8 +26,8 @@ CUDA_VISIBLE_DEVICES="2,3,4,5,6,7" torchrun \
   --pure_bf16 \
   --output_dir "${WORK_DIR}/${DATASET_NAME}.${TAG}-peft/" \
   --lr 2e-5 \
-  --val_batch_size 8 \
-  --batch_size_training 8 \
+  --valid_batch_size 8 \
+  --train_batch_size 8 \
   --micro_batch_size 8 \
   --num_epochs 5 \
   --evaluation_steps 100 \

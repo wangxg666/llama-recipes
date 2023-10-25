@@ -82,7 +82,7 @@ def main(**kwargs):
         setup_environ_flags(rank)
     
     # Calculate gradient accumulation steps
-    gradient_accumulation_steps = train_config.batch_size_training // train_config.micro_batch_size
+    gradient_accumulation_steps = train_config.train_batch_size // train_config.micro_batch_size
 
     model_name = train_config.model_name
     # gpu3 cpu memory is not enough, lazy loading with 20s after

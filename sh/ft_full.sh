@@ -29,8 +29,8 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --pure_bf16 \
   --output_dir "${WORK_DIR}/${DATASET_NAME}.${TAG}"/ \
   --lr ${LR} \
-  --val_batch_size ${BATCH_SIZE} \
-  --batch_size_training ${BATCH_SIZE} \
+  --valid_batch_size ${BATCH_SIZE} \
+  --train_batch_size ${BATCH_SIZE} \
   --micro_batch_size 8 \
   --num_epochs ${EPOCH} \
   --evaluation_steps 100 \

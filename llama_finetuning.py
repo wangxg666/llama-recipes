@@ -85,7 +85,7 @@ def main(**kwargs):
         setup_environ_flags(rank)
     
     # Calculate gradient accumulation steps
-    gradient_accumulation_steps = train_config.batch_size_training // train_config.micro_batch_size
+    gradient_accumulation_steps = train_config.train_batch_size // train_config.micro_batch_size
 
     model_name = train_config.model_name
     # gpu3 cpu memory is not enough, lazy loading with 20s after
@@ -216,7 +216,7 @@ def main(**kwargs):
     if train_config.run_validation:
         eval_dataloader = torch.utils.data.DataLoader(
             dataset_val,
-            batch_size=train_config.val_batch_size,
+            batch_size=train_config.valid_batch_size,
             num_workers=train_config.num_workers_dataloader,
             pin_memory=True,
             sampler=val_sampler if val_sampler else None,
