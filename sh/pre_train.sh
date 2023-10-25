@@ -1,15 +1,15 @@
 #!/bin/bash
 set -x
 
-MODEL_TYPE="7b"
+MODEL_TYPE="13b"
 WORK_DIR="/home/paperspace/xingguang/models/"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_pre_train_dataset"
 DATASET_TAG=""
-DATASET_SUB_DIR="pre-training-ariticle/tokenized.${MODEL_TYPE}"
+DATASET_SUB_DIR="pre-training-shuffle/tokenized.${MODEL_TYPE}"
 
-LR=3e-5
-BATCH_SIZE=8
+LR=1e-5
+BATCH_SIZE=4
 EPOCH=1
 
 TAG="${MODEL_TYPE}.${LR}.B${BATCH_SIZE}.E${EPOCH}.full"
@@ -33,7 +33,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --lr ${LR} \
   --val_batch_size ${BATCH_SIZE} \
   --batch_size_training ${BATCH_SIZE} \
-  --micro_batch_size 8 \
+  --micro_batch_size 4 \
   --num_epochs ${EPOCH} \
   --evaluation_steps 100 \
   --check_point_steps 2000000 \

@@ -52,9 +52,9 @@ class _MyPreTrainDataset(Dataset):
         for input_file in self.input_files:
             datas = pickle.load(open(input_file, 'rb'))
             if split == 'train':
-                datas = datas[100:]
+                datas = datas[500:]
             else:
-                datas = datas[0:100]
+                datas = datas[0:500]
             input_ids.extend(datas)
             # print(f'load total {len(input_ids)} after load {input_file}', flush=True)
         print(f'load [{split}], num articles = {len(input_ids)}', flush=True)
@@ -77,7 +77,7 @@ class _MyPreTrainDataset(Dataset):
 
 
 def get_my_pre_train_dataset(dataset_config, tokenizer, split):
-    dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, chunk_size=3998)
+    dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, chunk_size=4096)
     return dataset
 
 

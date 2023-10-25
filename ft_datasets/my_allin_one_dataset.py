@@ -37,46 +37,6 @@ Please help to check does text B is rewritten properly with text A.
 ### {source_sent}
 ### response:""",
 
-    "FAQ_ANSWER_EXTRACT": """
-You are an excellent linguist, and I need your help to complete the following task.
-Give you a user query and some background knowledge, 
-the knowledge is not the directly answer for the query, but it might be used to answer the query.
-Please read the query and knowledge carefully, 
-and then try extracting and summarizing the useful information from these knowledge to answer the query.
-If you think the knowledge is not relevant with the query, please give a default answer "Sorry, the query can not be answered.".
-Your answer should be in json format like {{"answer": xxx}}
-### query: {query}
-### knowledge: {knowledge}
-### response:""",
-
-    "FAQ_ANSWER_EXTRACT_NO_JSON": """
-You are an excellent linguist, and I need your help to complete the following task.
-Here is a user query and some retrieved information, the retrieved information might not be the proper for the query.
-Please read the user query and the retrieved information carefully, and then try using this information to answer the query.
-Your answer should be accurate, grammatically fluent, and avoid to output a short answer.
-Don't output any additional information that is not included in the retrieved information.
-If you think the information is not relevant to the query, please give a default answer "Sorry, the query can not be answered."
-If there is enumeration in the answer, please convert it to list format.
-Please answer the query directly, do not output your explanation.
-### Query: {query}
-### Retrieved Information: {knowledge}
-### response:""",
-
-    "FAQ_ANSWER_EXTRACT_NO_JSON_V4": """You are an excellent linguist, and I need your help to complete the following task.
-Here is a user query and some retrieved information, the retrieved information might not be the proper for the query.
-Please read the user query and the retrieved information carefully, and then try using this information to answer the query.
-The retrieved information may have duplicate content, please summarize the retrieved information with deduplication before you taking use of them.
-Your response should be accurate, grammatically fluent, and a short response is acceptable.
-But your answer should answer the query directly, and do not output any additional or furthermore guidelines in your response.
-Don't output any additional information that is not included in the retrieved information.
-If you think the information is not relevant to the query, please give a default response "Sorry, the query can not be answered."
-If there is enumeration of entities in your response, please convert it to list of entities with markdown syntax.
-Do not provide any additional response that is not relevant with the user query.
-Please answer the query directly, do not output your explanation.
-### Query: {query}
-### Retrieved Information: {knowledge}
-### response:""",
-
     "FAQ_ANSWER_EXTRACT_NO_JSON_V5_FAQ": """You are an excellent linguist, and I need your help to complete the following task.
 Here is a user query and some retrieved information, the retrieved information might not be the proper for the query.
 Please read the user query and the retrieved information carefully, and then try using this information to answer the query.
@@ -110,7 +70,21 @@ Please answer the query directly, do not output your explanation.
     "PLATYPUS": """{instruction}""",
 
     "NORM_PROMPT": """{prompt}""",
-    
+
+    "DOC_ID_QUERY": (
+        "You are an excellent knowledger, and I need you to help to complate the following task.\n"
+        "Given you an `8 character` string as a News ID, I need you to find out it's title from you memory.\n"
+        "- The news IDs is a 8 characters string, which is start with `0`\n"
+        "### Doc ID: \n{docid}\n"
+    ),
+
+    "DOC_ID_GENERATION": (
+        "You are an excellent knowledger, and I need you to help to complate the following task.\n"
+        "Here is a user query, I wnat you to help to find some news that you have read, and return their IDs.\n"
+        "The news IDs is a 8 characters string, start with `0`\n"
+        "### Query: \n{query}\n"
+        "### Response: \n"
+    )
 }
 
 
