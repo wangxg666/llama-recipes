@@ -9,11 +9,8 @@ from ft_datasets import (
     get_grammar_dataset,
     get_alpaca_dataset,
     get_samsum_dataset,
-    get_hallucination_dataset,
     get_my_allin_one_dataset,
     get_my_pre_train_dataset,
-    get_my_pre_train_pad_dataset,
-    get_my_pre_train_yelp_ins_dataset,
     get_my_news_comment_dataset,
 )
 from typing import Optional
@@ -23,11 +20,8 @@ DATASET_PREPROC = {
     "alpaca_dataset": partial(get_alpaca_dataset, max_words=224),
     "grammar_dataset": get_grammar_dataset,
     "samsum_dataset": get_samsum_dataset,
-    "hallucination_dataset": get_hallucination_dataset,
     'my_allin_one_dataset': get_my_allin_one_dataset,
     'my_pre_train_dataset': get_my_pre_train_dataset,
-    'my_pre_train_pad_dataset': get_my_pre_train_pad_dataset,
-    'my_pre_train_yelp_ins_dataset': get_my_pre_train_yelp_ins_dataset,
     'my_news_comment_dataset': get_my_news_comment_dataset
 }
 

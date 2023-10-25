@@ -40,5 +40,5 @@ class train_config:
     wandb_name: str = 'default'
     peft_model: str = ''
     max_grad_norm: float = 1.0
-    dataset_sub_dir_prefix: str = ''
+    dataset_dir: str = ''
     max_ckpt_num: int = 10

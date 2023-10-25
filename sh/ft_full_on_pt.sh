@@ -5,7 +5,7 @@ MODEL_TYPE="7b"
 WORK_DIR="/home/paperspace/xingguang/models/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_allin_one_dataset"
-DATASET_SUB_DIR="doc_id_query.v04"
+DATASET_DIR="doc_id_query.v04"
 PRE_TRAIN_MODEL="/home/paperspace/xingguang/models/my_pre_train_dataset.7b.3e-5.B8.E1.full/step_034290.hf"
 
 LR=3e-5
@@ -26,10 +26,10 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --model_name "${MODEL_NAME}" \
   --pre_train_model_path "${PRE_TRAIN_MODEL}" \
   --dataset "${DATASET_NAME}" \
-  --dataset_sub_dir_prefix "${DATASET_SUB_DIR}" \
+  --dataset_dir "${DATASET_DIR}" \
   --save_model \
   --pure_bf16 \
-  --output_dir "${WORK_DIR}/${DATASET_SUB_DIR}-${TAG}"/ \
+  --output_dir "${WORK_DIR}/${DATASET_DIR}-${TAG}"/ \
   --lr ${LR} \
   --valid_batch_size ${BATCH_SIZE} \
   --train_batch_size ${BATCH_SIZE} \
@@ -37,7 +37,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --num_epochs ${EPOCH} \
   --evaluation_steps 100 \
   --check_point_steps 2000 \
-  --wandb_name ${MODEL_TYPE}-${DATASET_SUB_DIR}-${TAG}
+  --wandb_name ${MODEL_TYPE}-${DATASET_DIR}-${TAG}
 
 cd ../
 

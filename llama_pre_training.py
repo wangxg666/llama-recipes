@@ -162,9 +162,9 @@ def main(**kwargs):
         model.to("cuda")
 
     dataset_config = generate_dataset_config(train_config, kwargs)
-    if train_config.dataset_sub_dir_prefix != '':
-        dataset_config.sub_dir_prefix = train_config.dataset_sub_dir_prefix
-    print(dataset_config.dataset, dataset_config.sub_dir_prefix)
+    if train_config.dataset_dir != '':
+        dataset_config.dataset_dir = train_config.dataset_dir
+    print(dataset_config.dataset, dataset_config.dataset_dir)
     
     # Initialize the optimizer and learning rate scheduler
     if fsdp_config.pure_bf16 and fsdp_config.optimizer == "anyprecision":
@@ -244,7 +244,7 @@ def main(**kwargs):
         save_train_params(save_dir, train_config, fsdp_config, rank)
 
     for epoch in range(train_config.num_epochs):
-        filenames = [f for f in sorted(os.listdir(dataset_config.root + '/' + dataset_config.sub_dir_prefix)) if 'train' in f]
+        filenames = [f for f in sorted(os.listdir(f'{dataset_config.root}/{dataset_config.dataset_dir}')) if 'train' in f]
         for i, filename in enumerate(filenames):
             # 指定训练文件
             dataset_config.input_file = filename

@@ -90,34 +90,9 @@ Please answer the query directly, do not output your explanation.
 
 class MyAllInOneDataset(Dataset):
     def __init__(self, dataset_config, tokenizer, partition="train", max_words=2048, debug=False):
-        input_files = [
-            f'{dataset_config.root}/{sub_dir}/{partition}.txt'
-            for sub_dir in os.listdir(dataset_config.root)
-            if os.path.exists(f'{dataset_config.root}/{sub_dir}/{partition}.txt')
-            and sub_dir.startswith(dataset_config.sub_dir_prefix)
-        ]
-        print(json.dumps(input_files, indent=4))
-        self.raw_data = []
-        for input_file in input_files:
-            for data in open(input_file):
-                try:
-                    obj = json.loads(data)
-                    self.raw_data.append(obj)
-                except:
-                    pass
-        if debug:
-            from collections import defaultdict
-            type2datas = defaultdict(list)
-            for data in self.raw_data:
-                type = data['type']
-                type2datas[type].append(data)
-            for type, datas in type2datas.items():
-                self.raw_data.extend(datas)
-
-        # self.raw_data = list(itertools.chain(*self.raw_data))
+        input_file = f'{dataset_config.root}/{dataset_config.dataset_dir}/{partition}.txt'
+        self.raw_data = [json.loads(data) for data in open(input_file)]
         print(f'load {len(self.raw_data)} {partition} datas')
-        # if partition == 'train':
-        #     random.shuffle(self.raw_data)
 
         self.max_words = max_words
         self.tokenizer = tokenizer
@@ -133,15 +108,6 @@ class MyAllInOneDataset(Dataset):
 
         prompt = self.tokenizer.encode(prompt)
         example = self.tokenizer.encode(example) + [self.tokenizer.eos_token_id]
-
-        if self.debug:
-            n = len(prompt) - 3
-            print(item['type'])
-            print(len(prompt), prompt[n:])
-            print(len(example), example[n:])
-            print(MyAllInOneDataset.prompting(item) + ' ' + item['label'])
-            print('**' * 20)
-            print('\n')
 
         prompt = torch.tensor(prompt, dtype=torch.int64)
         example = torch.tensor(example, dtype=torch.int64)

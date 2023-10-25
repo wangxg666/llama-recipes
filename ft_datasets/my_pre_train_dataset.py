@@ -17,10 +17,11 @@ from ft_datasets.utils import ConcatDatasetNumpy
 
 def get_input_files(dataset_config):
     input_files = []
-    for input_file in os.listdir(dataset_config.root + '/' + dataset_config.sub_dir_prefix):
+    dataset_dir = f'{dataset_config.root}/{dataset_config.dataset_dir}'
+    for input_file in os.listdir(dataset_dir):
         if dataset_config.input_file and input_file != dataset_config.input_file:
             continue
-        input_files.append(f'{dataset_config.root}/{dataset_config.sub_dir_prefix}/{input_file}')
+        input_files.append(f'{dataset_dir}/{input_file}')
     print(f'load input from {len(input_files)} files', flush=True)
     return sorted(input_files)
 
@@ -44,11 +45,6 @@ class _MyPreTrainDataset(Dataset):
     def get_input_datas(self, dataset_config, split):
         input_ids = []
         self.input_files = get_input_files(dataset_config)
-
-        if len(self.input_files) < 10:
-            print(f'load {split} from {json.dumps(self.input_files, indent=2)}')
-        else:
-            print(f'load {split} from {len(self.input_files)} input files')
 
         for input_file in self.input_files:
             input_ids.extend(pickle.load(open(input_file, 'rb')))
@@ -75,11 +71,6 @@ class _MyPreTrainDataset(Dataset):
 
 def get_my_pre_train_dataset(dataset_config, tokenizer, split):
     dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, chunk_size=4096)
-    return dataset
-
-
-def get_my_pre_train_pad_dataset(dataset_config, tokenizer, split):
-    dataset = _MyPreTrainDataset(dataset_config, tokenizer, split, chunk_size=512)
     return dataset
 
 

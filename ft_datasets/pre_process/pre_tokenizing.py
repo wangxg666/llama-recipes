@@ -47,13 +47,6 @@ def process_aritilces():
 
 
 if __name__ == '__main__':
-    # from configs.datasets import my_pre_train_pad_dataset, my_pre_train_dataset
-    # dataset = get_my_pre_train_dataset(my_pre_train_dataset, tokenizer, 'valid')
-    # dataset = get_my_pre_train_pad_dataset(my_pre_train_pad_dataset, tokenizer, 'valid')
-    # for i in range(10):
-    #     for k, v in dataset[i].items():
-    #         print(k)
-    #         print(len(v), v)
     model_type = '13b'
     from transformers import LlamaTokenizer
     tokenizer = LlamaTokenizer.from_pretrained(f'meta-llama/Llama-2-{model_type}-hf')
