@@ -22,7 +22,7 @@ if __name__ == '__main__':
     n_tokens = sum([len(x) for x in datas])
     print(f'pre load {len(datas)} datas from {len(input_files)} files, {n_tokens / 1024 / 1024 / 1024}B tokens')
 
-    NUM_VALID = 10000
+    NUM_VALID = 20000
 
     pickle.dump(datas[0:NUM_VALID], open(f'/home/paperspace/xingguang/datasets/pre-training-shuffle/tokenized.13b/valid.bin', 'wb'))
 

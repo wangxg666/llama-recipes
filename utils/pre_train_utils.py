@@ -181,6 +181,23 @@ def train(model,
         total_loss = 0.0
         for step, batch in enumerate(tqdm(train_dataloader, colour="blue", desc=f"Training")):
             accu_step += 1
+
+            # 改为先做 Evaluation
+            # stream based pre-train eval 使用 step，不使用 accu_step
+            if (accu_step % train_config.check_point_steps == 0
+                    or step % train_config.evaluation_steps == 0
+                    or (step + 1) == len(train_dataloader)
+            ):
+                if accu_step % train_config.check_point_steps == 0 and not torch.isnan(loss).any():
+                    save_model(model, train_config, fsdp_config, rank, None, accu_step=accu_step)
+
+                # validation
+                eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)
+                wandb_writer.log(rank, {
+                    'step': accu_step // gradient_accumulation_steps,
+                    'valid_loss': eval_epoch_loss
+                })
+
             for key in batch.keys():
                 if train_config.enable_fsdp:
                     batch[key] = batch[key].to(local_rank)
@@ -218,30 +235,15 @@ def train(model,
                     optimizer.step()
                     optimizer.zero_grad()
                     lr_scheduler.step()
-
-            if not train_config.enable_fsdp or rank == 0:
-                print(f"\n step {step} is completed and loss is {loss.detach().float()}")
-
-            # stream based pre-train eval 使用 step，不使用 accu_step
-            if (accu_step % train_config.check_point_steps == 0
-                    or (step + 1) % train_config.evaluation_steps == 0
-                    or (step + 1) == len(train_dataloader)
-            ):
-                if accu_step % train_config.check_point_steps == 0 and not torch.isnan(loss).any():
-                    save_model(model, train_config, fsdp_config, rank, None, accu_step=accu_step)
-
-                # validation
-                eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)
-                wandb_writer.log(rank, {
-                    'step': accu_step // gradient_accumulation_steps,
-                    'valid_loss': eval_epoch_loss
-                })
-
+                    
             wandb_writer.log(rank, {
                 'step': accu_step // gradient_accumulation_steps,
                 'step_loss': loss.detach().float(),
                 'learning_rate': lr_scheduler.get_lr()[0]
             })
+
+            if not train_config.enable_fsdp or rank == 0:
+                print(f"\n step {step} is completed and loss is {loss.detach().float()}")
 
     epoch_end_time = time.perf_counter() - epoch_start_time
     # Reducing total_loss across all devices if there's more than one CUDA device

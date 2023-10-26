@@ -267,7 +267,7 @@ def main(**kwargs):
                     num_warmup_steps=500,
                     num_training_steps=total_steps,
                 )
-                print(f'init scheduler, approximate total step is {total_steps}, warm up steps = 300.')
+                print(f'init scheduler, approximate total step is {total_steps}, warm up steps = 500.')
 
             num_training_steps = len(train_dataloader)
             if rank == 0:
