@@ -256,15 +256,15 @@ def main(**kwargs):
 
             # 随机加载验证集
             dataset_config.input_file = 'valid.bin'
-            dataset_config.sample_ratio = 0.1
+            dataset_config.sample_ratio = 1.
             valid_sampler, valid_dataloader = build_dataset('test', False)
             
             if not scheduler:
-                total_steps = len(filenames) * len(train_dataloader) * 1.5
+                total_steps = len(filenames) * len(train_dataloader) * 1.05
                 scheduler = get_scheduler(
                     SchedulerType.COSINE,
                     optimizer=optimizer,
-                    num_warmup_steps=300,
+                    num_warmup_steps=500,
                     num_training_steps=total_steps,
                 )
                 print(f'init scheduler, approximate total step is {total_steps}, warm up steps = 300.')

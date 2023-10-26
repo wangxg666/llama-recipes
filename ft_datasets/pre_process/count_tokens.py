@@ -21,14 +21,3 @@ if __name__ == '__main__':
 
     n_tokens = sum([len(x) for x in datas])
     print(f'pre load {len(datas)} datas from {len(input_files)} files, {n_tokens / 1024 / 1024 / 1024}B tokens')
-
-    NUM_VALID = 10000
-
-    pickle.dump(datas[0:NUM_VALID], open(f'/home/paperspace/xingguang/datasets/pre-training-shuffle/tokenized.13b/valid.bin', 'wb'))
-
-    datas = datas[NUM_VALID:]
-    n_parts = 100
-    chunk = len(datas) // n_parts
-    for i in range(n_parts):
-        pickle.dump(datas[i*chunk: i*chunk+chunk], open(f'/home/paperspace/xingguang/datasets/pre-training-shuffle/tokenized.13b/train.part-{str(i+1000)[1:]}.bin', 'wb'))
-
