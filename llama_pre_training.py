@@ -197,13 +197,14 @@ def main(**kwargs):
 
 
     # pre-train 的学习率不变
-    scheduler = get_scheduler(
-        SchedulerType.CONSTANT,
-        optimizer=optimizer,
-        num_warmup_steps=0,
-        num_training_steps=-1,
-    )
+    # scheduler = get_scheduler(
+    #     SchedulerType.CONSTANT,
+    #     optimizer=optimizer,
+    #     num_warmup_steps=0,
+    #     num_training_steps=-1,
+    # )
     # scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
+    scheduler = None
 
     def build_dataset(split, shuffle=False):
         dataset = get_preprocessed_dataset(
@@ -220,6 +221,7 @@ def main(**kwargs):
             rank=dist.get_rank(),
             num_replicas=dist.get_world_size(),
             shuffle=shuffle,
+            drop_last=True
         )
 
         dataloader = torch.utils.data.DataLoader(
@@ -236,11 +238,12 @@ def main(**kwargs):
 
     accu_step = 0
 
-
     os.makedirs(train_config.output_dir, exist_ok=True)
     if train_config.enable_fsdp and not train_config.use_peft:
         save_dir = train_config.output_dir
         save_train_params(save_dir, train_config, fsdp_config, rank)
+
+    dataset_config.world_size = world_size
 
     for epoch in range(train_config.num_epochs):
         filenames = [f for f in sorted(os.listdir(f'{dataset_config.root}/{dataset_config.dataset_dir}')) if 'train' in f]
@@ -255,6 +258,16 @@ def main(**kwargs):
             dataset_config.input_file = 'valid.bin'
             dataset_config.sample_ratio = 0.1
             valid_sampler, valid_dataloader = build_dataset('test', False)
+            
+            if not scheduler:
+                total_steps = len(filenames) * len(train_dataloader) * 1.5
+                scheduler = get_scheduler(
+                    SchedulerType.COSINE,
+                    optimizer=optimizer,
+                    num_warmup_steps=300,
+                    num_training_steps=total_steps,
+                )
+                print(f'init scheduler, approximate total step is {total_steps}, warm up steps = 300.')
 
             num_training_steps = len(train_dataloader)
             if rank == 0:

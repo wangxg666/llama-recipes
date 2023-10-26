@@ -39,7 +39,6 @@ class _MyPreTrainDataset(Dataset):
 
         self.tokenizer = tokenizer
         self.chunk_size = chunk_size
-
         self.get_input_datas(dataset_config, split)
 
     def get_input_datas(self, dataset_config, split):
@@ -48,8 +47,9 @@ class _MyPreTrainDataset(Dataset):
 
         for input_file in self.input_files:
             input_ids.extend(pickle.load(open(input_file, 'rb')))
+
         if dataset_config.sample_ratio < 1.:
-            input_ids = [x for x in input_ids if random.random() <= dataset_config.sample_ratio]
+            input_ids = input_ids[0:int(len(input_ids) * dataset_config.sample_ratio)]
             print(f'sample data by {dataset_config.sample_ratio}, size = {len(input_ids)}')
 
         self.input_token_ids = np.concatenate(input_ids)

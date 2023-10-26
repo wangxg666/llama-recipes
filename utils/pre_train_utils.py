@@ -284,6 +284,7 @@ def evaluation(model, train_config, eval_dataloader, local_rank, tokenizer):
     eval_loss = 0.0  # Initialize evaluation loss
     with MemoryTrace() as memtrace:
         for step, batch in enumerate(tqdm(eval_dataloader, colour="green", desc="evaluating Epoch")):
+        # for step, batch in enumerate(eval_dataloader):
             for key in batch.keys():
                 if train_config.enable_fsdp:
                     batch[key] = batch[key].to(local_rank)
@@ -300,10 +301,14 @@ def evaluation(model, train_config, eval_dataloader, local_rank, tokenizer):
             eval_preds.extend(
                 tokenizer.batch_decode(preds.detach().cpu().numpy(), skip_special_tokens=True)
             )
+            # print(f'\nlocal rank = {local_rank}, data size = {len(eval_dataloader)}, current step = {step}', flush=True)
+
 
     # If there's more than one CUDA device, reduce evaluation loss across all devices
     if torch.cuda.device_count() > 1 and train_config.enable_fsdp:
         dist.all_reduce(eval_loss, op=dist.ReduceOp.SUM)
+
+    # print(f'\nlocal rank = {local_rank}, data size = {len(eval_dataloader)}, eval loss = {eval_loss}', flush=True)
 
     # Compute average loss and perplexity
     eval_epoch_loss = eval_loss / len(eval_dataloader)
