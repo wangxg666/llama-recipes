@@ -7,6 +7,8 @@ import copy
 import json
 import os
 import gzip
+import pickle
+import numpy as np
 import torch
 
 from sentencepiece import SentencePieceProcessor
@@ -36,13 +38,7 @@ class NewsCommentDataset(Dataset):
         input_dir = f'{dataset_config.root}/{dataset_config.dataset_dir}/'
         input_file = 'train' if partition == 'train' else 'valid'
 
-        features = []
-        for data in open(f'{input_dir}/{input_file}.feature'):
-            features.append(json.loads(str(data, 'utf8')))
-        self.doc2feature = {obj['docid']: obj for obj in features}
-
-        self.items = [json.loads(str(data, 'utf8')) for data in open(f'{input_dir}/{input_file}.dialog')]
-        self.items = [item for item in self.items if item['docid'] in self.doc2feature]
+        self.items = pickle.load(open(f'{input_dir}/{input_file}.bin', 'rb'))
 
         if partition == 'train':
             self.items = self.items[0:500]
@@ -55,67 +51,16 @@ class NewsCommentDataset(Dataset):
 
     def __getitem__(self, index):
         item = self.items[index]
-        feature = self.doc2feature[item['docid']]
-        return NewsCommentDataset.process_item(item, feature, self.tokenizer, self.max_words)
-
-    @staticmethod
-    def process_item(item, feature, tokenizer, max_words, do_padding=True):
-        input_txt = PROMPT.format_map(feature)
-        input_ids = tokenizer.encode(input_txt)
-
-        labels = [IGNORE_INDEX for _ in input_ids]
-
-        for round in item['dialog']:
-            user = round['user']
-            reply_to = round['reply_to']
-            comment = round['comment']
-
-            round_prompt = ''
-            round_label = ''
-            if user == YOU:
-                if reply_to:
-                    round_prompt += f'r reply to {reply_to}'
-                round_prompt = f'\n\n{user}{round_prompt}:\n'
-                round_label = f'{comment} </s>'
-
-            else:
-                if reply_to:
-                    round_prompt += f'\'s reply to {reply_to}'
-                round_prompt += ':\n'
-                round_prompt += comment
-                round_prompt = f'\n\n[INST]\n{user}{round_prompt}\n[/INST]'
-
-            """
-                input: \n\nYou:\n
-                tokenize: ['▁', '<0x0A>', '<0x0A>', 'You', ':', '<0x0A>']
-                input_ids: [1, 29871, 13, 13, 3492, 29901, 13]
-                需要去掉的 [1, 29871, 13, 13] -> "<s> \n\n"
-                加两个回车，然后通过[3:] 操作跳过前4个操作符，能够确保结果跟一次性tokenize尽可能一致
-            """
-            # print(tokenizer.tokenize(round_prompt))
-            # print(tokenizer(round_prompt)['input_ids'])
-            round_prompt_ids = tokenizer.encode(round_prompt)[3:]
-
-            if round_label:
-                # print(tokenizer.tokenize(round_prompt + round_label))
-                # print(tokenizer(round_prompt + round_label)['input_ids'])
-                round_prompt_label_ids = tokenizer.encode(round_prompt + round_label)[3:]
-                round_label_ids = round_prompt_label_ids[len(round_prompt_ids):]
-            else:
-                round_label_ids = []
-
-            input_ids.extend(round_prompt_ids + round_label_ids)
-            labels.extend([IGNORE_INDEX for _ in round_prompt_ids] + round_label_ids)
-
-        if input_ids[-1] != tokenizer.eos_token_id:
-            input_ids.append(tokenizer.eos_token_id)
-            labels.append(tokenizer.eos_token_id)
+        input_ids = item['input_ids'].astype(np.int64)
+        labels_pos = item['labels_pos']
+        labels = np.zeros_like(input_ids, dtype=np.int64) - IGNORE_INDEX
+        labels[labels_pos] = input_ids[labels_pos]
 
         input_ids = torch.tensor(input_ids, dtype=torch.int64)
         labels = torch.tensor(labels, dtype=torch.int64)
 
-        padding = max_words - input_ids.shape[0]
-        if padding > 0 and do_padding:
+        padding = self.max_words - input_ids.shape[0]
+        if padding > 0:
             input_ids = torch.cat((input_ids, torch.zeros(padding, dtype=torch.int64) - 1))
             labels = torch.cat((labels, torch.zeros(padding, dtype=torch.int64) - 1))
 
@@ -123,9 +68,9 @@ class NewsCommentDataset(Dataset):
             input_ids[~input_ids.ge(0)] = 0
 
         return {
-            "input_ids": input_ids[: max_words],
-            "labels": labels[: max_words],
-            "attention_mask": input_ids[: max_words].ge(0),
+            "input_ids": input_ids[: self.max_words],
+            "labels": labels[: self.max_words],
+            "attention_mask": input_ids[: self.max_words].ge(0),
         }
 
 

@@ -4,10 +4,10 @@ set -x
 MODEL_TYPE="7b"
 WORK_DIR="/home/paperspace/xingguang/models/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
-DATASET_NAME="my_news_comment_dataset"
+DATASET_NAME="my_news_comment_tokenized_dataset"
 DATASET_DIR="comment.v01"
 
-LR=3e-5
+LR=2e-5
 BATCH_SIZE=4
 EPOCH=1
 

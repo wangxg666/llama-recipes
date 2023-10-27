@@ -68,3 +68,6 @@ class my_pre_train_dataset(my_common_dataset_config):
 
 class my_news_comment_dataset(my_common_dataset_config):
     dataset: str = "my_news_comment_dataset"
+
+class my_news_comment_tokenized_dataset(my_common_dataset_config):
+    dataset: str = "my_news_comment_tokenized_dataset"
