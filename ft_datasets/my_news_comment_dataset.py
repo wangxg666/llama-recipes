@@ -6,32 +6,46 @@
 import copy
 import json
 import os
+import gzip
 import torch
 
 from sentencepiece import SentencePieceProcessor
 from torch.utils.data import Dataset
+from transformers import LlamaTokenizer
 from typing import List
 
 IGNORE_INDEX = -100  # The default setting in CrossEntropyLoss
 
-PROMPT_DICT = {
-    'dialog': (
-        "Below is an instruction that describes a task, paired with an input that provides further context. \n"
-        "Write a comment that appropriately reflect the news's `title` and `content`\n\n"
-        "### Title:\n{title}\n\n"
-        "### Content:\n{content}\n\n"
-        "### Comment:\n"
-    )
-}
-
+YOU = 'You'
+PROMPT = (
+    "<<SYS>>\n"
+    "You are a senior news commentator, that is good at understanding the key points of news and making accurate comments.\n"
+    "Here is a news data with `title`, `content` and some comment history.\n"
+    "Please make a new comment or reply to the specified user based on the command.\n"
+    "### title:\n{title}\n"
+    "### content:\n{content}\n"
+    "<</SYS>>"
+    # "You:\n{comment} </s>\n"
+    # "[INST] User A reply to You: {other_coments} [/INST]\n" # 如果有多轮，重复多行
+    # "[INST] User A reply to User B: {other_coments} [/INST]\n" # 如果有多轮，重复多行
+    # "Your reply to User A: {reply} </s>"
+)
 
 class NewsCommentDataset(Dataset):
-    def __init__(self, dataset_config, tokenizer, partition="train", max_words=30):
-        self.items = json.load(open(dataset_config.data_path))
-        if partition == "train":
-            self.items = self.items[200:]
-        else:
-            self.items = self.items[:200]
+    def __init__(self, dataset_config, tokenizer, partition="train", max_words=4096):
+        input_dir = f'{dataset_config.root}/{dataset_config.dataset_dir}/'
+        input_file = 'train' if partition == 'train' else 'valid'
+
+        features = []
+        for data in gzip.open(f'{input_dir}/{input_file}.feature.gz', 'rb'):
+            features.append(json.loads(str(data, 'utf8')))
+        self.doc2feature = {obj['docid']: obj for obj in features}
+
+        self.items = [json.loads(data) for data in open(f'{input_dir}/{input_file}.dialog.txt')]
+        self.items = [item for item in self.items if item['docid'] in self.doc2feature]
+
+        if partition == 'train':
+            self.items = self.items[0:500]
 
         self.max_words = max_words
         self.tokenizer = tokenizer
@@ -41,41 +55,72 @@ class NewsCommentDataset(Dataset):
 
     def __getitem__(self, index):
         item = self.items[index]
-        return NewsCommentDataset.process_item(item, self.tokenizer, self.max_words)
+        feature = self.doc2feature[item['docid']]
+        return NewsCommentDataset.process_item(item, feature, self.tokenizer, self.max_words)
 
     @staticmethod
-    def process_item(item, tokenizer, max_words):
-        owner = item['dialog'][0]['user']
-        u2nick = {owner: 'You'}
-        for round in item['dialog']:
-            if round['user'] not in u2nick:
-                u2nick[round['user']] = f'User {len(u2nick)}'
-
-        input_txt = PROMPT_DICT["dialog"].format_map(item)
+    def process_item(item, feature, tokenizer, max_words):
+        input_txt = PROMPT.format_map(feature)
         input_ids = tokenizer.encode(input_txt)
+
         labels = [IGNORE_INDEX for _ in input_ids]
 
         for round in item['dialog']:
             user = round['user']
+            reply_to = round['reply_to']
             comment = round['comment']
-            round_txt = f'\n{u2nick[user]}: \n{comment}'
-            round_ids = tokenizer.encode(round_txt)[1:]  # remove first token id `1`
 
-            if user == owner:
-                round_labels = copy.deepcopy(round_ids)
+            round_prompt = ''
+            round_label = ''
+            if user == YOU:
+                if reply_to:
+                    round_prompt += f'r reply to {reply_to}'
+                round_prompt = f'\n\n{user}{round_prompt}:\n'
+                round_label = f'{comment} </s>'
+
             else:
-                round_labels = [IGNORE_INDEX for _ in round_ids]
+                if reply_to:
+                    round_prompt += f'\'s reply to {reply_to}'
+                round_prompt += ':\n'
+                round_prompt += comment
+                round_prompt = f'\n\n[INST]\n{user}{round_prompt}\n[/INST]'
 
-            input_ids.extend(round_ids)
-            labels.extend(round_labels)
+            """
+                input: \n\nYou:\n
+                tokenize: ['▁', '<0x0A>', '<0x0A>', 'You', ':', '<0x0A>']
+                input_ids: [1, 29871, 13, 13, 3492, 29901, 13]
+                需要去掉的 [1, 29871, 13, 13] -> "<s> \n\n"
+                加两个回车，然后通过[3:] 操作跳过前4个操作符，能够确保结果跟一次性tokenize尽可能一致
+            """
+            # print(tokenizer.tokenize(round_prompt))
+            # print(tokenizer(round_prompt)['input_ids'])
+            round_prompt_ids = tokenizer.encode(round_prompt)[3:]
 
-        input_ids = torch.tensor(input_ids + [tokenizer.eos_token_id], dtype=torch.int64)
-        labels = torch.tensor(labels + [tokenizer.eos_token_id], dtype=torch.int64)
+            if round_label:
+                # print(tokenizer.tokenize(round_prompt + round_label))
+                # print(tokenizer(round_prompt + round_label)['input_ids'])
+                round_prompt_label_ids = tokenizer.encode(round_prompt + round_label)[3:]
+                round_label_ids = round_prompt_label_ids[len(round_prompt_ids):]
+            else:
+                round_label_ids = []
+
+            input_ids.extend(round_prompt_ids + round_label_ids)
+            labels.extend([IGNORE_INDEX for _ in round_prompt_ids] + round_label_ids)
+
+        if input_ids[-1] != tokenizer.eos_token_id:
+            input_ids.append(tokenizer.eos_token_id)
+            labels.append(tokenizer.eos_token_id)
+
+        input_ids = torch.tensor(input_ids, dtype=torch.int64)
+        labels = torch.tensor(labels, dtype=torch.int64)
 
         padding = max_words - input_ids.shape[0]
         if padding > 0:
             input_ids = torch.cat((input_ids, torch.zeros(padding, dtype=torch.int64) - 1))
             labels = torch.cat((labels, torch.zeros(padding, dtype=torch.int64) - 1))
+
+            labels[~input_ids.ge(0)] = -100
+            input_ids[~input_ids.ge(0)] = 0
 
         return {
             "input_ids": input_ids[: max_words],
@@ -87,32 +132,84 @@ class NewsCommentDataset(Dataset):
 
 if __name__ == '__main__':
     item = {
-        "docid": "0mDBslHA",
-        "title": "Is Gabapentin a Narcotic or Controlled Substance ?",
-        "content": "Gabapentin is n't a narcotic or federally controlled substance , but it is regulated and recognized as a controlled substance in certain states . Gabapentin is approved by the Food and Drug Administration -LRB- FDA -RRB- to treat seizure disorders and neuropathic pain . Some people misuse the prescription medication alongside opioids to boost their effects , though this the risk of unintentional opioid poisoning and death . This has led several U.S. states to classify gabapentin as a controlled substance , with more potentially looking to do the same . There have also been calls for the Drug Enforcement Administration -LRB- DEA -RRB- to classify the medication as a federally controlled substance , though some doctors disagree with such a move . Read on to find out more about gabapentin 's current classification status across the United States and the various side effects and risks of the medication . What class of drug is gabapentin ? Gabapentin has been a federally noncontrolled substance since its FDA approval in 1993 . It 's typically used for epilepsy and nerve pain , a severe symptom that other prescription medications can often not manage . But some states do control its use , labeling gabapentin as a Schedule 5 controlled substance . Why does gabapentin 's drug class vary from state to state ? Although gabapentin is n't controlled federally , some states have listed it as a controlled substance and therefore regulate its use . That 's because there have been increasing reports of gabapentin being misused , whether by being combined with opioids or used alone for nonprescribed reasons . Some neurologists believe that stricter gabapentin regulation may lead to greater opioid use and make it harder for people with neuropathic pain to receive proper care . The following states classify gabapentin as a controlled substance : Alabama Kentucky Michigan North Dakota Virginia West Virginia Several other states require gabapentin prescriptions to be monitored , allowing authorities to detect potential misuse : Connecticut Indiana Kansas Massachusetts Minnesota Nebraska New Jersey Ohio Oregon Utah Washington , D.C. Wisconsin Wyoming These lists may be subject to change . What side effects are possible when using gabapentin ? Gabapentin is generally well tolerated and safe for most people to use . But as with any medication , there 's a risk of side effects . Misuse can increase the risk of side effects . Potential side effects include : In rare cases , more serious side effects include : long lasting stomach pain or nausea and vomiting new or worsening depression , anxiety , or irritability unusual bruising or bleeding If you experience any of the above symptoms , seek immediate medical attention or contact your local emergency services . Before taking gabapentin , tell your doctor if you : are pregnant or planning to become pregnant currently take opioids , sleep medication , or anxiety medication have diabetes , myasthenia gravis , or myoclonus have difficulty breathing or a history of respiratory conditions have a history of kidney conditions have a history of suicidal thoughts or self-harm What risks are possible when using gabapentin ? When first taking gabapentin , it 's best to be cautious when driving , using machinery , or drinking alcohol . The medication can cause drowsiness , which may affect your ability to do certain things , or have an adverse reaction when mixed with alcohol . But the biggest risks of gabapentin come when people take the medication with opioids , or if a person already has a substance use disorder . In these cases , there may be an increased risk of dependence or overdose . Serious breathing troubles can in people with respiratory conditions , like chronic obstructive pulmonary disease -LRB- COPD -RRB- or asthma , or related risk factors . Finally , there may be a higher risk of fetal cardiac abnormalities in pregnant people , according to a 2020 study . But the same study did not find evidence of a link between gabapentin use and major fetal abnormalities overall . When to consult a doctor or other healthcare professional Before taking any new medication , it 's a good idea to talk with a healthcare professional . Let them know if you currently take any opioid medication or medications for anxiety or sleep , or if you have any health conditions , such as breathing disorders , kidney disease , or diabetes . It 's important to be honest about any drug or alcohol use or misuse . This will help your clinician determine whether gabapentin is safe for you , or if there 's a better alternative . The bottom line While there have been calls to make gabapentin a controlled substance across the United States , there are currently only limitations in some states . Concerns revolve around its use alongside opioids and the potentially dangerous effects of this combination . Lauren Sharkey is a U.K.-based journalist and author specializing in women 's issues . When she is n't trying to discover a way to banish migraines , she can be found uncovering the answers to your lurking health questions . She has also written a book profiling young female activists across the globe and is currently building a community of such resisters . Catch her on Twitter .",
-        "dialog": [
+        "docid":"0fEbGsKB",
+        "dialog":[
             {
-                "cid":"s2e4rz19z541",
-                "user":"Mary Dowdell",
-                "comment":"So the damn answer is YES..IT IS A NARCOTIC ",
-                "is_label":True
+                "cid":"ranmj129o951",
+                "pre_cid":"",
+                "user":"You",
+                "comment":"am sitting at the bar right now on my day off and there's a guy in here having a beer working from home, maybe that's why companies want you in the office",
+                "reply_to":""
             },
             {
-                "cid":"s2mlfi084qfh",
-                "user":"Laura Stclair",
-                "comment":"NO!ITS NOT",
-                "is_label":False
+                "cid":"ranndj22e5qv",
+                "pre_cid":"ranmj129o951",
+                "user":"User A",
+                "comment":"if that guy is being productive and getting his work done then who cares? I'm sure his boss doesn't of that's the case.",
+                "reply_to":"You"
             },
             {
-                "cid":"s2mmju19z541",
-                "user":"Mary Dowdell",
-                "comment":"WHERE IM FROM YES TF IT IS ",
-                "is_label":True
+                "cid":"rannmv29o951",
+                "pre_cid":"ranndj22e5qv",
+                "user":"You",
+                "comment":"I know lots of alcoholic who can function at work and still get fired what's the difference",
+                "reply_to":"User A"
+            },
+            {
+                "cid":"rannp522e5qv",
+                "pre_cid":"rannmv29o951",
+                "user":"User A",
+                "comment":"I used to have a beer at lunch every now and then when I used to go into the office and I still got my job done. this is no different.",
+                "reply_to":"You"
+            },
+            {
+                "cid":"rannrt29o951",
+                "pre_cid":"rannp522e5qv",
+                "user":"You",
+                "comment":"who says his boss knows he's at the bar drinking on company time 99% of companies don't let there employees drink on the clock",
+                "reply_to":"User A"
+            },
+            {
+                "cid":"rano4t22e5qv",
+                "pre_cid":"rannrt29o951",
+                "user":"User A",
+                "comment":"and way to throw a random stat about drinking on company time which technically you're not when you're on your lunch break since most companies don't pay for the time you're out to lunch",
+                "reply_to":"You"
+            },
+            {
+                "cid":"ranodd29o951",
+                "pre_cid":"rano4t22e5qv",
+                "user":"You",
+                "comment":"so the guy who is at the bar for a couple hours on company time is ok if your the owner of a business is what your telling me",
+                "reply_to":"User A"
+            },
+            {
+                "cid":"ranp7t22e5qv",
+                "pre_cid":"ranodd29o951",
+                "user":"User A",
+                "comment":"so you know how much this guy was drinking? were you there for hours counting how many beers he was drinking? like I said if the guy is getting his job done I doubt he company cares but once it effects his work then the guy is going to get in trouble and possibly fired",
+                "reply_to":"You"
+            },
+            {
+                "cid":"ranpag29o951",
+                "pre_cid":"ranp7t22e5qv",
+                "user":"You",
+                "comment":"actually I got here before the guy we talked he told me he was at work we laughed had 3 beers and 2 shots together and then he left",
+                "reply_to":"User A"
             }
-        ]
+        ],
+        "num_labels":5
     }
-
+    feature = {
+        'title': 'Auto Parts Carry Millions in Smuggled Meth and Other Drugs Into the U.S. and Canada',
+        'content': "The opioid crisis has made headlines in recent years . But fentanyl is n't the only drug fueling overdose deaths across the nation . Methamphetamine use has also grown , as have fatal overdoses . Law enforcement is cracking down on the manufacturing and distribution of these and other controlled substances . But transnational criminal organizations -LRB- TCOs -RRB- use increasingly sophisticated trafficking techniques to thwart detection . For example , TCO drug traffickers stash meth in auto parts and vehicles transported via semi-trucks to the United States and Canada . The auto parts smuggling scheme For the past few years , authorities in the United States and Canada have stopped tractor-trailers transporting auto parts or vehicles from Mexico . In June 2019 , Canadian border patrol agents seized a 400-pound shipment of methamphetamine hidden in the spare tires of 14 Ford Fusion sedans . Apparently , the Sinaloa Cartel had failed to extract the drugs from the cars before they went to nine Ontario Ford dealerships . The cartel had accessed the vehicles after their assembly at a plant in Hermosillo , Mexico , according to The Drive . And in June 2020 , U.S. Customs and Border Protection -LRB- CBP -RRB- agents seized $ 420,000 worth of meth from a tractor-trailer hauling auto parts from Nuevo Laredo , Tamaulipas , to Laredo , Texas , News4SA reports . April 19-21 , 2021 : CBP officers in Laredo foiled four separate smuggling attempts resulting in the seizure of $ 11M in narcotics . In total : ▪ 432lbs of meth ▪ 134lbs of cocaine ▪ 41lbs of heroin ▪ 16lbs of fentanyl #CBPTop5 RELEASE : https://t.co/GdMYEOyiTL pic.twitter.com/f1Cbn1yghz -- CBP -LRB- @CBP -RRB- December 28 , 2021 In addition , CBP agents seized a record-breaking amount of meth and fentanyl in a tractor-trailer at the U.S.-Mexico border in November 2021 . Carlos Martin Quintana-Arias attempted to sneak almost 18,000 pounds of the drugs through the Otay Mesa Port of Entry in San Diego . According to The Guardian , most of the drugs were meth -LRB- 17,500 pounds -RRB- , with the remaining 389 pounds consisting of fentanyl . Most recently , a Mexican national was arrested for trying to drive a semi-truck filled with meth into the U.S. His trailer , carrying auto parts , was inspected by a canine unit that detected the illicit drugs . Per CBP , the auto parts contained more than 3,280 pounds of meth bound for Arizona . How common is auto parts drug trafficking ? CBP officers at Laredo Port of Entry seized $ 2.9 M in meth and cocaine in back-to-back seizures on Feb. 16 . Details via @CBPSouthTexas : https://t.co/G2CRirIR3P pic.twitter.com/sSZWmfBRw4 -- CBP -LRB- @CBP -RRB- February 24 , 2020 According to The National Drug Intelligence Center , smuggling meth and other drugs in auto parts is common in the United States . Generally , traffickers use ground transportation . However , smuggled meth has been seized from commercial air and water transport . Mexico-based TCOs typically try to move drugs to staging areas primarily in Arizona , California , and Texas before distributing them nationally . Usually , smugglers use one of seven points of entry : Nogales in Arizona ; Calexico , Otay Mesa , and San Ysidro in California ; and Hidalgo , Laredo , and Pharr in Texas . From there , the drugs are often distributed to markets such as Phoenix , Los Angeles , San Diego , and San Francisco . Mexico-based TCOs are the primary producers and suppliers of meth available in the U.S. , and the Southwest border is the main entry point . Some domestic producers manufacture meth , but none can match the quantity , purity , or potency of the meth produced by Mexico-based TCOs . According to the DEA 's 2020 National Drug Threat Assessment , `` Commonly , traffickers transport multi-kilogram shipments of methamphetamine in privately owned vehicles . Fuel tank concealment remains a widely used technique ... Methamphetamine concealed in tires and other natural voids in vehicles are other popular methods for smuggling . '' Why is meth so dangerous ? Over three months sober after a year and a half long relapse on heroin and some short term meth use , which ravaged my face . Even weeks before I got sober I was absolutely sure I had no chance . Change can come when you least expect it to . Do n't ever believe you 're hopeless pic.twitter.com/0xxUacA1Ud -- taylor nicole dean -LRB- @taylorndean -RRB- August 14 , 2021 If you 're unfamiliar with meth -LRB- and the TV show Breaking Bad did n't scare you enough -RRB- , it 's a relatively cheap drug that can release as much as four times that amount of dopamine as cocaine . Dopamine is a neurotransmitter that sends signals of pleasure to the body . Ingesting meth stimulates the production of dopamine , which is then sent through the body 's nervous system , creating a euphoric feeling . According to the Addiction Center , a single dose costs as little as $ 5 . However , methamphetamine overdoses occur at nearly twice the rate of heroin overdoses , making meth quite deadly . Further , chronic meth use alters the areas of the brain associated with emotion and memory and can result in anxiety , confusion , insomnia , hallucinations , delusions , and violent behavior . These symptoms can last long after a user has quit meth . Weight loss , tooth decay , and skin sores are also common symptoms . Meth has historically had a high prevalence in the American West , Midwest , and Southeast . However , the Drug Enforcement Administration has noted a growing market for the drug in the Northeast . Unfortunately , its migration is also fueling a growth in overdose deaths , which , according to WebMD , nearly tripled between 2015 and 2019 . How to get help : In the U.S. , contact the Substance Abuse and Mental Health Services Administration helpline at 1-800-662-4357 .",
+    }
     from transformers import LlamaTokenizer
 
     tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
-    NewsCommentDataset.process_item(item, tokenizer, 2048)
+    out = NewsCommentDataset.process_item(item, feature, tokenizer, 4096)
+
+    print(out['labels'].tolist())
+    print(out['input_ids'].tolist())
+    print(tokenizer.decode([x for x in out['input_ids'] if x != -1]))
+    # print(tokenizer.decode([x for x in out['labels'] if x != -1 and x != -100]).replace('</s>', '</s>\n'))

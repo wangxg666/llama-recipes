@@ -4,11 +4,11 @@ set -x
 MODEL_TYPE="7b"
 WORK_DIR="/home/paperspace/xingguang/models/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
-DATASET_NAME="my_allin_one_dataset"
-DATASET_DIR="answer_extractor.v027"
+DATASET_NAME="my_news_comment_dataset"
+DATASET_DIR="comment.v01"
 
 LR=3e-5
-BATCH_SIZE=8
+BATCH_SIZE=4
 EPOCH=1
 
 TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}"
@@ -16,7 +16,7 @@ ts=$(date +"%Y-%m-%d")
 
 cd ..
 
-CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
+CUDA_VISIBLE_DEVICES="4,5,6,7" torchrun \
   --nnodes 1 \
   --nproc_per_node 4 \
   --master_port=1201 \
@@ -31,7 +31,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --lr ${LR} \
   --valid_batch_size ${BATCH_SIZE} \
   --train_batch_size ${BATCH_SIZE} \
-  --micro_batch_size 8 \
+  --micro_batch_size 4 \
   --num_epochs ${EPOCH} \
   --evaluation_steps 100 \
   --check_point_steps 2000 \

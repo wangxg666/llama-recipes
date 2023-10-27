@@ -256,7 +256,7 @@ def main(**kwargs):
 
             # 随机加载验证集
             dataset_config.input_file = 'valid.bin'
-            dataset_config.sample_ratio = 1.
+            dataset_config.sample_ratio = 0.2
             valid_sampler, valid_dataloader = build_dataset('test', False)
             
             if not scheduler:

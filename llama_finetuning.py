@@ -258,13 +258,21 @@ def main(**kwargs):
         print(f'num eval steps = {len(eval_dataloader)}')
         print(f'num data batches = {len(train_dataloader)}')
 
-    scheduler = get_scheduler(
-        "linear",
-        optimizer=optimizer,
-        num_warmup_steps=int(0.03 * num_training_steps),
-        num_training_steps=num_training_steps // gradient_accumulation_steps,
-    )
+    from transformers import get_scheduler, SchedulerType
+    # scheduler = get_scheduler(
+    #     "linear",
+    #     optimizer=optimizer,
+    #     num_warmup_steps=int(0.03 * num_training_steps),
+    #     num_training_steps=num_training_steps // gradient_accumulation_steps,
+    # )
     # scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
+    total_steps = len(train_dataloader) * train_config.num_epochs
+    scheduler = get_scheduler(
+        SchedulerType.COSINE,
+        optimizer=optimizer,
+        num_warmup_steps=int(total_steps * 0.03),
+        num_training_steps=total_steps,
+    )
 
     # Start the training process
     results = train(

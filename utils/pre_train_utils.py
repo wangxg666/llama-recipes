@@ -182,21 +182,7 @@ def train(model,
         for step, batch in enumerate(tqdm(train_dataloader, colour="blue", desc=f"Training")):
             accu_step += 1
 
-            # 改为先做 Evaluation
-            # stream based pre-train eval 使用 step，不使用 accu_step
-            if (accu_step % train_config.check_point_steps == 0
-                    or step % train_config.evaluation_steps == 0
-                    or (step + 1) == len(train_dataloader)
-            ):
-                if accu_step % train_config.check_point_steps == 0 and not torch.isnan(loss).any():
-                    save_model(model, train_config, fsdp_config, rank, None, accu_step=accu_step)
 
-                # validation
-                eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)
-                wandb_writer.log(rank, {
-                    'step': accu_step // gradient_accumulation_steps,
-                    'valid_loss': eval_epoch_loss
-                })
 
             for key in batch.keys():
                 if train_config.enable_fsdp:
@@ -206,16 +192,16 @@ def train(model,
             loss = model(**batch).loss
             loss = loss / gradient_accumulation_steps
 
-            # 如果 loss 出现nan，放弃这一步更新
-            if torch.isnan(loss).any():
-                continue
-
             total_loss += loss.detach().float()
             if train_config.use_fp16:
                 # if fp16 is enabled, use gradient scaler to handle gradient update
                 scaler.scale(loss).backward()
                 if (step + 1) % gradient_accumulation_steps == 0 or step == len(train_dataloader) - 1:
                     nn.utils.clip_grad_norm_(model.parameters(), train_config.max_grad_norm)
+
+                    # 如果 loss 出现nan，放弃这一步更新，梯度直接置零，不更新
+                    if torch.isnan(loss).any():
+                        optimizer.zero_grad()
 
                     scaler.step(optimizer)
                     scaler.update()
@@ -232,15 +218,36 @@ def train(model,
                         nn.utils.clip_grad_norm_(
                             model.parameters(), train_config.max_grad_norm,
                         )
+
+                    # 如果 loss 出现nan，放弃这一步更新，梯度直接置零，不更新
+                    if torch.isnan(loss).any() or torch.isinf(loss).any():
+                        optimizer.zero_grad()
+
                     optimizer.step()
                     optimizer.zero_grad()
                     lr_scheduler.step()
-                    
+
             wandb_writer.log(rank, {
                 'step': accu_step // gradient_accumulation_steps,
                 'step_loss': loss.detach().float(),
                 'learning_rate': lr_scheduler.get_lr()[0]
             })
+
+            # 改为先做 Evaluation
+            # stream based pre-train eval 使用 step，不使用 accu_step
+            if (accu_step % train_config.check_point_steps == 0
+                    or step % train_config.evaluation_steps == 0
+                    or (step + 1) == len(train_dataloader)
+            ):
+                if accu_step % train_config.check_point_steps == 0 and not torch.isnan(loss).any():
+                    save_model(model, train_config, fsdp_config, rank, None, accu_step=accu_step)
+
+                # validation
+                eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)
+                wandb_writer.log(rank, {
+                    'step': accu_step // gradient_accumulation_steps,
+                    'valid_loss': eval_epoch_loss
+                })
 
             if not train_config.enable_fsdp or rank == 0:
                 print(f"\n step {step} is completed and loss is {loss.detach().float()}")
@@ -262,6 +269,7 @@ def train(model,
         print(f"CPU Total Peak Memory consumed during the train (max): {memtrace.cpu_peaked + memtrace.cpu_begin} GB")
         print(f"step {first_step} to {accu_step}: train_perplexity={train_perplexity:.4f}, train_epoch_loss={train_epoch_loss:.4f}, epcoh time {epoch_end_time}s")
 
+    print(f'\ntraining rank {rank} is done.\n', flush=True)
     # save_model(model, train_config, fsdp_config, rank, None, accu_step=accu_step)
 
     return accu_step
