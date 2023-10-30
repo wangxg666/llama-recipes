@@ -1,17 +1,17 @@
 #!/bin/bash
 set -x
 
-MODEL_TYPE="7b"
+MODEL_TYPE="13b"
 WORK_DIR="/home/paperspace/xingguang/models/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_news_comment_tokenized_dataset"
-DATASET_DIR="comment.v01"
+DATASET_DIR="comment.v02"
 
-LR=2e-5
+LR=1e-5
 BATCH_SIZE=4
 EPOCH=1
 
-TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}"
+TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}.Tokenized"
 ts=$(date +"%Y-%m-%d")
 
 cd ..
@@ -33,8 +33,8 @@ CUDA_VISIBLE_DEVICES="4,5,6,7" torchrun \
   --train_batch_size ${BATCH_SIZE} \
   --micro_batch_size 4 \
   --num_epochs ${EPOCH} \
-  --evaluation_steps 100 \
-  --check_point_steps 2000 \
+  --evaluation_steps 500 \
+  --check_point_steps 5000 \
   --wandb_name ${MODEL_TYPE}-${DATASET_DIR}-${TAG}
 
 cd ../

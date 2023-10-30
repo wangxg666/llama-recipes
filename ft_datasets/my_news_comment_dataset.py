@@ -92,13 +92,9 @@ class NewsCommentDataset(Dataset):
                 需要去掉的 [1, 29871, 13, 13] -> "<s> \n\n"
                 加两个回车，然后通过[3:] 操作跳过前4个操作符，能够确保结果跟一次性tokenize尽可能一致
             """
-            # print(tokenizer.tokenize(round_prompt))
-            # print(tokenizer(round_prompt)['input_ids'])
             round_prompt_ids = tokenizer.encode(round_prompt)[3:]
 
             if round_label:
-                # print(tokenizer.tokenize(round_prompt + round_label))
-                # print(tokenizer(round_prompt + round_label)['input_ids'])
                 round_prompt_label_ids = tokenizer.encode(round_prompt + round_label)[3:]
                 round_label_ids = round_prompt_label_ids[len(round_prompt_ids):]
             else:
@@ -117,15 +113,15 @@ class NewsCommentDataset(Dataset):
         padding = max_words - input_ids.shape[0]
         if padding > 0 and do_padding:
             input_ids = torch.cat((input_ids, torch.zeros(padding, dtype=torch.int64) - 1))
-            labels = torch.cat((labels, torch.zeros(padding, dtype=torch.int64) - 1))
+            labels = torch.cat((labels, torch.zeros(padding, dtype=torch.int64) + IGNORE_INDEX))
 
-            labels[~input_ids.ge(0)] = -100
-            input_ids[~input_ids.ge(0)] = 0
+        input_mask = input_ids.ge(0)
+        input_ids[~input_mask] = 0
 
         return {
             "input_ids": input_ids[: max_words],
             "labels": labels[: max_words],
-            "attention_mask": input_ids[: max_words].ge(0),
+            "attention_mask": input_mask[: max_words],
         }
 
 
@@ -211,5 +207,6 @@ if __name__ == '__main__':
 
     print(out['labels'].tolist())
     print(out['input_ids'].tolist())
+    print(out['attention_mask'].tolist())
     print(tokenizer.decode([x for x in out['input_ids'] if x != -1]))
     # print(tokenizer.decode([x for x in out['labels'] if x != -1 and x != -100]).replace('</s>', '</s>\n'))

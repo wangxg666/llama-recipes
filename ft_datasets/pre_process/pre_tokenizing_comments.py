@@ -101,7 +101,6 @@ def process_part(partition, n_thread, i_thread):
     from transformers import LlamaTokenizer
     tokenizer = LlamaTokenizer.from_pretrained(f'meta-llama/Llama-2-{model_type}-hf')
 
-
     gzin = open(f'{work_dir}/{input_file}.feature')
     if i_thread == 0:
         gzin = tqdm.tqdm(gzin)
