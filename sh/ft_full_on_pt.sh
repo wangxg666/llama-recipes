@@ -40,8 +40,3 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --wandb_name ${MODEL_TYPE}-${DATASET_DIR}-${TAG}
 
 cd ../
-
-python inference/checkpoint_converter_fsdp_hf.py \
-  --fsdp_checkpoint_path ${WORK_DIR}/${DATASET_NAME}/${TAG}-${MODEL_NAME}/ \
-  --consolidated_model_path ${WORK_DIR}/${DATASET_NAME}/${TAG}-hf/ \
-  --HF_model_path_or_name ${MODEL_NAME}
