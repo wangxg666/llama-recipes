@@ -5,4 +5,4 @@ __pycache__
 logs/
 wandb/
 .idea/
-bechmark/lm-evaluation-harness
+benchmark/lm-evaluation-harness
