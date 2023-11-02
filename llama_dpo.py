@@ -6,9 +6,16 @@ from typing import Dict, Optional
 import torch
 from datasets import Dataset, load_dataset
 from peft import AutoPeftModelForCausalLM, LoraConfig
+from transformers import (
+    AutoModelForCausalLM, LlamaForCausalLM
+)
 from transformers import AutoTokenizer, HfArgumentParser, TrainingArguments
 
 from trl import DPOTrainer
+from utils.dataset_utils import get_processed_dpo_dataset
+from utils.flash_atn import replace_llama_attn_with_flash_attn
+
+
 
 
 # Define and parse arguments.
@@ -21,12 +28,20 @@ class ScriptArguments:
     # data parameters
     beta: Optional[float] = field(default=0.1, metadata={"help": "the beta parameter for DPO loss"})
 
+    flash_attn: Optional[bool] = field(default=False, metadata={'help': 'use flash attention for llama'})
+
     # training parameters
     model_name_or_path: Optional[str] = field(
         default="../sft/results/final_checkpoint",
         metadata={"help": "the location of the SFT model name or path"},
     )
-    learning_rate: Optional[float] = field(default=5e-4, metadata={"help": "optimizer learning rate"})
+    dataset_name: Optional[str] = field(
+        default='my_news_comment_dpo_dataset', metadata={'help': "data set name with dpo format"}
+    )
+    dataset_version: Optional[str] = field(
+        default='', metadata={'help': 'sub directory of dataset'}
+    )
+    learning_rate: Optional[float] = field(default=2e-6, metadata={"help": "optimizer learning rate"})
     lr_scheduler_type: Optional[str] = field(default="cosine", metadata={"help": "the lr scheduler type"})
     warmup_steps: Optional[int] = field(default=100, metadata={"help": "the number of warmup steps"})
     weight_decay: Optional[float] = field(default=0.05, metadata={"help": "the weight decay"})
@@ -49,7 +64,7 @@ class ScriptArguments:
     max_prompt_length: Optional[int] = field(default=512, metadata={"help": "the maximum prompt length"})
     max_length: Optional[int] = field(default=1024, metadata={"help": "the maximum sequence length"})
     max_steps: Optional[int] = field(default=1000, metadata={"help": "max number of training steps"})
-    logging_steps: Optional[int] = field(default=10, metadata={"help": "the logging frequency"})
+    logging_steps: Optional[int] = field(default=1, metadata={"help": "the logging frequency"})
     save_steps: Optional[int] = field(default=100, metadata={"help": "the saving frequency"})
     eval_steps: Optional[int] = field(default=100, metadata={"help": "the evaluation frequency"})
 
@@ -79,60 +94,20 @@ class ScriptArguments:
     )
 
 
-def get_stack_exchange_paired(
-    data_dir: str = "data/rl",
-    sanity_check: bool = False,
-    cache_dir: str = None,
-    num_proc=24,
-) -> Dataset:
-    """Load the stack-exchange-paired dataset from Hugging Face and convert it to the necessary format.
-
-    The dataset is converted to a dictionary with the following structure:
-    {
-        'prompt': List[str],
-        'chosen': List[str],
-        'rejected': List[str],
-    }
-
-    Prompts are structured as follows:
-      "Question: " + <prompt> + "\n\nAnswer: "
-    """
-    dataset = load_dataset(
-        "lvwerra/stack-exchange-paired",
-        split="train",
-        cache_dir=cache_dir,
-        data_dir=data_dir,
-    )
-    original_columns = dataset.column_names
-
-    if sanity_check:
-        dataset = dataset.select(range(min(len(dataset), 1000)))
-
-    def return_prompt_and_responses(samples) -> Dict[str, str]:
-        return {
-            "prompt": ["Question: " + question + "\n\nAnswer: " for question in samples["question"]],
-            "chosen": samples["response_j"],
-            "rejected": samples["response_k"],
-        }
-
-    return dataset.map(
-        return_prompt_and_responses,
-        batched=True,
-        num_proc=num_proc,
-        remove_columns=original_columns,
-    )
-
 
 if __name__ == "__main__":
     parser = HfArgumentParser(ScriptArguments)
     script_args = parser.parse_args_into_dataclasses()[0]
 
+    # replace flash attention
+    if script_args.flash_attn:
+        replace_llama_attn_with_flash_attn()
+
     # 1. load a pretrained model
-    model = AutoPeftModelForCausalLM.from_pretrained(
+    model = LlamaForCausalLM.from_pretrained(
         script_args.model_name_or_path,
         low_cpu_mem_usage=True,
-        torch_dtype=torch.float16,
-        load_in_4bit=True,
+        torch_dtype=torch.bfloat16,
     )
     model.config.use_cache = False
 
@@ -142,28 +117,23 @@ if __name__ == "__main__":
             name for name, buffer in model.named_buffers() if buffer.dtype == torch.bool
         ]
 
-    model_ref = AutoPeftModelForCausalLM.from_pretrained(
+    model_ref = LlamaForCausalLM.from_pretrained(
         script_args.model_name_or_path,
         low_cpu_mem_usage=True,
-        torch_dtype=torch.float16,
-        load_in_4bit=True,
+        torch_dtype=torch.bfloat16,
     )
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+    if script_args.flash_attn:
+        model_ref.config.use_cache = False
+    model_ref.eval()
+
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-13b-hf")
     tokenizer.pad_token = tokenizer.eos_token
 
     # 2. Load the Stack-exchange paired dataset
-    train_dataset = get_stack_exchange_paired(data_dir="data/rl", sanity_check=script_args.sanity_check)
-    train_dataset = train_dataset.filter(
-        lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
-        and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
-    )
+    train_dataset = get_processed_dpo_dataset(script_args.dataset_name)(script_args.dataset_version, 'train')
 
     # 3. Load evaluation dataset
-    eval_dataset = get_stack_exchange_paired(data_dir="data/evaluation", sanity_check=True)
-    eval_dataset = eval_dataset.filter(
-        lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
-        and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
-    )
+    eval_dataset = get_processed_dpo_dataset(script_args.dataset_name)(script_args.dataset_version, 'test')
 
     # 4. initialize training arguments:
     training_args = TrainingArguments(

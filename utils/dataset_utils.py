@@ -13,6 +13,7 @@ from ft_datasets import (
     get_my_pre_train_dataset,
     get_my_news_comment_dataset,
     get_my_news_comment_tokenized_dataset,
+    get_my_news_comment_dpo_dataset,
 )
 from typing import Optional
 
@@ -25,6 +26,7 @@ DATASET_PREPROC = {
     'my_pre_train_dataset': get_my_pre_train_dataset,
     'my_news_comment_dataset': get_my_news_comment_dataset,
     'my_news_comment_tokenized_dataset': get_my_news_comment_tokenized_dataset,
+    'my_news_comment_dpo_dataset': get_my_news_comment_dpo_dataset,
 }
 
 
@@ -46,3 +48,7 @@ def get_preprocessed_dataset(
         tokenizer,
         get_split(),
     )
+
+
+def get_processed_dpo_dataset(name):
+    return DATASET_PREPROC[name]

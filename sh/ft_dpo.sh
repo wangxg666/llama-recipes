@@ -7,6 +7,8 @@ SFT_MODEL_PATH=""
 LR=1e-5
 LR_SCHEDULER="cosine"
 BATCH_SIZE=4
+DATASET_NAME="my_news_comment_dpo_dataset"
+DATASET_VERSION='dpo.comment.v01'
 
 TAG="${MODEL_TYPE}.${LR}.${LR_SCHEDULER}.B${BATCH_SIZE}.DPO"
 
@@ -15,6 +17,8 @@ cd ..
 CUDA_VISIBLE_DEVICES="4,5,6,7" accelerate launch \
   ./llama_dpo.py \
   --model_name_or_path "${SFT_MODEL_PATH}"  \
+  --dataset_name "${DATASET_NAME}" \
+  --dataset_version "${DATASET_VERSION}" \
   --learning_rate ${LR} \
   --lr_scheduler_type ${LR_SCHEDULER} \
   --warmup_steps 300 \

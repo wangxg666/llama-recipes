@@ -14,6 +14,9 @@ from torch.utils.data import Dataset
 from transformers import LlamaTokenizer
 from typing import List
 
+from configs.datasets import get_data_root
+
+
 IGNORE_INDEX = -100  # The default setting in CrossEntropyLoss
 
 YOU = 'You'
@@ -27,24 +30,18 @@ PROMPT = (
     "<</SYS>>"
 )
 
-class NewsCommentDataset(Dataset):
-    def __init__(self, dataset_config, tokenizer, partition="train", max_words=4096):
-        input_dir = f'{dataset_config.root}/{dataset_config.dataset_dir}/'
+class NewsCommentDPODataset(Dataset):
+    def __init__(self, dataset_dir, partition="train"):
+        input_dir = f'{get_data_root()}/{dataset_dir}/'
         input_file = 'train' if partition == 'train' else 'valid'
 
         features = []
         for data in open(f'{input_dir}/{input_file}.feature'):
-            features.append(json.loads(str(data, 'utf8')))
+            features.append(json.loads(data))
         self.doc2feature = {obj['docid']: obj for obj in features}
 
-        self.items = [json.loads(str(data, 'utf8')) for data in open(f'{input_dir}/{input_file}.dialog')]
+        self.items = [json.loads(data) for data in open(f'{input_dir}/{input_file}.dialog')]
         self.items = [item for item in self.items if item['docid'] in self.doc2feature]
-
-        if partition == 'train':
-            self.items = self.items[0:500]
-
-        self.max_words = max_words
-        self.tokenizer = tokenizer
 
     def __len__(self):
         return len(self.items)
@@ -52,145 +49,65 @@ class NewsCommentDataset(Dataset):
     def __getitem__(self, index):
         item = self.items[index]
         feature = self.doc2feature[item['docid']]
-        return NewsCommentDataset.process_item(item, feature, self.tokenizer, self.max_words)
+        return NewsCommentDPODataset.process_item(item, feature)
 
     @staticmethod
-    def process_item(item, feature, tokenizer, max_words, do_padding=True):
-        input_txt = PROMPT.format_map(feature)
-        input_ids = tokenizer.encode(input_txt)
-
-        labels = [IGNORE_INDEX for _ in input_ids]
-
-        for round in item['dialog']:
+    def process_item(item, feature):
+        prompt = PROMPT.format_map(feature)
+        for round in item['history']:
             user = round['user']
             reply_to = round['reply_to']
             comment = round['comment']
 
             round_prompt = ''
-            round_label = ''
             if user == YOU:
                 if reply_to:
                     round_prompt += f'r reply to {reply_to}'
-                round_prompt = f'\n\n{user}{round_prompt}:\n'
-                round_label = f'{comment} </s>'
+                round_prompt = f'\n{user}{round_prompt}:\n{comment}'
 
             else:
                 if reply_to:
                     round_prompt += f'\'s reply to {reply_to}'
-                round_prompt += ':\n'
-                round_prompt += comment
-                round_prompt = f'\n\n[INST]\n{user}{round_prompt}\n[/INST]'
+                round_prompt += f':\n{comment}'
+                round_prompt = f'\n[INST]\n{user}{round_prompt}\n[/INST]'
+            prompt += round_prompt
 
-            """
-                input: \n\nYou:\n
-                tokenize: ['▁', '<0x0A>', '<0x0A>', 'You', ':', '<0x0A>']
-                input_ids: [1, 29871, 13, 13, 3492, 29901, 13]
-                需要去掉的 [1, 29871, 13, 13] -> "<s> \n\n"
-                加两个回车，然后通过[3:] 操作跳过前4个操作符，能够确保结果跟一次性tokenize尽可能一致
-            """
-            round_prompt_ids = tokenizer.encode(round_prompt)[3:]
+        reply_w = item['reply_w']
+        reply_l = item['reply_l']
 
-            if round_label:
-                round_prompt_label_ids = tokenizer.encode(round_prompt + round_label)[3:]
-                round_label_ids = round_prompt_label_ids[len(round_prompt_ids):]
-            else:
-                round_label_ids = []
-
-            input_ids.extend(round_prompt_ids + round_label_ids)
-            labels.extend([IGNORE_INDEX for _ in round_prompt_ids] + round_label_ids)
-
-        if input_ids[-1] != tokenizer.eos_token_id:
-            input_ids.append(tokenizer.eos_token_id)
-            labels.append(tokenizer.eos_token_id)
-
-        input_ids = torch.tensor(input_ids, dtype=torch.int64)
-        labels = torch.tensor(labels, dtype=torch.int64)
-
-        padding = max_words - input_ids.shape[0]
-        if padding > 0 and do_padding:
-            input_ids = torch.cat((input_ids, torch.zeros(padding, dtype=torch.int64) - 1))
-            labels = torch.cat((labels, torch.zeros(padding, dtype=torch.int64) + IGNORE_INDEX))
-
-        input_mask = input_ids.ge(0)
-        input_ids[~input_mask] = 0
+        reply_to = reply_w['reply_to']
+        if reply_to:
+            prompt += f'\nYour reply to {reply_to}:\n'
+        else:
+            prompt += '\n You:\n'
 
         return {
-            "input_ids": input_ids[: max_words],
-            "labels": labels[: max_words],
-            "attention_mask": input_mask[: max_words],
+            "prompt": prompt,
+            "chosen": reply_w['comment'],
+            "rejected": reply_l['comment'],
         }
-
 
 
 if __name__ == '__main__':
     item = {
-        "docid":"0fEbGsKB",
-        "dialog":[
+        "docid":"0pIZFupi",
+        "history":[
             {
-                "cid":"ranmj129o951",
-                "pre_cid":"",
-                "user":"You",
-                "comment":"am sitting at the bar right now on my day off and there's a guy in here having a beer working from home, maybe that's why companies want you in the office",
-                "reply_to":""
-            },
-            {
-                "cid":"ranndj22e5qv",
-                "pre_cid":"ranmj129o951",
                 "user":"User A",
-                "comment":"if that guy is being productive and getting his work done then who cares? I'm sure his boss doesn't of that's the case.",
-                "reply_to":"You"
-            },
-            {
-                "cid":"rannmv29o951",
-                "pre_cid":"ranndj22e5qv",
-                "user":"You",
-                "comment":"I know lots of alcoholic who can function at work and still get fired what's the difference",
-                "reply_to":"User A"
-            },
-            {
-                "cid":"rannp522e5qv",
-                "pre_cid":"rannmv29o951",
-                "user":"User A",
-                "comment":"I used to have a beer at lunch every now and then when I used to go into the office and I still got my job done. this is no different.",
-                "reply_to":"You"
-            },
-            {
-                "cid":"rannrt29o951",
-                "pre_cid":"rannp522e5qv",
-                "user":"You",
-                "comment":"who says his boss knows he's at the bar drinking on company time 99% of companies don't let there employees drink on the clock",
-                "reply_to":"User A"
-            },
-            {
-                "cid":"rano4t22e5qv",
-                "pre_cid":"rannrt29o951",
-                "user":"User A",
-                "comment":"and way to throw a random stat about drinking on company time which technically you're not when you're on your lunch break since most companies don't pay for the time you're out to lunch",
-                "reply_to":"You"
-            },
-            {
-                "cid":"ranodd29o951",
-                "pre_cid":"rano4t22e5qv",
-                "user":"You",
-                "comment":"so the guy who is at the bar for a couple hours on company time is ok if your the owner of a business is what your telling me",
-                "reply_to":"User A"
-            },
-            {
-                "cid":"ranp7t22e5qv",
-                "pre_cid":"ranodd29o951",
-                "user":"User A",
-                "comment":"so you know how much this guy was drinking? were you there for hours counting how many beers he was drinking? like I said if the guy is getting his job done I doubt he company cares but once it effects his work then the guy is going to get in trouble and possibly fired",
-                "reply_to":"You"
-            },
-            {
-                "cid":"ranpag29o951",
-                "pre_cid":"ranp7t22e5qv",
-                "user":"You",
-                "comment":"actually I got here before the guy we talked he told me he was at work we laughed had 3 beers and 2 shots together and then he left",
-                "reply_to":"User A"
+                "reply_to":"",
+                "comment":"It's okay to cut a little. But why isn't it okay to make the top pay a little more to get the budget balanced? Why should grandma take a cut on her ssi check that barley pays utilities when the mega rich don't pay theor fair share? America is going down fast and gets just what she deserves. Ignorance is bliss. Whatever happened to politicians who worked for the good of the American people. now it's all about work for your donor. Not even representing your own party anymore. Come on China, Russia, Iran, and get this over with. "
             }
         ],
-        "num_labels":5
+        "reply_w":{
+            "user":"You",
+            "reply_to":"User A",
+            "comment":"The majority of the country is working. The smallest class of people in America are poor and rich. The working pay into Medicare, SSI, State and Federal taxes. Some poor people paid more in taxes than president Trump. He said himself it's not his fault, he played by the ridiculous rules we have. I agree with him. When Joe the plumber pays in more than a billionaire, we have a problem. Rich shouldn't pay it all by themselves either. But realistically, they need to pay their share and some poor people may loose a little. These things are what caused the Babylonian, Persian, British, and Roman empire to fall. History repeating when the poor amd working people get tired......"
+        },
+        "reply_l":{
+            "user":"You",
+            "reply_to":"User A",
+            "comment":"The top 1% all ready pays 40% of all taxes. They pay their share. Why deincentivise the largest producers"
+        }
     }
     feature = {
         'title': 'Auto Parts Carry Millions in Smuggled Meth and Other Drugs Into the U.S. and Canada',
@@ -199,10 +116,8 @@ if __name__ == '__main__':
     from transformers import LlamaTokenizer
 
     tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
-    out = NewsCommentDataset.process_item(item, feature, tokenizer, 4096)
+    out = NewsCommentDPODataset.process_item(item, feature)
 
-    print(out['labels'].tolist())
-    print(out['input_ids'].tolist())
-    print(out['attention_mask'].tolist())
-    print(tokenizer.decode([x for x in out['input_ids'] if x != -1]))
-    # print(tokenizer.decode([x for x in out['labels'] if x != -1 and x != -100]).replace('</s>', '</s>\n'))
+    for k, v in out.items():
+        print(k)
+        print(v)

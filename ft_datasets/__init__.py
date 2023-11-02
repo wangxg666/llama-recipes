@@ -8,3 +8,4 @@ from .my_allin_one_dataset import MyAllInOneDataset as get_my_allin_one_dataset
 from .my_pre_train_dataset import get_my_pre_train_dataset
 from .my_news_comment_dataset import NewsCommentDataset as get_my_news_comment_dataset
 from .my_news_comment_tokenized_dataset import NewsCommentDataset as get_my_news_comment_tokenized_dataset
+from .my_news_comment_dpo_dataset import NewsCommentDPODataset as get_my_news_comment_dpo_dataset

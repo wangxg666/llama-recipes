@@ -16,3 +16,5 @@ wandb
 torch
 torchvision
 torchaudio
+trl
+flash-attn
