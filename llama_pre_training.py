@@ -17,9 +17,9 @@ from transformers import (
 )
 import torch.distributed as dist
 # Unused imports removed
-from utils.train_utils_partition import (
+from utils.train_utils import (
     save_train_params,
-    train,
+    train_partition,
     save_model,
     freeze_transformer_layers,
     setup,
@@ -28,7 +28,6 @@ from utils.train_utils_partition import (
     get_policies  
 )
 
-from transformers.models.llama import modeling_llama
 from utils.dataset_utils import get_preprocessed_dataset
 
 from utils.config_utils import (
@@ -191,7 +190,6 @@ def main(**kwargs):
             betas=(0.9, 0.999),
         )
 
-
     if train_config.checkpoint_optimizer:
         from pathlib import Path
         path = Path(train_config.checkpoint_optimizer)
@@ -293,7 +291,7 @@ def main(**kwargs):
                 continue
 
             # Start the training process
-            accu_step = train(
+            accu_step = train_partition(
                 model,
                 train_dataloader,
                 train_sampler,
