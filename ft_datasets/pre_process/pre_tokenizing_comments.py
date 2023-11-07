@@ -142,7 +142,7 @@ def process_partation(partition='train', N=32):
 
 def partation(N=20):
     datas = pickle.load(open(f'{work_dir}/train.{model_type}.bin', 'rb'))
-    output_dir = f'{work_dir}/tokenized.${model_type}/'
+    output_dir = f'{work_dir}/tokenized.{model_type}/'
     batch_size = len(datas) // N
     for i in range(N):
         pickle.dump(datas[i*batch_size: (i+1)*batch_size], open(f'{output_dir}/train.part-{str(i+1000)[1:]}.bin', 'wb'))
