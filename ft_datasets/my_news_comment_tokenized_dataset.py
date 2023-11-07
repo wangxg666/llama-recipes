@@ -43,9 +43,6 @@ class NewsCommentDataset(Dataset):
             x for x in self.items if len(x['input_ids']) <= max_words
         ]
 
-        if partition != 'train':
-            self.items = self.items[0:5000]
-
         self.max_words = max_words
         self.tokenizer = tokenizer
 

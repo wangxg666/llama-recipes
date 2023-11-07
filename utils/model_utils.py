@@ -2,6 +2,7 @@ import os
 import sys
 import torch
 import yaml
+import tqdm
 import torch.distributed as dist
 from torch.distributed.fsdp import StateDictType
 import model_checkpointing
