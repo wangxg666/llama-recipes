@@ -31,5 +31,6 @@ CUDA_VISIBLE_DEVICES="4,5,6,7" accelerate launch \
   --save_steps 2000 \
   --eval_steps 200 \
   --output_dir "${WORK_DIR}/${DATASET_NAME}.${TAG}"/ \
-  --wandb_name ${MODEL_TYPE}-${TAG}
+  --wandb_name ${MODEL_TYPE}-${TAG} \
+  --wandb_project "llama-pre-train-cmp"
 

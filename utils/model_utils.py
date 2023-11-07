@@ -1,38 +1,14 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# This software may be used and distributed according to the terms of the Llama 2 Community License Agreement.
-
 import os
 import sys
-from typing import List
-import yaml
-import time
-
-import fire
 import torch
-import transformers
-from datasets import load_dataset
-from tqdm import tqdm
-
-"""
-Unused imports:
-import torch.nn as nn
-import bitsandbytes as bnb
-"""
-from torch.nn import functional as F
-from peft import (
-    LoraConfig,
-    get_peft_model,
-    get_peft_model_state_dict,
-    prepare_model_for_int8_training,
-    set_peft_model_state_dict,
-)
-from transformers import LlamaForCausalLM, LlamaTokenizer
-from torch.distributed.fsdp import StateDictType
+import yaml
 import torch.distributed as dist
+from torch.distributed.fsdp import StateDictType
+import model_checkpointing
+from transformers import LlamaForCausalLM, LlamaTokenizer
 from pkg_resources import packaging
 from .memory_utils import MemoryTrace
 from torch import nn
-import model_checkpointing
 import torch.cuda.nccl as nccl
 from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
 from pathlib import Path
@@ -43,10 +19,10 @@ import wandb
 
 
 class WanDBWriter:
-    def __init__(self, name, rank):
+    def __init__(self, project, name, rank):
         if rank == 0:
             wandb.init(
-                project="llama-pre-train",
+                project=project,
                 entity="canon",
                 name=name
             )
@@ -58,16 +34,6 @@ class WanDBWriter:
     def log(self, rank, info):
         if rank == 0:
             wandb.log(info)
-
-
-def set_tokenizer_params(tokenizer: LlamaTokenizer):
-    tokenizer.pad_token_id = 0
-    tokenizer.padding_side = "left"
-
-
-# Converting Bytes to Megabytes
-def byte2mb(x):
-    return int(x / 2 ** 20)
 
 
 def remove_exist_saved_models(train_config):
@@ -130,161 +96,16 @@ def save_model(model, train_config, fsdp_config, rank, optimizer=None, epoch=-1,
     return save_dir
 
 
-def train(model,
-          train_dataloader,
-          train_sampler,
-          eval_dataloader,
-          tokenizer,
-          optimizer,
-          lr_scheduler,
-          gradient_accumulation_steps,
-          train_config,
-          fsdp_config=None,
-          local_rank=None,
-          rank=None,
-          first_step=0):
-    """
-    Trains the model on the given dataloader
-    
-    Args:
-        model: The model to be trained
-        train_dataloader: The dataloader containing the training data
-        train_sampler: The sampler for the training data, used to shuffle between epoches
-        eval_dataloader: The dataloader containing the validation data
-        optimizer: The optimizer used for training
-        lr_scheduler: The learning rate scheduler
-        gradient_accumulation_steps: The number of steps to accumulate gradients before performing a backward/update operation
-        num_epochs: The number of epochs to train for
-        local_rank: The rank of the current node in a distributed setting
-        train_config: The training configuration
-        eval_dataloader: The dataloader containing the eval data
-        tokenizer: tokenizer used in the eval for decoding the predicitons
-    
-    Returns: results dictionary containing average training and validation perplexity and loss
-    """
-    # Create a gradient scaler for fp16
-    if train_config.use_fp16 and train_config.enable_fsdp:
-        scaler = ShardedGradScaler()
-    elif train_config.use_fp16 and not train_config.enable_fsdp:
-        scaler = torch.cuda.amp.GradScaler()
-    if train_config.enable_fsdp:
-        world_size = int(os.environ["WORLD_SIZE"])
-
-    wandb_writer = WanDBWriter(train_config.wandb_name, rank)
-
-    accu_step = first_step
-    train_sampler.set_epoch(first_step)
-    epoch_start_time = time.perf_counter()
-
-    with MemoryTrace() as memtrace:  # track the memory usage
-        model.train()
-        total_loss = 0.0
-        for step, batch in enumerate(tqdm(train_dataloader, colour="blue", desc=f"Training")):
-            accu_step += 1
-
-
-
-            for key in batch.keys():
-                if train_config.enable_fsdp:
-                    batch[key] = batch[key].to(local_rank)
-                else:
-                    batch[key] = batch[key].to('cuda:0')
-            loss = model(**batch).loss
-            loss = loss / gradient_accumulation_steps
-
-            total_loss += loss.detach().float()
-            if train_config.use_fp16:
-                # if fp16 is enabled, use gradient scaler to handle gradient update
-                scaler.scale(loss).backward()
-                if (step + 1) % gradient_accumulation_steps == 0 or step == len(train_dataloader) - 1:
-                    nn.utils.clip_grad_norm_(model.parameters(), train_config.max_grad_norm)
-
-                    # 如果 loss 出现nan，放弃这一步更新，梯度直接置零，不更新
-                    if torch.isnan(loss).any():
-                        optimizer.zero_grad()
-
-                    scaler.step(optimizer)
-                    scaler.update()
-                    optimizer.zero_grad()
-            else:
-                # regular backpropagation when fp16 is not used
-                loss.backward()
-                if (step + 1) % gradient_accumulation_steps == 0 or step == len(train_dataloader) - 1:
-                    if hasattr(model, "clip_grad_norm_"):
-                        # Some models (like FullyShardedDDP) have a specific way to do gradient clipping
-                        model.clip_grad_norm_(train_config.max_grad_norm)
-                    else:
-                        # Revert to normal clipping otherwise, handling Apex or full precision
-                        nn.utils.clip_grad_norm_(
-                            model.parameters(), train_config.max_grad_norm,
-                        )
-
-                    # 如果 loss 出现nan，放弃这一步更新，梯度直接置零，不更新
-                    if torch.isnan(loss).any() or torch.isinf(loss).any():
-                        optimizer.zero_grad()
-
-                    optimizer.step()
-                    optimizer.zero_grad()
-                    lr_scheduler.step()
-
-            wandb_writer.log(rank, {
-                'step': accu_step // gradient_accumulation_steps,
-                'step_loss': loss.detach().float(),
-                'learning_rate': lr_scheduler.get_lr()[0]
-            })
-
-            # 改为先做 Evaluation
-            # stream based pre-train eval 使用 step，不使用 accu_step
-            if (accu_step % train_config.check_point_steps == 0
-                    or step % train_config.evaluation_steps == 0
-                    or (step + 1) == len(train_dataloader)
-            ):
-                if accu_step % train_config.check_point_steps == 0 and not torch.isnan(loss).any():
-                    save_model(model, train_config, fsdp_config, rank, None, accu_step=accu_step)
-
-                # validation
-                eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)
-                wandb_writer.log(rank, {
-                    'step': accu_step // gradient_accumulation_steps,
-                    'valid_loss': eval_epoch_loss
-                })
-
-            if not train_config.enable_fsdp or rank == 0:
-                print(f"\n step {step} is completed and loss is {loss.detach().float()}")
-
-    epoch_end_time = time.perf_counter() - epoch_start_time
-    # Reducing total_loss across all devices if there's more than one CUDA device
-    if torch.cuda.device_count() > 1 and train_config.enable_fsdp:
-        dist.all_reduce(total_loss, op=dist.ReduceOp.SUM)
-    train_epoch_loss = total_loss / len(train_dataloader)
-    if train_config.enable_fsdp:
-        train_epoch_loss = train_epoch_loss / world_size
-    train_perplexity = torch.exp(train_epoch_loss)
-
-    if not train_config.enable_fsdp or rank == 0:
-        print(f"Max CUDA memory allocated was {memtrace.peak} GB")
-        print(f"Max CUDA memory reserved was {memtrace.max_reserved} GB")
-        print(f"Peak active CUDA memory was {memtrace.peak_active_gb} GB")
-        print(f"Cuda Malloc retires : {memtrace.cuda_malloc_retires}")
-        print(f"CPU Total Peak Memory consumed during the train (max): {memtrace.cpu_peaked + memtrace.cpu_begin} GB")
-        print(f"step {first_step} to {accu_step}: train_perplexity={train_perplexity:.4f}, train_epoch_loss={train_epoch_loss:.4f}, epcoh time {epoch_end_time}s")
-
-    print(f'\ntraining rank {rank} is done.\n', flush=True)
-    # save_model(model, train_config, fsdp_config, rank, None, accu_step=accu_step)
-
-    return accu_step
-
-
 def evaluation(model, train_config, eval_dataloader, local_rank, tokenizer):
     """
     Evaluates the model on the given dataloader
-    
+
     Args:
         model: The model to evaluate
         eval_dataloader: The dataloader containing the evaluation data
         local_rank: The rank of the current node in a distributed setting
         tokenizer: The tokenizer used to decode predictions
-    
+
     Returns: eval_ppl, eval_epoch_loss
     """
     if train_config.enable_fsdp:
@@ -294,7 +115,6 @@ def evaluation(model, train_config, eval_dataloader, local_rank, tokenizer):
     eval_loss = 0.0  # Initialize evaluation loss
     with MemoryTrace() as memtrace:
         for step, batch in enumerate(tqdm(eval_dataloader, colour="green", desc="evaluating Epoch")):
-        # for step, batch in enumerate(eval_dataloader):
             for key in batch.keys():
                 if train_config.enable_fsdp:
                     batch[key] = batch[key].to(local_rank)
@@ -311,14 +131,10 @@ def evaluation(model, train_config, eval_dataloader, local_rank, tokenizer):
             eval_preds.extend(
                 tokenizer.batch_decode(preds.detach().cpu().numpy(), skip_special_tokens=True)
             )
-            # print(f'\nlocal rank = {local_rank}, data size = {len(eval_dataloader)}, current step = {step}', flush=True)
-
 
     # If there's more than one CUDA device, reduce evaluation loss across all devices
     if torch.cuda.device_count() > 1 and train_config.enable_fsdp:
         dist.all_reduce(eval_loss, op=dist.ReduceOp.SUM)
-
-    # print(f'\nlocal rank = {local_rank}, data size = {len(eval_dataloader)}, eval loss = {eval_loss}', flush=True)
 
     # Compute average loss and perplexity
     eval_epoch_loss = eval_loss / len(eval_dataloader)
@@ -361,7 +177,7 @@ def setup_environ_flags(rank):
     # os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
     # This flag will help with CUDA memory fragmentations that can lead into OOM in some cases.
     # Note this is only availble in PyTorch Nighlies (as of July 30 2023)
-    # os.environ['PYTORCH_CUDA_ALLOC_CONF']='expandable_segments:True' 
+    # os.environ['PYTORCH_CUDA_ALLOC_CONF']='expandable_segments:True'
     if rank == 0:
         print(f"--> Running with torch dist debug set to detail")
 
@@ -441,7 +257,7 @@ def save_train_params(save_dir, train_config, fsdp_config, rank):
     This will be used by converter script in the inference folder to fetch the HF model name or path.
     It also would be hepful as a log for future references.
     """
-    # Convert the train_config and fsdp_config objects to dictionaries, 
+    # Convert the train_config and fsdp_config objects to dictionaries,
     # converting all values to strings to ensure they can be serialized into a YAML file
     train_config_dict = {k: str(v) for k, v in vars(train_config).items() if not k.startswith('__')}
     fsdp_config_dict = {k: str(v) for k, v in vars(fsdp_config).items() if not k.startswith('__')}
@@ -463,3 +279,14 @@ def save_train_params(save_dir, train_config, fsdp_config, rank):
             f.write(config_yaml)
         if rank == 0:
             print(f"training params are saved in {file_name}")
+
+
+
+def set_tokenizer_params(tokenizer: LlamaTokenizer):
+    tokenizer.pad_token_id = 0
+    tokenizer.padding_side = "left"
+
+
+# Converting Bytes to Megabytes
+def byte2mb(x):
+    return int(x / 2 ** 20)

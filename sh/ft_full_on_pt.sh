@@ -37,6 +37,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --num_epochs ${EPOCH} \
   --evaluation_steps 100 \
   --check_point_steps 2000 \
-  --wandb_name ${MODEL_TYPE}-${DATASET_DIR}-${TAG}
+  --wandb_name ${MODEL_TYPE}-${DATASET_DIR}-${TAG} \
+  --wandb_project "llama-pre-train-cmp"
 
 cd ../

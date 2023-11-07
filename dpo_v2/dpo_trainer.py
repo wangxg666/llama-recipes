@@ -29,8 +29,7 @@ from transformers.trainer_utils import EvalLoopOutput
 
 from trl.import_utils import is_peft_available, is_wandb_available
 from trl.models import PreTrainedModelWrapper, create_reference_model
-from trl.trainer.utils import disable_dropout_in_model, pad_to_length
-from dpo.my_dpo_dataset import DPODataCollatorWithPadding
+from trl.trainer.utils import DPODataCollatorWithPadding, disable_dropout_in_model, pad_to_length
 
 
 if is_peft_available():
@@ -105,6 +104,7 @@ class DPOTrainer(Trainer):
         model: Union[PreTrainedModel, nn.Module] = None,
         ref_model: Optional[Union[PreTrainedModel, nn.Module]] = None,
         beta: float = 0.1,
+        alpha: float = 0.1,
         args: TrainingArguments = None,
         data_collator: Optional[DataCollator] = None,
         label_pad_token_id: int = -100,
@@ -152,7 +152,14 @@ class DPOTrainer(Trainer):
             self.is_encoder_decoder = is_encoder_decoder
 
         self.is_peft_model = is_peft_available() and isinstance(model, PeftModel)
-        self.ref_model = ref_model
+
+        if ref_model:
+            self.ref_model = ref_model
+        elif self.is_peft_model:
+            # The `model` with adapters turned off will be used as the reference model
+            self.ref_model = None
+        else:
+            self.ref_model = create_reference_model(model)
 
         if data_collator is None:
             if tokenizer is None:
@@ -216,6 +223,7 @@ class DPOTrainer(Trainer):
         self.label_pad_token_id = label_pad_token_id
         self.padding_value = padding_value
 
+        self.alpha = alpha
         self.beta = beta
 
         self._stored_metrics = defaultdict(lambda: defaultdict(list))
@@ -239,7 +247,12 @@ class DPOTrainer(Trainer):
                 "Your `Trainer` does not have an `accelerator` object. Consider upgrading `transformers`."
             )
 
-        if self.ref_model is not None:
+        if self.ref_model is None:
+            if not hasattr(self.accelerator.unwrap_model(self.model), "disable_adapter"):
+                raise ValueError(
+                    "You are using a `peft` version that does not support `disable_adapter`. Please update your `peft` version to the latest version."
+                )
+        else:
             if self.is_deepspeed_enabled:
                 self.ref_model = self._prepare_deepspeed(self.ref_model)
             else:
@@ -338,21 +351,20 @@ class DPOTrainer(Trainer):
             The chosen_rewards and rejected_rewards tensors contain the rewards for the chosen and rejected responses, respectively.
         """
         pi_logratios = policy_chosen_logps - policy_rejected_logps
+        ref_logratios = reference_chosen_logps - reference_rejected_logps
+
         if reference_free:
             ref_logratios = 0
-        else:
-            ref_logratios = reference_chosen_logps - reference_rejected_logps
 
         logits = pi_logratios - ref_logratios
 
-        losses = -F.logsigmoid(self.beta * logits)
+        # chooesn probablity should not be decreased compared with reference model
+        # if the probability dropped, there should be a penalty loss
+        boundry = torch.min(torch.zeros_like(policy_chosen_logps), policy_chosen_logps - reference_chosen_logps)
 
-        if reference_free:
-            chosen_rewards = self.beta * policy_chosen_logps.detach()
-            rejected_rewards = self.beta * policy_rejected_logps.detach()
-        else:
-            chosen_rewards = self.beta * (policy_chosen_logps - reference_chosen_logps).detach()
-            rejected_rewards = self.beta * (policy_rejected_logps - reference_rejected_logps).detach()
+        losses = -F.logsigmoid(self.beta * logits) - boundry * self.alpha
+        chosen_rewards = self.beta * (policy_chosen_logps - reference_chosen_logps).detach()
+        rejected_rewards = self.beta * (policy_rejected_logps - reference_rejected_logps).detach()
 
         return losses, chosen_rewards, rejected_rewards
 
@@ -417,13 +429,13 @@ class DPOTrainer(Trainer):
         all_logps = self._get_batch_logps(
             all_logits,
             concatenated_batch["concatenated_labels"],
-            average_log_prob=True,
+            average_log_prob=False,
         )
 
         chosen_logps = all_logps[:len_chosen]
-        chosen_logits = all_logits[:len_chosen]
-
         rejected_logps = all_logps[len_chosen:]
+
+        chosen_logits = all_logits[:len_chosen]
         rejected_logits = all_logits[len_chosen:]
 
         return (chosen_logps, rejected_logps, chosen_logits, rejected_logits)
@@ -443,11 +455,15 @@ class DPOTrainer(Trainer):
             policy_chosen_logits,
             policy_rejected_logits,
         ) = self.concatenated_forward(model, batch)
-        reference_free = False
         with torch.no_grad():
             if self.ref_model is None:
-                reference_free = True
-                reference_chosen_logps, reference_rejected_logps = None, None
+                with self.accelerator.unwrap_model(self.model).disable_adapter():
+                    (
+                        reference_chosen_logps,
+                        reference_rejected_logps,
+                        _,
+                        _,
+                    ) = self.concatenated_forward(self.model, batch)
             else:
                 (
                     reference_chosen_logps,
@@ -461,7 +477,6 @@ class DPOTrainer(Trainer):
             policy_rejected_logps,
             reference_chosen_logps,
             reference_rejected_logps,
-            reference_free=reference_free
         )
         reward_accuracies = (chosen_rewards > rejected_rewards).float()
 
@@ -498,7 +513,7 @@ class DPOTrainer(Trainer):
             return (loss, metrics)
         return loss
 
-    def get_batch_samples(self, model, batch: Dict[str, torch.LongTensor]) -> tuple[list[str], list[str] | None]:
+    def get_batch_samples(self, model, batch: Dict[str, torch.LongTensor]) -> Tuple[str, str]:
         """Generate samples from the model and reference model for the given batch of inputs."""
 
         policy_output = model.generate(
@@ -508,11 +523,16 @@ class DPOTrainer(Trainer):
             do_sample=True,
             pad_token_id=self.tokenizer.pad_token_id,
         )
-        policy_output = pad_to_length(policy_output, self.max_length, self.tokenizer.pad_token_id)
-        policy_output_decoded = self.tokenizer.batch_decode(policy_output, skip_special_tokens=True)
 
         if self.ref_model is None:
-            reference_output_decoded = None
+            with self.accelerator.unwrap_model(self.model).disable_adapter():
+                reference_output = self.model.generate(
+                    batch["prompt_input_ids"],
+                    attention_mask=batch["prompt_attention_mask"],
+                    max_length=self.max_length,
+                    do_sample=True,
+                    pad_token_id=self.tokenizer.pad_token_id,
+                )
         else:
             reference_output = self.ref_model.generate(
                 batch["prompt_input_ids"],
@@ -521,8 +541,12 @@ class DPOTrainer(Trainer):
                 do_sample=True,
                 pad_token_id=self.tokenizer.pad_token_id,
             )
-            reference_output = pad_to_length(reference_output, self.max_length, self.tokenizer.pad_token_id)
-            reference_output_decoded = self.tokenizer.batch_decode(reference_output, skip_special_tokens=True)
+
+        policy_output = pad_to_length(policy_output, self.max_length, self.tokenizer.pad_token_id)
+        policy_output_decoded = self.tokenizer.batch_decode(policy_output, skip_special_tokens=True)
+
+        reference_output = pad_to_length(reference_output, self.max_length, self.tokenizer.pad_token_id)
+        reference_output_decoded = self.tokenizer.batch_decode(reference_output, skip_special_tokens=True)
 
         return policy_output_decoded, reference_output_decoded
 
@@ -597,19 +621,19 @@ class DPOTrainer(Trainer):
 
             policy_output_decoded, ref_output_decoded = self.get_batch_samples(self.model, random_batch)
 
-            if ref_output_decoded is None:
-                columns = ["Prompt", "Policy"]
-                rows = [
-                    [prompt, pol[len(prompt):]]
-                    for prompt, pol in zip(random_batch["prompt"], policy_output_decoded)
-                ]
-            else:
-                columns = ["Prompt", "Policy", "Ref Model"]
-                rows = [
-                    [prompt, pol[len(prompt):], ref[len(prompt):]]
-                    for prompt, pol, ref in zip(random_batch["prompt"], policy_output_decoded, ref_output_decoded)
-                ]
-            self.log({"game_log": wandb.Table(columns=columns, rows=rows)})
+            self.log(
+                {
+                    "game_log": wandb.Table(
+                        columns=["Prompt", "Policy", "Ref Model"],
+                        rows=[
+                            [prompt, pol[len(prompt) :], ref[len(prompt) :]]
+                            for prompt, pol, ref in zip(
+                                random_batch["prompt"], policy_output_decoded, ref_output_decoded
+                            )
+                        ],
+                    )
+                }
+            )
 
         # Base evaluation
         initial_output = super().evaluation_loop(

@@ -32,7 +32,8 @@ CUDA_VISIBLE_DEVICES="2,3,4,5,6,7" torchrun \
   --num_epochs 5 \
   --evaluation_steps 100 \
   --check_point_steps 100 \
-  --wandb_name ${MODEL_NAME}-${DATASET_NAME}-${DATASET_DIR}-${TAG}-${ts}
+  --wandb_name ${MODEL_NAME}-${DATASET_NAME}-${DATASET_DIR}-${TAG}-${ts} \
+  --wandb_project "llama"
 
 cd ../
 

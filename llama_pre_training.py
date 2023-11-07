@@ -1,6 +1,6 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # This software may be used and distributed according to the terms of the Llama 2 Community License Agreement.
-
+import json
 import os
 import pathlib
 import time
@@ -87,9 +87,16 @@ def main(**kwargs):
     model_name = train_config.model_name
     # gpu3 cpu memory is not enough, lazy loading with 20s after
     if train_config.pre_train_model_path and pathlib.Path(train_config.pre_train_model_path).exists():
-        if rank == 0 or rank == 1:
-            time.sleep(20)
         model_name = train_config.pre_train_model_path
+        if os.path.exists(train_config.pre_train_model_path + '/checkpoint_cfg.json'):
+            obj = json.load(open(train_config.pre_train_model_path + '/checkpoint_cfg.json'))
+            if 'checkpoint_optimizer' in obj:
+                train_config.checkpoint_optimizer = obj['checkpoint_optimizer']
+            if 'checkpoint_data_file' in obj:
+                train_config.checkpoint_data_file = obj['checkpoint_data_file']
+        if not train_config.enable_fsdp or rank == 1:
+            print(f'start checkpoint optimizer = {train_config.checkpoint_optimizer}, checkpoint data file = {train_config.checkpoint_data_file}.')
+
     print(f'{"x" * 20}    {model_name}    {"x" * 20}')
 
     # Load the pre-trained model and setup its configuration
@@ -184,14 +191,16 @@ def main(**kwargs):
             betas=(0.9, 0.999),
         )
 
-    if train_config.optimizer_checkpoint_path:
+
+    if train_config.checkpoint_optimizer:
         from pathlib import Path
-        path = Path(train_config.optimizer_checkpoint_path)
+        path = Path(train_config.checkpoint_optimizer)
         if path.exists():
-            sharded_osd = load_optimizer_checkpoint(model, Path(train_config.optimizer_checkpoint_path), rank)
+            sharded_osd = load_optimizer_checkpoint(model, Path(train_config.checkpoint_optimizer), rank)
             optimizer.load_state_dict(sharded_osd)
             del sharded_osd
             torch.cuda.empty_cache()
+        print(f'load {train_config.checkpoint_optimizer} shared done.')
 
     from transformers import get_scheduler, SchedulerType
 
@@ -276,6 +285,13 @@ def main(**kwargs):
                 print(f'[{i}], num eval steps = {len(valid_dataloader)}')
                 print(f'[{i}], num data batches = {len(train_dataloader)}')
 
+            skip_training = train_config.checkpoint_data_file and train_config.checkpoint_data_file >= filename
+            if skip_training:
+                n_step = len(train_dataloader) // gradient_accumulation_steps
+                [scheduler.step() for _ in range(n_step)]
+                accu_step += n_step
+                continue
+
             # Start the training process
             accu_step = train(
                 model,
@@ -290,7 +306,7 @@ def main(**kwargs):
                 fsdp_config if train_config.enable_fsdp else None,
                 local_rank if train_config.enable_fsdp else None,
                 rank if train_config.enable_fsdp else None,
-                first_step=accu_step
+                first_step=accu_step,
             )
 
             if (i+1) % 5 == 0:

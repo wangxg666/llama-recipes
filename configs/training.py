@@ -26,7 +26,6 @@ class train_config:
     use_peft: bool=False
     output_dir: str = "PATH/to/save/PEFT/model"
     freeze_layers: bool = False
-    optimizer_checkpoint_path: str = ''
     num_freeze_layers: int = 1
     quantization: bool = False
     one_gpu: bool = False
@@ -38,7 +37,13 @@ class train_config:
     check_point_steps: int = 1
     evaluation_steps: int = 100
     wandb_name: str = 'default'
+    wandb_project: str = 'default'
     peft_model: str = ''
     max_grad_norm: float = 1.0
     dataset_dir: str = ''
     max_ckpt_num: int = 10
+
+    # restart pre-training config
+    checkpoint_data_file: str = ''
+    checkpoint_optimizer: str = ''
+
