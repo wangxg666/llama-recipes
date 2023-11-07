@@ -33,18 +33,28 @@ PROMPT = (
     # "Your reply to User A: {reply} </s>"
 )
 
+
+def get_input_files(dataset_config):
+    input_files = []
+    dataset_dir = f'{dataset_config.root}/{dataset_config.dataset_dir}'
+    for input_file in os.listdir(dataset_dir):
+        if dataset_config.input_file and input_file != dataset_config.input_file:
+            continue
+        input_files.append(f'{dataset_dir}/{input_file}')
+    print(f'load input from {len(input_files)} files', flush=True)
+    return sorted(input_files)
+
+
 class NewsCommentDataset(Dataset):
     def __init__(self, dataset_config, tokenizer, partition="train", max_words=2048):
-        input_dir = f'{dataset_config.root}/{dataset_config.dataset_dir}/'
-        input_file = 'train' if partition == 'train' else 'valid'
-
-        self.items = pickle.load(open(f'{input_dir}/{input_file}.bin', 'rb'))
-        self.items = [
-            x for x in self.items if len(x['input_ids']) <= max_words
-        ]
-
+        self.items = []
         self.max_words = max_words
         self.tokenizer = tokenizer
+
+        for input_file in get_input_files(dataset_config):
+            self.items.extend(pickle.load(open(input_file, 'rb')))
+        self.items = [x for x in self.items if len(x['input_ids']) <= max_words]
+        print(f'load [{partition}], from files = {get_input_files(dataset_config)}, data size = {len(self.items)}')
 
     def __len__(self):
         return len(self.items)

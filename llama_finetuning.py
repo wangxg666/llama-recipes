@@ -242,11 +242,11 @@ def main(**kwargs):
             betas=(0.9, 0.999),
         )
 
-    if train_config.optimizer_checkpoint_path:
+    if train_config.checkpoint_optimizer:
         from pathlib import Path
-        path = Path(train_config.optimizer_checkpoint_path)
+        path = Path(train_config.checkpoint_optimizer)
         if path.exists():
-            sharded_osd = load_optimizer_checkpoint(model, Path(train_config.optimizer_checkpoint_path), rank)
+            sharded_osd = load_optimizer_checkpoint(model, Path(train_config.checkpoint_optimizer), rank)
             optimizer.load_state_dict(sharded_osd)
             del sharded_osd
             torch.cuda.empty_cache()
@@ -259,13 +259,6 @@ def main(**kwargs):
         print(f'num data batches = {len(train_dataloader)}')
 
     from transformers import get_scheduler, SchedulerType
-    # scheduler = get_scheduler(
-    #     "linear",
-    #     optimizer=optimizer,
-    #     num_warmup_steps=int(0.03 * num_training_steps),
-    #     num_training_steps=num_training_steps // gradient_accumulation_steps,
-    # )
-    # scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
     total_steps = len(train_dataloader) * train_config.num_epochs
     scheduler = get_scheduler(
         SchedulerType.COSINE,

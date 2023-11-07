@@ -1,17 +1,7 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # This software may be used and distributed according to the terms of the Llama 2 Community License Agreement.
 
-import os
-import sys
-from typing import List
-import yaml
-import time
 
-import fire
-import torch
-import transformers
-from datasets import load_dataset
-from tqdm import tqdm
 
 """
 Unused imports:

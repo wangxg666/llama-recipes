@@ -5,7 +5,7 @@ MODEL_TYPE="7b"
 WORK_DIR="/home/paperspace/xingguang/models/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_allin_one_dataset"
-DATASET_DIR="doc_id_query.v04"
+DATASET_DIR="answer_extractor.v027"
 PRE_TRAIN_MODEL="/home/paperspace/xingguang/models/my_pre_train_dataset.7b.3e-5.B8.E1.full/step_034290.hf"
 
 LR=3e-5
