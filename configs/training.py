@@ -41,7 +41,7 @@ class train_config:
     peft_model: str = ''
     max_grad_norm: float = 1.0
     dataset_dir: str = ''
-    max_ckpt_num: int = 10
+    max_ckpt_num: int = 5
 
     # restart pre-training config
     checkpoint_data_file: str = ''

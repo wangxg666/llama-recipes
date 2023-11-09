@@ -4,21 +4,23 @@ set -x
 MODEL_TYPE="13b"
 WORK_DIR="/home/paperspace/xingguang/models/${MODEL_TYPE}"
 SFT_MODEL_PATH=""
-LR=1e-5
+LR=1e-6
+BETA=0.1
 LR_SCHEDULER="cosine"
 BATCH_SIZE=4
 DATASET_NAME="my_news_comment_dpo_dataset"
-DATASET_VERSION='dpo.comment.v01'
+DATASET_VERSION='dpo.comment.v02'
 
-TAG="${MODEL_TYPE}.${LR}.${LR_SCHEDULER}.B${BATCH_SIZE}.DPO"
+TAG="${MODEL_TYPE}.${LR}.beta${BETA}.${LR_SCHEDULER}.B${BATCH_SIZE}.DPO"
 
 cd ..
 
-CUDA_VISIBLE_DEVICES="4,5,6,7" accelerate launch \
+CUDA_VISIBLE_DEVICES="3,4,6,7" accelerate launch \
   ./llama_dpo.py \
   --model_name_or_path "${SFT_MODEL_PATH}"  \
   --dataset_name "${DATASET_NAME}" \
   --dataset_version "${DATASET_VERSION}" \
+  --beta ${BETA} \
   --learning_rate ${LR} \
   --lr_scheduler_type ${LR_SCHEDULER} \
   --warmup_steps 300 \
@@ -31,6 +33,5 @@ CUDA_VISIBLE_DEVICES="4,5,6,7" accelerate launch \
   --save_steps 2000 \
   --eval_steps 200 \
   --output_dir "${WORK_DIR}/${DATASET_NAME}.${TAG}"/ \
-  --wandb_name ${MODEL_TYPE}-${TAG} \
-  --wandb_project "llama-pre-train-cmp"
+  --wandb_name "${TAG}"
 

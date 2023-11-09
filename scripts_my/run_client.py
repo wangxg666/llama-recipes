@@ -7,7 +7,6 @@ from pymongo import MongoClient
 
 client = Client("http://184.105.106.16:1308")
 
-
 def clean_text_fast(text):
     reps = {
         '-LRB-': '(',
@@ -80,9 +79,7 @@ for data in datas[0:200]:
 
     print(prompt)
     print(f'real: {label}')
-    response = client.generate(prompt=prompt, max_new_tokens=100, repetition_penalty=1.1)
-    print(f'pred (greedy): {response.generated_text}')
-    response = client.generate(prompt=prompt, max_new_tokens=100, repetition_penalty=1., do_sample=True)
+    response = client.generate(prompt=prompt, max_new_tokens=100, repetition_penalty=1, do_sample=True)
     print(f'pred (random): {response.generated_text}')
     # for response in client.generate_stream(prompt=prompt, max_new_tokens=100, repetition_penalty=1., do_sample=True):
     #     if not response.token.special:

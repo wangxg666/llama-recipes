@@ -28,22 +28,24 @@ def pre_tokenize(input_file, output_file):
 
 
 def process_aritilces():
-    pool = multiprocessing.Pool(64)
+    pool = multiprocessing.Pool(32)
     work_dir = '/home/paperspace/xingguang/datasets/pre-training-ariticle'
 
-    os.makedirs(f'{work_dir}/tokenized.{model_type}', exist_ok=True)
+    input_dir = f'{work_dir}/text.comment.gz.v02/'
+    output_dir = f'{work_dir}/tokenized.{model_type}.v02/'
 
-    for input_file in sorted(os.listdir(f'{work_dir}/text.comment.gz/')):
+    os.makedirs(f'{output_dir}', exist_ok=True)
+
+    for input_file in sorted(os.listdir(f'{input_dir}')):
         pool.apply_async(
             func=pre_tokenize,
             args=(
-                f'{work_dir}/text.comment.gz/{input_file}',
-                f'{work_dir}/tokenized.{model_type}/{input_file.replace(".gz", ".bin")}',
+                f'{input_dir}/{input_file}',
+                f'{output_dir}/{input_file.replace(".gz", ".bin")}',
             )
         )
     pool.close()
     pool.join()
-
 
 
 if __name__ == '__main__':

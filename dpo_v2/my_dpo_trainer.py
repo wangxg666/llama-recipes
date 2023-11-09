@@ -29,7 +29,7 @@ from transformers.trainer_utils import EvalLoopOutput
 
 from trl.import_utils import is_peft_available, is_wandb_available
 from trl.models import PreTrainedModelWrapper, create_reference_model
-from trl.trainer.utils import DPODataCollatorWithPadding, disable_dropout_in_model, pad_to_length
+from trl.trainer.utils import disable_dropout_in_model, pad_to_length
 
 
 if is_peft_available():
@@ -104,7 +104,6 @@ class DPOTrainer(Trainer):
         model: Union[PreTrainedModel, nn.Module] = None,
         ref_model: Optional[Union[PreTrainedModel, nn.Module]] = None,
         beta: float = 0.1,
-        alpha: float = 0.1,
         args: TrainingArguments = None,
         data_collator: Optional[DataCollator] = None,
         label_pad_token_id: int = -100,
@@ -223,7 +222,6 @@ class DPOTrainer(Trainer):
         self.label_pad_token_id = label_pad_token_id
         self.padding_value = padding_value
 
-        self.alpha = alpha
         self.beta = beta
 
         self._stored_metrics = defaultdict(lambda: defaultdict(list))
@@ -358,11 +356,7 @@ class DPOTrainer(Trainer):
 
         logits = pi_logratios - ref_logratios
 
-        # chooesn probablity should not be decreased compared with reference model
-        # if the probability dropped, there should be a penalty loss
-        boundry = torch.min(torch.zeros_like(policy_chosen_logps), policy_chosen_logps - reference_chosen_logps)
-
-        losses = -F.logsigmoid(self.beta * logits) - boundry * self.alpha
+        losses = -F.logsigmoid(self.beta * logits)
         chosen_rewards = self.beta * (policy_chosen_logps - reference_chosen_logps).detach()
         rejected_rewards = self.beta * (policy_rejected_logps - reference_rejected_logps).detach()
 
