@@ -9,67 +9,43 @@ import torch
 from torch.utils.data import Dataset
 
 PROMPT_DICT = {
-    "GRAMMAR_SINGLE": """Below is an instruction that describes a task. 
-The following **text** might have some grammatical errors.
-Kindly review it and provide your assessment of whether there are any grammatical errors. 
-Your response should be "Good." if there are no grammatical errors and "Poor." if there are.
-### text: {source_sent}
-### response:""",
+    "PLATYPUS": "{instruction}",
 
-    "GRAMMAR_SEQ2SEQ": """Below is an instruction that describes a task. 
-The following **text** might have some grammatical errors.
-Please correct these errors and provide the revised text if it contains any mistakes, 
-or simply provide the text as is if it is correct.
-### text: {source_sent}
-### response:""",
+    "NORM_PROMPT": "{prompt}",
 
-    "CLICKBAIT_SINGLE": """Below is an instruction that describes a task. 
-The following **text** might be writen in an informal style, 
-characterized by clickbait tendencies, excessive elaboration, hyperbole, a confrontational tone, curiosity, fear, or even anger. 
-Please review it and provide your assessment of whether it is composed informally.
-Your response should be "Good." if it is writen formally and "Poor." if it is not.
-### text: {source_sent}
-### response:""",
+    "FAQ_ANSWER_EXTRACT_NO_JSON_V5_FAQ": (
+        "You are an excellent linguist, and I need your help to complete the following task.\n"
+        "Here is a user query and some retrieved information, the retrieved information might not be the proper for the query.\n"
+        "Please read the user query and the retrieved information carefully, and then try using this information to answer the query.\n"
+        "The retrieved information may have duplicate content, please summarize the retrieved information with deduplication before you taking use of them.\n"
+        "Your response should be accurate, grammatically fluent.\n"
+        "But your answer should answer the query directly, and do not output any additional or furthermore guidelines in your response.\n"
+        "Don't output any additional information that is not included in the retrieved information.\n"
+        "If you think the information is not relevant to the query, please give a default response \"Sorry, the query can not be answered.\"\n"
+        "If there is enumeration of entities in your response, please convert it to list of entities with markdown syntax.\n"
+        "Do not provide any additional response that is not relevant with the user query.\n"
+        "Please answer the query directly, do not output your explanation.\n"
+        "### Query: {query}\n"
+        "### Retrieved Information: {prompt_answer}\n"
+        "### response:\n"
+    ),
 
-    "HALLUCINATION": """Below is an instruction that describes a task. 
-The following text B is rewritten from text A, but text B might be inconsistent with text A in content.
-Please help to check does text B is rewritten properly with text A.
-### {source_sent}
-### response:""",
-
-    "FAQ_ANSWER_EXTRACT_NO_JSON_V5_FAQ": """You are an excellent linguist, and I need your help to complete the following task.
-Here is a user query and some retrieved information, the retrieved information might not be the proper for the query.
-Please read the user query and the retrieved information carefully, and then try using this information to answer the query.
-The retrieved information may have duplicate content, please summarize the retrieved information with deduplication before you taking use of them.
-Your response should be accurate, grammatically fluent.
-But your answer should answer the query directly, and do not output any additional or furthermore guidelines in your response.
-Don't output any additional information that is not included in the retrieved information.
-If you think the information is not relevant to the query, please give a default response "Sorry, the query can not be answered."
-If there is enumeration of entities in your response, please convert it to list of entities with markdown syntax.
-Do not provide any additional response that is not relevant with the user query.
-Please answer the query directly, do not output your explanation.
-### Query: {query}
-### Retrieved Information: {prompt_answer}
-### response:""",
-
-    "FAQ_ANSWER_EXTRACT_NO_JSON_V5_AIGC": """You are an excellent linguist, and I need your help to complete the following task.
-Here is a user query and some retrieved ariticles, the retrieved ariticles might not be the proper for the query.
-Please read the user query and the retrieved ariticles carefully, and then try using this ariticles to answer the query.
-The retrieved ariticles may have duplicate content, please summarize the retrieved ariticles with deduplication before you taking use of them.
-Your response should be accurate, grammatically fluent.
-But your answer should answer the query directly, and do not output any additional or furthermore guidelines in your response.
-Don't output any additional ariticles that is not included in the retrieved ariticles.
-If you think the ariticles is not relevant to the query, please give a default response "Sorry, the query can not be answered."
-If there is enumeration of entities in your response, please convert it to list of entities with markdown syntax.
-Do not provide any additional response that is not relevant with the user query.
-Please answer the query directly, do not output your explanation.
-### Query: {query}
-### Retrieved Information: {prompt_answer}
-### response:""",
-
-    "PLATYPUS": """{instruction}""",
-
-    "NORM_PROMPT": """{prompt}""",
+    "FAQ_ANSWER_EXTRACT_NO_JSON_V5_AIGC": (
+        "You are an excellent linguist, and I need your help to complete the following task.\n"
+        "Here is a user query and some retrieved ariticles, the retrieved ariticles might not be the proper for the query.\n"
+        "Please read the user query and the retrieved ariticles carefully, and then try using this ariticles to answer the query.\n"
+        "The retrieved ariticles may have duplicate content, please summarize the retrieved ariticles with deduplication before you taking use of them.\n"
+        "Your response should be accurate, grammatically fluent.\n"
+        "But your answer should answer the query directly, and do not output any additional or furthermore guidelines in your response.\n"
+        "Don't output any additional ariticles that is not included in the retrieved ariticles.\n"
+        "If you think the ariticles is not relevant to the query, please give a default response \"Sorry, the query can not be answered.\"\n"
+        "If there is enumeration of entities in your response, please convert it to list of entities with markdown syntax.\n"
+        "Do not provide any additional response that is not relevant with the user query.\n"
+        "Please answer the query directly, do not output your explanation.\n"
+        "### Query: {query}\n"
+        "### Retrieved Information: {prompt_answer}\n"
+        "### response:\n"
+    ),
 
     "DOC_ID_QUERY": (
         "You are an excellent knowledger, and I need you to help to complate the following task.\n"
@@ -84,6 +60,12 @@ Please answer the query directly, do not output your explanation.
         "The news IDs is a 8 characters string, start with `0`\n"
         "### Query: \n{query}\n"
         "### Response: \n"
+    ),
+
+    "NEWS_COMMENT_WITH_INSTRUCTION": (
+        "{prompt}\n"
+        "{instruction}\n"
+        "Your Comment:\n"
     )
 }
 

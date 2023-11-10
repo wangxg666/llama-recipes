@@ -90,12 +90,11 @@ def main(**kwargs):
         if os.path.exists(train_config.pre_train_model_path + '/checkpoint_cfg.json'):
             obj = json.load(open(train_config.pre_train_model_path + '/checkpoint_cfg.json'))
             if 'checkpoint_optimizer' in obj:
-                train_config.checkpoint_optimizer = obj['checkpoint_optimizer']
+                train_config.checkpoint_optimizer = f'{train_config.pre_train_model_path}/{obj["checkpoint_optimizer"]}'
             if 'checkpoint_data_file' in obj:
                 train_config.checkpoint_data_file = obj['checkpoint_data_file']
         if not train_config.enable_fsdp or rank == 1:
             print(f'start checkpoint optimizer = {train_config.checkpoint_optimizer}, checkpoint data file = {train_config.checkpoint_data_file}.')
-
     print(f'{"x" * 20}    {model_name}    {"x" * 20}')
 
     # Load the pre-trained model and setup its configuration
@@ -263,13 +262,13 @@ def main(**kwargs):
 
             # 随机加载验证集
             dataset_config.input_file = 'valid.bin'
-            dataset_config.sample_ratio = 0.2
+            dataset_config.sample_ratio = 1.
             valid_sampler, valid_dataloader = build_dataset('test', False)
             
             if not scheduler:
                 total_steps = len(filenames) * len(train_dataloader) * 1.05
                 scheduler = get_scheduler(
-                    SchedulerType.COSINE,
+                    SchedulerType.CONSTANT,
                     optimizer=optimizer,
                     num_warmup_steps=500,
                     num_training_steps=total_steps,

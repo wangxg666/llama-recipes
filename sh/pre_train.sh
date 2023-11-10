@@ -5,9 +5,9 @@ MODEL_TYPE="13b"
 WORK_DIR="/home/paperspace/xingguang/models/"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_pre_train_dataset"
-DATASET_DIR="pre-training-shuffle/tokenized.${MODEL_TYPE}"
+DATASET_DIR="pre-training-shuffle/tokenized.${MODEL_TYPE}.v02"
 
-LR=1e-5
+LR=2e-5
 BATCH_SIZE=4
 MICRO_BATCH_SIZE=4
 EPOCH=1
