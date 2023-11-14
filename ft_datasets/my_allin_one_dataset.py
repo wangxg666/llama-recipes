@@ -66,7 +66,9 @@ PROMPT_DICT = {
         "{prompt}\n"
         "{instruction}\n"
         "Your Comment:\n"
-    )
+    ),
+
+    "NEWS_COMMENT_WITH_INSTRUCTION_V2": "{prompt}"
 }
 
 

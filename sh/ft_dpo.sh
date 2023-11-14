@@ -9,9 +9,9 @@ BETA=0.1
 LR_SCHEDULER="cosine"
 BATCH_SIZE=4
 DATASET_NAME="my_news_comment_dpo_dataset"
-DATASET_VERSION='dpo.comment.v02'
+DATASET_VERSION='comment.dpo.stage-3.v02'
 
-TAG="${MODEL_TYPE}.${LR}.beta${BETA}.${LR_SCHEDULER}.B${BATCH_SIZE}.DPO"
+TAG="${MODEL_TYPE}.${LR}.beta${BETA}.${LR_SCHEDULER}.B${BATCH_SIZE}"
 
 cd ..
 
@@ -27,11 +27,11 @@ CUDA_VISIBLE_DEVICES="3,4,6,7" accelerate launch \
   --per_device_train_batch_size ${BATCH_SIZE} \
   --per_device_eval_batch_size ${BATCH_SIZE} \
   --gradient_accumulation_steps ${BATCH_SIZE} \
-  --max_prompt_length 2000 \
+  --max_prompt_length 1800 \
   --max_length 2048 \
   --max_steps 0 \
-  --save_steps 2000 \
+  --save_steps 2000000 \
   --eval_steps 200 \
-  --output_dir "${WORK_DIR}/${DATASET_NAME}.${TAG}"/ \
+  --output_dir "${WORK_DIR}-${DATASET_NAME}-${TAG}"/ \
   --wandb_name "${TAG}"
 

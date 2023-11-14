@@ -8,7 +8,7 @@ DATASET_NAME="my_pre_train_dataset"
 DATASET_DIR="pre-training-shuffle/tokenized.${MODEL_TYPE}.v02"
 
 LR=2e-5
-BATCH_SIZE=4
+BATCH_SIZE=6
 MICRO_BATCH_SIZE=4
 EPOCH=1
 
