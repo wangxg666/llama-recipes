@@ -331,7 +331,7 @@ def train_partition(model,
             # 改为先做 Evaluation
             # stream based pre-train eval 使用 step，不使用 accu_step
             if (accu_step % train_config.check_point_steps == 0
-                    or step % train_config.evaluation_steps == 0
+                    or accu_step % train_config.evaluation_steps == 0
                     or (step + 1) == len(train_dataloader)
             ):
                 if accu_step % train_config.check_point_steps == 0 and not torch.isnan(loss).any():

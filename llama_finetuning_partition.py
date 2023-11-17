@@ -19,7 +19,6 @@ import torch.distributed as dist
 # Unused imports removed
 from utils.train_utils import (
     save_train_params,
-    train_partition,
     save_model,
     freeze_transformer_layers,
     setup,
@@ -27,6 +26,7 @@ from utils.train_utils import (
     print_model_size,
     get_policies  
 )
+from utils.train_utils import train_partition
 
 from utils.dataset_utils import get_preprocessed_dataset
 

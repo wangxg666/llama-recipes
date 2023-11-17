@@ -268,7 +268,7 @@ def main(**kwargs):
             if not scheduler:
                 total_steps = len(filenames) * len(train_dataloader) * 1.05
                 scheduler = get_scheduler(
-                    SchedulerType.CONSTANT,
+                    SchedulerType.CONSTANT_WITH_WARMUP,
                     optimizer=optimizer,
                     num_warmup_steps=500,
                     num_training_steps=total_steps,
