@@ -66,6 +66,10 @@ class my_pre_train_dataset(my_common_dataset_config):
     sample_ratio: float = 1.
 
 
+class my_agent_sft_dataset(my_common_dataset_config):
+    dataset: str = "my_agent_sft_dataset"
+
+
 class my_news_comment_dataset(my_common_dataset_config):
     dataset: str = "my_news_comment_dataset"
 

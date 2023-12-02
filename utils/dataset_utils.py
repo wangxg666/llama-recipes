@@ -5,16 +5,7 @@ import torch
 
 from functools import partial
 
-from ft_datasets import (
-    get_grammar_dataset,
-    get_alpaca_dataset,
-    get_samsum_dataset,
-    get_my_allin_one_dataset,
-    get_my_pre_train_dataset,
-    get_my_news_comment_dataset,
-    get_my_news_comment_tokenized_dataset,
-    get_my_news_comment_dpo_dataset,
-)
+from ft_datasets import *
 from typing import Optional
 
 
@@ -27,6 +18,7 @@ DATASET_PREPROC = {
     'my_news_comment_dataset': get_my_news_comment_dataset,
     'my_news_comment_tokenized_dataset': get_my_news_comment_tokenized_dataset,
     'my_news_comment_dpo_dataset': get_my_news_comment_dpo_dataset,
+    'my_agent_sft_dataset': get_my_agent_sft_dataset
 }
 
 
