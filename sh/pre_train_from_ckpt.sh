@@ -6,7 +6,7 @@ WORK_DIR="/home/paperspace/xingguang/models/"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_pre_train_dataset"
 DATASET_DIR="pre-training-shuffle/tokenized.${MODEL_TYPE}.v02"
-PRE_TRAIN_CKPT_PATH="/home/paperspace/xingguang/models/my_pre_train_dataset.v02.13b.1e-5.B6.E1.full/optimizer_step_005145.hf"
+PRE_TRAIN_CKPT_PATH="/home/paperspace/xingguang/models/my_pre_train_dataset.v02.13b.1e-5.B6.E1.full/optimizer_step_082756.hf"
 
 LR=1e-5
 BATCH_SIZE=6
