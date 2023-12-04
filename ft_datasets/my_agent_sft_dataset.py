@@ -28,6 +28,7 @@ PERSONA_PROMPT_DICT = {
 
 ANSWER_TYPE_PROMPT = {
     'casual_generation': (
+        '{persona}\n'
         'Given the conversion history, please firstly to decide what to do next. Specifically:\n'
         '- Casual, if you feel the user question is casual, which can be answered without querying the database, please provide your response based on the conversation history.\n'
         '- Query, if a database query is needed, please provide the specific query parameters.\n'
@@ -80,12 +81,20 @@ class MyAgentSFTDataset(Dataset):
         type = item['type']
 
         if type == 'api_generation':
-            prompt = ANSWER_TYPE_PROMPT[type].format(history=json.dumps(item['history'], indent=2))
-            label = item['action'] + '\n' + json.dumps(item['label'], separators=(',', ':'))
+            persona = PERSONA_PROMPT_DICT.get(item['action'], PERSONA_PROMPT_DICT['default'])
+            prompt = ANSWER_TYPE_PROMPT[type].format(
+                persona=persona,
+                history=json.dumps(item['history'], indent=2)
+            )
+            label = item['label_type'] + '\n' + json.dumps(item['label'], separators=(',', ':'))
 
         elif type == 'casual_generation':
-            prompt = ANSWER_TYPE_PROMPT[type].format(history=json.dumps(item['history'], indent=2))
-            label = item['action'] + '\n' + item['label']
+            persona = PERSONA_PROMPT_DICT.get(item['action'], PERSONA_PROMPT_DICT['default'])
+            prompt = ANSWER_TYPE_PROMPT[type].format(
+                persona=persona,
+                history=json.dumps(item['history'], indent=2)
+            )
+            label = item['label_type'] + '\n' + item['label']
 
         else:
             persona = PERSONA_PROMPT_DICT.get(item['action'], PERSONA_PROMPT_DICT['default'])
@@ -97,7 +106,7 @@ class MyAgentSFTDataset(Dataset):
             label = item['label']
 
         example = prompt + label
-        # print(example + '\n\n', flush=True)
+        print(example + '\n\n', flush=True)
 
         prompt = tokenizer.encode(prompt)
         example = tokenizer.encode(example) + [tokenizer.eos_token_id]
@@ -133,15 +142,63 @@ if __name__ == '__main__':
     tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-13b-hf')
 
     items = [
-        {"type": "api_generation", "action": "Query",
-         "history": ["USER: Yes, I need a place to stay that is expensive, and is a hotel please."], "label": [
-            {"service": "hotel", "active_intent": "find_hotel",
-             "slot_values": {"hotel-pricerange": ["expensive"], "hotel-type": ["hotel"]}}]},
-        {"type": "casual_generation", "action": "Normal",
-         "history": ["USER: Yes, I need a place to stay that is expensive, and is a hotel please.",
-                     "SYSTEM: I have 5 different hotels that meet your needs. Is there a certain area you prefer to stay in?",
-                     "USER: Not really. Do all of them include free parking?"],
-         "label": "Yes, all of these hotels include parking."},
+        {
+            "type": "api_generation",
+            "action": "hotel",
+            "label_type": "Query",
+            "history": [
+                "USER: I want a hotel with free parking in the center of town.",
+                "SYSTEM: Sure, I can help you with that. Do you have a price preference?",
+                "USER: Something moderate would be preferred.",
+                "SYSTEM: I am sorry but there is nothing in the moderate price range. Would you like another price range?",
+                "USER: What about a moderate hotel located in the North?"
+            ],
+            "label": [
+                {
+                    "service": "hotel",
+                    "active_intent": "find_hotel",
+                    "slot_values": {
+                        "hotel-area": [
+                            "north"
+                        ],
+                        "hotel-parking": [
+                            "yes"
+                        ],
+                        "hotel-pricerange": [
+                            "moderate"
+                        ],
+                        "hotel-name": [
+                            "Acorn Guest House"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "type": "casual_generation",
+            "action": "restaurant",
+            "label_type": "Normal",
+            "history": [
+                "USER: I need a train that leaves on monday from cambridge",
+                "SYSTEM: Ok and what is your destination?",
+                "USER: Norwich. I'd like to leave after 17:30",
+                "SYSTEM: Okay, the TR6675 leaves at 17:36 and arrives by 18:55. Would you like me to book tickets?",
+                "USER: Yes please book that for 5 people.",
+                "SYSTEM: Your train tickets are booked, please retain reference number: YVHR5SZJ and the fee for the tickets is 88GBP, which you will be required to pay at the station. Anything else today?",
+                "USER: I need a restaurant that serves catalan food and it should be in the west.",
+                "SYSTEM: Unfortunately, I'm not finding any Catalan restaurants in the west. Would you like me to look in other areas?",
+                "USER: Is there another high-end restaurant in the west area that you can recommend?",
+                "SYSTEM: Are you looking for expensive food?",
+                "USER: Yes, please.",
+                "SYSTEM: Cocum is an expensive restaurant on the west part of town serving Indian food. Would you like more information or reserve a table?",
+                "USER: I don't really like Indian food. Are there any expensive british restaurants in the west?",
+                "SYSTEM: Yes, I have 2. The Graffiti and Traveller's Rest. Do you know which you would prefer?",
+                "USER: I don't really have a preference. Which one would you recommend?",
+                "SYSTEM: I would recommend the Travellers rest. Would you like me to book you a table?",
+                "USER: Yes, I would like a table."
+            ],
+            "label": "What day and time will you want a table?"
+        },
         {"type": "rag_generation", "action": "hotel",
          "history": ["USER: Yes, I need a place to stay that is expensive, and is a hotel please."], "search_results": {
             "hotel": [{"address": "15-17 norman way, coldhams business park", "area": "east", "internet": "yes",
@@ -159,17 +216,17 @@ if __name__ == '__main__':
     for item in items:
         output = MyAgentSFTDataset.inner_tokenize(item, 1024, tokenizer)
 
-    datas = []
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v02'
-    for input_file in os.listdir(input_dir):
-        input_file = f'{input_dir}/{input_file}'
-        datas.extend([json.loads(data) for data in open(input_file)])
-
-    max_len = -1
-    for data in tqdm.tqdm(datas):
-        out = MyAgentSFTDataset.inner_tokenize(data, 2048, tokenizer, do_padding=False)
-        print(len(out['input_ids']))
-        max_len = max(max_len, len(out['input_ids']))
-    print(f'max len is {max_len}')
+    # datas = []
+    # input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v02'
+    # for input_file in os.listdir(input_dir):
+    #     input_file = f'{input_dir}/{input_file}'
+    #     datas.extend([json.loads(data) for data in open(input_file)])
+    #
+    # max_len = -1
+    # for data in tqdm.tqdm(datas):
+    #     out = MyAgentSFTDataset.inner_tokenize(data, 2048, tokenizer, do_padding=False)
+    #     print(len(out['input_ids']))
+    #     max_len = max(max_len, len(out['input_ids']))
+    # print(f'max len is {max_len}')
 
 
