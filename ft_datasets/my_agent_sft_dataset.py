@@ -30,11 +30,12 @@ ANSWER_TYPE_PROMPT = {
     'casual_generation': (
         '{persona}\n'
         'Given the conversion history, please firstly to decide what to do next. Specifically:\n'
-        '- Casual, if you feel the user question is casual, which can be answered without querying the database, please provide your response based on the conversation history.\n'
-        '- Query, if a database query is needed, please provide the specific query parameters.\n'
+        '- Normal, if the user\' request can be answered without querying the database, please response directly.\n'
+        '- Query, if a database query is needed to answer the user\'s request, please output the specific query parameters.\n'
         'The first word you provide should represent the action you are going to perform.\n'
-        'Then, give your response based on your decision.\n'
+        'Then, give your response based on your action decision.\n'
         'Here is the conversion history:\n{history}\n'
+        'the user lastest utterence: \n{user_utterence}\n'
         'Please give your output:\n'
     ),
     'rag_generation': (
@@ -43,6 +44,7 @@ ANSWER_TYPE_PROMPT = {
         'please generate a appropriate answer based on the give conversion status.\n'
         'Here is the conversion history:\n{history}\n'
         'query result:\n{search_results}\n'
+        'the user lastest utterence: \n{user_utterence}\n'
         'Please give your output:\n'
     )
 }
@@ -79,12 +81,14 @@ class MyAgentSFTDataset(Dataset):
     @staticmethod
     def inner_tokenize(item, max_words, tokenizer, do_padding=True):
         type = item['type']
+        history = [x.replace('USER', 'user').replace('SYSTEM', 'you') for x in item['history']]
 
         if type == 'api_generation':
             persona = PERSONA_PROMPT_DICT.get(item['action'], PERSONA_PROMPT_DICT['default'])
             prompt = ANSWER_TYPE_PROMPT[type].format(
                 persona=persona,
-                history=json.dumps(item['history'], indent=2)
+                history=json.dumps(history[0:-1], indent=2),
+                user_utterence=history[-1].replace('user: ', '')
             )
             label = item['label_type'] + '\n' + json.dumps(item['label'], separators=(',', ':'))
 
@@ -92,7 +96,8 @@ class MyAgentSFTDataset(Dataset):
             persona = PERSONA_PROMPT_DICT.get(item['action'], PERSONA_PROMPT_DICT['default'])
             prompt = ANSWER_TYPE_PROMPT[type].format(
                 persona=persona,
-                history=json.dumps(item['history'], indent=2)
+                history=json.dumps(history[0:-1], indent=2),
+                user_utterence=history[-1].replace('user: ', '')
             )
             label = item['label_type'] + '\n' + item['label']
 
@@ -100,7 +105,8 @@ class MyAgentSFTDataset(Dataset):
             persona = PERSONA_PROMPT_DICT.get(item['action'], PERSONA_PROMPT_DICT['default'])
             prompt = ANSWER_TYPE_PROMPT[type].format(
                 persona=persona,
-                history=json.dumps(item['history'], indent=2),
+                history=json.dumps(history[0:-1], indent=2),
+                user_utterence=history[-1].replace('user: ', ''),
                 search_results=json.dumps(item['search_results'], separators=(',', ':'))
             )
             label = item['label']
@@ -142,75 +148,39 @@ if __name__ == '__main__':
     tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-13b-hf')
 
     items = [
-        {
-            "type": "api_generation",
-            "action": "hotel",
-            "label_type": "Query",
-            "history": [
-                "USER: I want a hotel with free parking in the center of town.",
-                "SYSTEM: Sure, I can help you with that. Do you have a price preference?",
-                "USER: Something moderate would be preferred.",
-                "SYSTEM: I am sorry but there is nothing in the moderate price range. Would you like another price range?",
-                "USER: What about a moderate hotel located in the North?"
-            ],
-            "label": [
-                {
-                    "service": "hotel",
-                    "active_intent": "find_hotel",
-                    "slot_values": {
-                        "hotel-area": [
-                            "north"
-                        ],
-                        "hotel-parking": [
-                            "yes"
-                        ],
-                        "hotel-pricerange": [
-                            "moderate"
-                        ],
-                        "hotel-name": [
-                            "Acorn Guest House"
-                        ]
-                    }
-                }
-            ]
-        },
-        {
-            "type": "casual_generation",
-            "action": "restaurant",
-            "label_type": "Normal",
-            "history": [
-                "USER: I need a train that leaves on monday from cambridge",
-                "SYSTEM: Ok and what is your destination?",
-                "USER: Norwich. I'd like to leave after 17:30",
-                "SYSTEM: Okay, the TR6675 leaves at 17:36 and arrives by 18:55. Would you like me to book tickets?",
-                "USER: Yes please book that for 5 people.",
-                "SYSTEM: Your train tickets are booked, please retain reference number: YVHR5SZJ and the fee for the tickets is 88GBP, which you will be required to pay at the station. Anything else today?",
-                "USER: I need a restaurant that serves catalan food and it should be in the west.",
-                "SYSTEM: Unfortunately, I'm not finding any Catalan restaurants in the west. Would you like me to look in other areas?",
-                "USER: Is there another high-end restaurant in the west area that you can recommend?",
-                "SYSTEM: Are you looking for expensive food?",
-                "USER: Yes, please.",
-                "SYSTEM: Cocum is an expensive restaurant on the west part of town serving Indian food. Would you like more information or reserve a table?",
-                "USER: I don't really like Indian food. Are there any expensive british restaurants in the west?",
-                "SYSTEM: Yes, I have 2. The Graffiti and Traveller's Rest. Do you know which you would prefer?",
-                "USER: I don't really have a preference. Which one would you recommend?",
-                "SYSTEM: I would recommend the Travellers rest. Would you like me to book you a table?",
-                "USER: Yes, I would like a table."
-            ],
-            "label": "What day and time will you want a table?"
-        },
-        {"type": "rag_generation", "action": "hotel",
-         "history": ["USER: Yes, I need a place to stay that is expensive, and is a hotel please."], "search_results": {
-            "hotel": [{"address": "15-17 norman way, coldhams business park", "area": "east", "internet": "yes",
-                       "parking": "yes", "id": "16", "location": [52.2, 0.17],
-                       "name": "express by holiday inn cambridge", "phone": "01223866800", "postcode": "cb13lh",
-                       "price": {"double": "90", "family": "90", "single": "90"}, "pricerange": "expensive",
-                       "stars": "2", "takesbookings": "yes", "type": "hotel"},
-                      {"address": "gonville place", "area": "centre", "internet": "yes", "parking": "yes", "id": "18",
-                       "location": [52.2, 0.13], "name": "gonville hotel", "phone": "01223366611", "postcode": "cb11ly",
-                       "price": {"double": "95", "family": "119", "single": "79"}, "pricerange": "expensive",
-                       "stars": "3", "takesbookings": "yes", "type": "hotel"}]},
-         "label": "I have 5 different hotels that meet your needs. Is there a certain area you prefer to stay in?"}
+        {"dialog_id": "pmul1141", "turn_id": 3, "type": "rag_generation", "action": "attraction",
+         "history": ["USER: I'm looking for a place to go in the south of town.",
+                     "SYSTEM: What type of place are you looking for? In the south, we have a cinema, theater, museum, parks, and night club. If you tell me what you are looking for, we can narrow it down.",
+                     "USER: south. and i need to get address and postcode"], "search_results": {"attraction": [
+            {"address": "14 king's parade", "area": "south", "entrance fee": "free", "id": "6",
+             "location": [52.17, 0.11], "name": "byard art",
+             "openhours": "it opens from 09:30 a.m. to 5:30 p.m. from monday to saturday, and from 11:00 a.m. to 4:00 p.m. on sunday",
+             "phone": "01223464646", "postcode": "cb21sj", "pricerange": "free", "type": "museum"},
+            {"address": "cambridge leisure park, clifton way", "area": "south", "entrance fee": "?", "id": "21",
+             "location": [52.19, 0.14], "name": "cineworld cinema", "openhours": "?", "phone": "00872208000",
+             "postcode": "cb17dy", "pricerange": "?", "type": "cinema"}]},
+         "label": "Tenpin is a fun place in the south, located at Cambridge Leisure Park, Clifton Way. Their postcode is cb17dy."},
+        {"dialog_id": "pmul3589", "turn_id": 11, "type": "casual_generation", "action": "train", "label_type": "Normal",
+         "history": ["USER: Hello. I'm hoping to find a guesthouse in the north part of Cambridge. Are there any?",
+                     "SYSTEM: Indeed there are. In fact, there are 11. If you'd like an inexpensive, 4 star guesthouse with free internet and free parking, Worth House is a good choice.",
+                     "USER: I'm looking for a place to stay that is cheap located in the north.",
+                     "SYSTEM: I would suggest this one city centre north b and b.",
+                     "USER: Sure, I need a reservation for 4 people and 2 nights starting on Monday please.",
+                     "SYSTEM: I have made the booking the Reference number is E6UVD9OL . Is there anything else i can help you with?",
+                     "USER: Would you mind finding some info on a train into Cambridge for me?",
+                     "SYSTEM: I could do that for you. Can you give me a time ?",
+                     "USER: Yes, we will be coming from bishops stortford on Monday. I would like to leave after 19:30.",
+                     "SYSTEM: Their is a train that leaves Monday at 21:29. it costs 10.10 pounds and it's a 38 minute trip. Would you like me to book that for you?",
+                     "USER: Yes, please. Can you book me 4 tickets?"],
+         "label": "Booking was successful, the total fee is 40.4 GBP payable at the station. Reference number is : H4BIFD0U . Will there be anything else today?"},
+        {"dialog_id": "mul2061", "turn_id": 7, "type": "api_generation", "action": "hotel", "label_type": "Query",
+         "history": [
+             "USER: I am looking for a place to stay and it doesn't need free parking , but I would like it to be cheap.",
+             "SYSTEM: There are lots of accommodations in the cheaper price range, but they do all offer free parking. Also, is there a certain part of town you'd like to be in?",
+             "USER: Yes, the east part of town.", "SYSTEM: How about autumn house?",
+             "USER: As long as it has free parking, we are good to go!",
+             "SYSTEM: Great, would you like for me to set up a booking?", "USER: Yes and can I get a postcode?"],
+         "label": {"hotel": {"area": "east", "name": "autumn house", "parking": "yes", "pricerange": "cheap"}}}
     ]
 
     for item in items:
