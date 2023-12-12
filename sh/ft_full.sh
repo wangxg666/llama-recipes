@@ -1,11 +1,11 @@
 #!/bin/bash
 set -x
 
-MODEL_TYPE="13b"
+MODEL_TYPE="7b"
 WORK_DIR="/home/paperspace/xingguang/models/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="my_agent_sft_dataset"
-DATASET_DIR="agent_sft.v04"
+DATASET_DIR="agent_sft.v07"
 
 LR=2e-5
 BATCH_SIZE=4
@@ -16,7 +16,7 @@ ts=$(date +"%Y-%m-%d")
 
 cd ..
 
-CUDA_VISIBLE_DEVICES="4,5,6,7" torchrun \
+CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --nnodes 1 \
   --nproc_per_node 4 \
   --master_port=1201 \
