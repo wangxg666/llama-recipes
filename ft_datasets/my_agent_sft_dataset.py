@@ -112,7 +112,10 @@ class MyAgentSFTDataset(Dataset):
             label = item['label']
 
         example = prompt + label
-        print(example + '\n\n', flush=True)
+
+        # input_ids = tokenizer.encode(prompt + label)
+        # print(input_ids)
+        # print(tokenizer.encode(label))
 
         prompt = tokenizer.encode(prompt)
         example = tokenizer.encode(example) + [tokenizer.eos_token_id]

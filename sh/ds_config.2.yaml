@@ -1,20 +1,14 @@
 compute_environment: LOCAL_MACHINE
 debug: false
 deepspeed_config:
-  gradient_accumulation_steps: 1
-  gradient_clipping: 1.0
-  offload_optimizer_device: cpu
-  offload_param_device: cpu
+  deepspeed_config_file: /home/paperspace/xingguang/llama-recipes/sh/ds_config.2.json
   zero3_init_flag: false
-  zero_stage: 2
-  train_micro_batch_size_per_gpu: 2
 distributed_type: DEEPSPEED
 downcast_bf16: 'no'
 machine_rank: 0
 main_training_function: main
-mixed_precision: bf16
 num_machines: 1
-num_processes: 4
+num_processes: 7
 rdzv_backend: static
 same_network: true
 tpu_env: []

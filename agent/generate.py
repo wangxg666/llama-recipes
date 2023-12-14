@@ -246,7 +246,7 @@ if __name__ == '__main__':
     all_raw_datas = []
     sout_tok = open(f'{output_dir}/data.tok.json', 'a')
     sout_raw = open(f'{output_dir}/data.raw.json', 'a')
-    for i in range(200):
+    for i in range(1000):
         out_services, out_turns, out_rewards = generate_dialog(fake_ppo_trainner)
         if not out_services:
             continue
@@ -255,3 +255,5 @@ if __name__ == '__main__':
             sout_tok.write(json.dumps(sample) + '\n')
         sout_raw.write(json.dumps({'reward': out_rewards, 'dialog': out_turns}) + '\n')
 
+        sout_raw.flush()
+        sout_tok.flush()
