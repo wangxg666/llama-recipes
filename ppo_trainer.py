@@ -107,9 +107,11 @@ outputs = model(**inputs, labels=inputs["input_ids"])
 """
 
 def print_rank_0(*args):
-    if dist.get_rank() == 0:
+    try:
+        if dist.get_rank() == 0:
+            print(*args, flush=True)
+    except:
         print(*args, flush=True)
-
 
 def to_list(data):
     return json.dumps([round(x, 2) for x in data.tolist()])
@@ -650,8 +652,6 @@ class PPOTrainer(BaseTrainer):
         )
         scores = torch.tensor(scores, device=self.current_device)
 
-        print_rank_0(scores)
-
         if self.config.use_score_scaling:
             # Score scaling
             scores_mean, scores_std = self.running.update(scores)
@@ -684,8 +684,8 @@ class PPOTrainer(BaseTrainer):
         t = time.time()
 
         model_inputs = self.prepare_model_inputs(queries, responses)
+        print_rank_0('scores', scores)
         print_rank_0('model_inputs', model_inputs['input_ids'].shape)
-        print_rank_0('is_distributed', self.is_distributed)
 
         if self.is_distributed:
             pad_first = self.tokenizer.padding_side == "left"
@@ -699,6 +699,9 @@ class PPOTrainer(BaseTrainer):
             model_inputs["attention_mask"] = self.accelerator.pad_across_processes(
                 model_inputs["attention_mask"], dim=1, pad_index=0, pad_first=pad_first
             )
+
+            print_rank_0(model_inputs['input_ids'])
+            print_rank_0(model_inputs['attention_mask'])
 
             # print_rank_0("input_ids", model_inputs['input_ids'])
             # print_rank_0("attention_mask", model_inputs['attention_mask'])
@@ -756,16 +759,6 @@ class PPOTrainer(BaseTrainer):
 
             t = time.time()
             values, advantages, returns = self.compute_advantages(values, rewards, masks)
-            for i in range(len(masks)):
-                inds = masks[i].nonzero()
-                start, end = inds[0], inds[-1]
-                print_rank_0(f'******** {i} ********')
-                print_rank_0('values =', to_list(values[i][start: end]))
-                print_rank_0('advantages =', to_list(advantages[i][start: end]))
-                print_rank_0('returns =', to_list(returns[i][start: end]))
-                print_rank_0(f'++++++++ {i} ++++++++')
-                break
-
             timing["time/ppo/compute_advantages"] = time.time() - t
 
         # upcast to float32 to avoid dataset issues
@@ -783,7 +776,8 @@ class PPOTrainer(BaseTrainer):
         t = time.time()
         all_stats = []
         early_stop = False
-        for _ in range(self.config.ppo_epochs):
+        for ppo_epoch in range(self.config.ppo_epochs):
+            print_rank_0(f'oooooooooo {ppo_epoch} oooooooooo')
             if early_stop:
                 break
             b_inds = np.random.permutation(bs)
@@ -820,14 +814,12 @@ class PPOTrainer(BaseTrainer):
                         for i in range(len(mini_batch_dict['masks'])):
                             inds = mini_batch_dict['masks'][i].nonzero()
                             start, end = inds[0], inds[-1]
-                            print_rank_0(f'******** {i} ********')
                             print_rank_0(f'mask pos = {start}, {end}')
                             print_rank_0(f'old log probs = {to_list(mini_batch_dict["logprobs"][i][start: end+1])}')
                             print_rank_0(f'new log probs = {to_list(logprobs[i][start: end+1])}')
                             print_rank_0(f'values = {to_list(mini_batch_dict["values"][i][start: end+1])}')
                             print_rank_0(f'returns = {to_list(mini_batch_dict["returns"][i][start: end+1])}')
                             print_rank_0(f'advantages = {to_list(mini_batch_dict["advantages"][i][start: end+1])}')
-                            print_rank_0(f'++++++++ {i} ++++++++\n\n')
                             break
 
                         train_stats = self.train_minibatch(
@@ -842,7 +834,6 @@ class PPOTrainer(BaseTrainer):
                         )
                         all_stats.append(train_stats)
 
-            print_rank_0('=========================')
 
             # typically, early stopping is done at the epoch level
             if self.config.early_stopping:
@@ -1039,7 +1030,8 @@ class PPOTrainer(BaseTrainer):
                     start = 1
                     end = attention_mask[j, :].sum() - 1
                 else:
-                    start = len(query_batch[j]) - 1  # logprobs starts from the second query token
+                    start = len(query_batch[j])    # logprobs starts from the second query token
+                    # start = len(query_batch[j]) - 1    # logprobs starts from the second query token
                     if attention_mask[j, 0] == 0:  # offset left padding
                         start += attention_mask[j, :].nonzero()[0]
                     end = start + len(response_batch[j])
@@ -1141,6 +1133,7 @@ class PPOTrainer(BaseTrainer):
             reward = non_score_reward.clone()
             last_non_masked_index = mask.nonzero()[-1]
 
+            ## TODO
             # reward is preference model score + KL penalty
             reward[last_non_masked_index] += score
             rewards.append(reward)
@@ -1186,8 +1179,10 @@ class PPOTrainer(BaseTrainer):
         advantages = torch.stack(advantages_reversed[::-1]).transpose(0, 1)
 
         returns = advantages + values
-        advantages = masked_whiten(advantages, mask)
+        # advantages = masked_whiten(advantages, mask)
         advantages = advantages.detach()
+        returns = returns * mask
+        advantages = advantages * mask
         return values, advantages, returns
 
     def loss(
@@ -1248,16 +1243,6 @@ class PPOTrainer(BaseTrainer):
             pg_loss = pg_loss * 0.0
             vf_loss = vf_loss * 0.0
             loss = loss * 0.0
-
-        for i in range(len(mask)):
-            inds = mask[i].nonzero()
-            start, end = inds[0], inds[-1]
-            print_rank_0(f'******** {i} ********')
-            print_rank_0('logprobs =', to_list(logprobs[i][start: end]))
-            print_rank_0('old_logprobs =', to_list(old_logprobs[i][start: end]))
-            print_rank_0('ratio =', to_list(ratio[i][start: end]))
-            print_rank_0(f'++++++++ {i} ++++++++')
-            break
 
         entropy = masked_mean(entropy_from_logits(logits), mask)
 

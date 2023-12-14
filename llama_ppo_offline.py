@@ -13,22 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import json
-import pickle
-import time
 from dataclasses import dataclass, field
 from typing import Optional
 
 import torch
 import tyro
 from accelerate import Accelerator
-from datasets import load_dataset
 from peft import LoraConfig
 from tqdm import tqdm
-from transformers import AutoTokenizer, pipeline
+from transformers import AutoTokenizer
 
-from trl import AutoModelForCausalLMWithValueHead, AutoModelForSeq2SeqLMWithValueHead, PPOConfig, set_seed, PPOTrainer
-from trl.core import LengthSampler
-from trl.import_utils import is_xpu_available
+from trl import AutoModelForCausalLMWithValueHead, PPOConfig, set_seed
 
 from ppo_trainer import PPOTrainer, print_rank_0
 
@@ -87,7 +82,13 @@ class PPODataset(Dataset):
         for data in open(input_file):
             data = json.loads(data)
             keys = [key[:-1] for key in self.samples if key[:-1] in data]
+            if data['key'] == 'rag':
+                continue
             if len(keys) != len(self.samples):
+                continue
+            if len(data['query_tensor']) + len(data['response_tensor']) > 1536:
+                continue
+            if len(data['response_tensor']) == 0:
                 continue
             for key in keys:
                 self.samples[key + 's'].append(torch.tensor(data[key]))

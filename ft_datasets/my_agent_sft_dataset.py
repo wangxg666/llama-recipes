@@ -53,14 +53,14 @@ ANSWER_TYPE_PROMPT['api_generation'] = ANSWER_TYPE_PROMPT['casual_generation']
 
 class MyAgentSFTDataset(Dataset):
     def __init__(self, dataset_config, tokenizer, partition="train", max_words=2048, debug=False):
-        type = 'train' if partition == 'train' else 'dev'
+        type = 'train' if partition == 'train' else 'train'
         input_files = [
             f'{dataset_config.root}/{dataset_config.dataset_dir}/{type}.{task}.json'
             for task in ['api', 'casual', 'rag']
         ]
         self.datas = []
         for input_file in input_files:
-            datas = [json.loads(data) for data in open(input_file)]
+            datas = [json.loads(data) for data in open(input_file) if data.strip()]
             if partition == 'train':
                 self.datas.extend(datas)
             else:
@@ -113,9 +113,6 @@ class MyAgentSFTDataset(Dataset):
 
         example = prompt + label
 
-        # input_ids = tokenizer.encode(prompt + label)
-        # print(input_ids)
-        # print(tokenizer.encode(label))
 
         prompt = tokenizer.encode(prompt)
         example = tokenizer.encode(example) + [tokenizer.eos_token_id]

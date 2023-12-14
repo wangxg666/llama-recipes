@@ -10,8 +10,8 @@
             "pin_memory": true
         },
         "offload_param": {
-            "device": "cpu",
-            "pin_memory": true
+            "device": "none",
+            "pin_memory": false
         }
     },
     "gradient_clipping": 1.0,
