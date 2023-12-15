@@ -38,7 +38,7 @@ class ScriptArguments:
             model_name="/home/paperspace/xingguang/models/my_agent_sft_dataset.13b.2e-5.full.B4.E1.v07.all.hf",
             query_dataset="/home/paperspace/xingguang/datasets/agent_raft.v07/ppo.train.jsonl",
             reward_model="",
-            learning_rate=1.41e-7,
+            learning_rate=1.41e-6,
             log_with=None,
             mini_batch_size=1,
             batch_size=1,
@@ -50,7 +50,7 @@ class ScriptArguments:
             use_score_scaling=False,
             use_score_norm=False,
             score_clip=None,
-            ppo_epochs=2,
+            ppo_epochs=1,
         )
     )
     """whether to use seq2seq models"""
@@ -170,10 +170,21 @@ generation_kwargs = {
     "max_new_tokens": 32,
 }
 
+
+from agent.generate import generate_dialog
+from agent.convert_ppo_offline import convert_sft_types, tokenize_samples
+
+
 for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
-    query_tensors = batch["query_tensors"]
-    response_tensors = batch['response_tensors']
-    rewards = batch['rewards']
+    out_services, out_turns, out_rewards = generate_dialog(ppo_trainer)
+    key2turns = convert_sft_types(out_turns)
+    reward = out_rewards['reward']['avg_score']
+    if reward >= 4:
+        for key, turns in key2turns.items():
+            key2sout[key].write('\n'.join([json.dumps(turn) for turn in turns]) + '\n')
+            key2sout[key].flush()
+    samples = tokenize_samples(reward, key2turns, tokenizer)
+
 
     # Get response from gpt2
     # response_tensors, ref_response_tensors = ppo_trainer.generate(

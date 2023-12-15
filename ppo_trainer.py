@@ -700,8 +700,8 @@ class PPOTrainer(BaseTrainer):
                 model_inputs["attention_mask"], dim=1, pad_index=0, pad_first=pad_first
             )
 
-            print_rank_0(model_inputs['input_ids'])
-            print_rank_0(model_inputs['attention_mask'])
+            # print_rank_0(model_inputs['input_ids'])
+            # print_rank_0(model_inputs['attention_mask'])
 
             # print_rank_0("input_ids", model_inputs['input_ids'])
             # print_rank_0("attention_mask", model_inputs['attention_mask'])
