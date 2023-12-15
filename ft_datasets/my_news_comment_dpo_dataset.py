@@ -5,7 +5,17 @@
 
 import json
 from torch.utils.data import Dataset
-from configs.datasets import get_data_root
+
+def get_data_root():
+    for path in [
+        '/mnt/nlp/xingguang/llama/datasets/nb_training',
+        '/home/cpp/xingguang/datasets',
+        '/home/paperspace/xingguang/datasets',
+        '/home/paperspace/datasets',
+    ]:
+        if os.path.exists(path):
+            return path
+    return ""
 
 
 IGNORE_INDEX = -100  # The default setting in CrossEntropyLoss

@@ -18,7 +18,9 @@ DATASET_PREPROC = {
     'my_news_comment_dataset': get_my_news_comment_dataset,
     'my_news_comment_tokenized_dataset': get_my_news_comment_tokenized_dataset,
     'my_news_comment_dpo_dataset': get_my_news_comment_dpo_dataset,
-    'my_agent_sft_dataset': get_my_agent_sft_dataset
+    'my_agent_sft_dataset': get_my_agent_sft_dataset,
+    'agent_sft_gen_dataset': get_agent_sft_gen_dataset,
+    'agent_sft_act_dataset': get_agent_sft_act_dataset,
 }
 
 

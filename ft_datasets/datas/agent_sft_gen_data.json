@@ -1,0 +1,55 @@
+[
+    {
+        "dialog_id":"sng0771",
+        "turn_id":1,
+        "type":"api_generation",
+        "action":"hotel",
+        "label_type":"Query",
+        "history":[
+            "USER: I need a hotel in the south with free wifi."
+        ],
+        "label":{
+            "hotel":{
+                "area":"south",
+                "internet":"yes"
+            }
+        }
+    },
+    {
+        "dialog_id":"pmul0432",
+        "turn_id":1,
+        "type":"casual_generation",
+        "action":"hotel",
+        "label_type":"Normal",
+        "history":[
+            "USER: I need a place to stay that has a 4 star rating."
+        ],
+        "label":"Okay, I'll help you with that. Do you have a price range in mind?",
+        "asked_slots":{
+            "hotel":{
+                "hotel-parking":[
+                    "yes"
+                ]
+            }
+        }
+    },
+    {
+        "dialog_id":"sng0771",
+        "turn_id":9,
+        "type":"casual_generation_no_slots",
+        "action":"general",
+        "label_type":"Normal",
+        "history":[
+            "USER: I need a hotel in the south with free wifi.",
+            "SYSTEM: I have a cheap guesthouse, 2 moderately priced guesthouses, and 1 expensive hotel - do you have a preference?",
+            "USER: Can you tell me if the cheap one has a star rating?",
+            "SYSTEM: Yes, that would be Rosa's Bed and Breakfast. It has a 4-star rating and offers free wifi and parking. Would you like me to book you a room?",
+            "USER: Yes, please book a room for 5 people.",
+            "SYSTEM: What day and how long should I book this for?",
+            "USER: Please book it on Thursday, for 5 people, and 3 days.",
+            "SYSTEM: Your booking was successful. Reference numbr is Y113FEV7 . Can I assist you with anything else today?",
+            "USER: That will be all, thank you."
+        ],
+        "label":"You're welcome. Enjoy your time in Cambridge!"
+    }
+]

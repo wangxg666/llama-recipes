@@ -1,0 +1,74 @@
+[
+    {
+        "dialog_id":"sng0771",
+        "turn_id":3,
+        "type":"act_selection",
+        "action":"hotel",
+        "history":[
+            "USER: I need a hotel in the south with free wifi.",
+            "SYSTEM: I have a cheap guesthouse, 2 moderately priced guesthouses, and 1 expensive hotel - do you have a preference?",
+            "USER: Can you tell me if the cheap one has a star rating?"
+        ],
+        "label":{
+            "action":"search",
+            "slots":{
+                "hotel":[
+                    "area",
+                    "internet",
+                    "pricerange"
+                ]
+            }
+        }
+    },
+    {
+        "dialog_id":"mul0707",
+        "turn_id":13,
+        "type":"act_selection",
+        "action":"general",
+        "history":[
+            "USER: Yes, I need a place to stay that is expensive, and is a hotel please.",
+            "SYSTEM: I have 5 different hotels that meet your needs. Is there a certain area you prefer to stay in?",
+            "USER: Not really. Do all of them include free parking?",
+            "SYSTEM: Yes, all of these hotels include parking.",
+            "USER: Can you please book one for me? I would also like the star of the hotel, the postcode, and the phone number please.",
+            "SYSTEM: I would be happy to book a room for you. I need to know when you plan to arrive, and how many people will be in your party.",
+            "USER: My mistake, no booking needed. I just require the hotel's name, the star of the hotel, its postcode, and also its phone number.",
+            "SYSTEM: The Gonville Hotel is located at Gonville Place. The phone number is 01223366611 and the postcode is cb11ly. It is a 3 star hotel.",
+            "USER: Thank you. I also need a train from Broxbourne to Cambridge on Monday. I need to arrive in Cambridge by 16:30.",
+            "SYSTEM: I have a train that arrives in Cambridge at 13:32. All other trains arrive after 14:30. Would you like me to book that for you?",
+            "USER: What was the departure time?",
+            "SYSTEM: The departure time for the TR0354 train is 12:32, it then arrives at 13:32.",
+            "USER: Great. That's all I need, thank you."
+        ],
+        "label":{
+            "action":"chat",
+            "slots":{
+
+            }
+        }
+    },
+    {
+        "dialog_id":"pmul0432",
+        "turn_id":1,
+        "type":"act_selection",
+        "action":"hotel",
+        "history":[
+            "USER: I need a place to stay that has a 4 star rating."
+        ],
+        "label":{
+            "action":"chat",
+            "slots":{
+                "hotel":[
+                    "hotel-parking"
+                ]
+            }
+        },
+        "asked_slots":{
+            "hotel":{
+                "hotel-parking":[
+                    "yes"
+                ]
+            }
+        }
+    }
+]
