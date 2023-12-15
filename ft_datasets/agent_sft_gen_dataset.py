@@ -99,7 +99,7 @@ class AgentSFTDataset(Dataset):
                 user_utterence=history[-1].replace('user: ', ''),
                 slots=json.dumps(slots)
             )
-            label = item['label_type'] + '\n' + json.dumps(item['label'], separators=(',', ':'))
+            label = json.dumps(item['label'], separators=(',', ':'))
 
         elif type == 'casual_generation':
             persona = PERSONA_PROMPT_DICT.get(item['action'], PERSONA_PROMPT_DICT['default'])
@@ -111,7 +111,7 @@ class AgentSFTDataset(Dataset):
                 user_utterence=history[-1].replace('user: ', ''),
                 slots=json.dumps(slots)
             )
-            label = item['label_type'] + '\n' + item['label']
+            label = item['label']
 
         elif type == 'casual_generation_no_slots':
             persona = PERSONA_PROMPT_DICT.get(item['action'], PERSONA_PROMPT_DICT['default'])
@@ -120,7 +120,7 @@ class AgentSFTDataset(Dataset):
                 history=json.dumps(history[0:-1], indent=2),
                 user_utterence=history[-1].replace('user: ', '')
             )
-            label = item['label_type'] + '\n' + item['label']
+            label = item['label']
 
         else:
             persona = PERSONA_PROMPT_DICT.get(item['action'], PERSONA_PROMPT_DICT['default'])

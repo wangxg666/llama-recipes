@@ -22,7 +22,7 @@ PERSONA_PROMPT_DICT = {
 
 def agent_tokenize(tokenizer, prompt, label, max_words, do_padding):
     example = prompt + label
-    print(prompt+label)
+    # print(prompt+label)
     prompt = tokenizer.encode(prompt)
     example = tokenizer.encode(example) + [tokenizer.eos_token_id]
 
