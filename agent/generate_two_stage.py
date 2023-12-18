@@ -144,7 +144,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
         act_prompt, _ = AgentActDataset.prompting(act_item)
         if policy_model is not None and policy_tokenizer is not None:
             current_device = device if device is not None else 'cuda'
-            batch = tokenizer(act_prompt, return_tensors="pt")
+            batch = policy_tokenizer(act_prompt, return_tensors="pt")
             batch = {k: v.to(current_device) for k, v in batch.items()}
             output = policy_model.generate(
                 **batch,
@@ -416,9 +416,9 @@ if __name__ == '__main__':
             }) + '\n')
     else:
         model_name_or_path = 'meta-llama/Llama-2-13b-hf'
-        tokenizer = LlamaTokenizer.from_pretrained(model_name_or_path)
+        policy_tokenizer = LlamaTokenizer.from_pretrained(model_name_or_path)
 
-        model = LlamaForCausalLM.from_pretrained('/home/paperspace/xingguang/models/agent_sft_act_dataset.7b.2e-5.full.B16.E1.hf')
-        model.to('cuda')
-        get_batch(4, model, tokenizer)
+        policy_model = LlamaForCausalLM.from_pretrained('/home/paperspace/xingguang/models/agent_sft_act_dataset.7b.2e-5.full.B16.E1.hf')
+        policy_model.to('cuda')
+        get_batch(4, policy_model, policy_tokenizer)
 
