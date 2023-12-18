@@ -186,11 +186,12 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
             print()
 
             # casual 的数字都很危险，替换成不确定量词
-            words = gen_output.split(' ')
-            for idx in range(len(words)):
-                if words[idx].isdigit() and 1 < int(words[idx]) < 20:
-                    words[idx] = random.choice(['some', 'many', 'several', 'various', 'multiple'])
-            gen_output = ' '.join(words)
+            if gen_item['type'] in {'casual_generation', 'casual_generation_no_slots'}:
+                words = gen_output.split(' ')
+                for idx in range(len(words)):
+                    if words[idx].isdigit() and 1 < int(words[idx]) < 20:
+                        words[idx] = random.choice(['some', 'many', 'several', 'various', 'multiple'])
+                gen_output = ' '.join(words)
 
             return gen_output
 
