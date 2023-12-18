@@ -138,22 +138,31 @@ if ds_plugin is not None and ds_plugin.is_zero3_init_enabled():
 from agent.generate_two_stage import get_batch
 import torch.distributed as dist
 
+
+def safty_get_batch(batch_size, policy_model, policy_tokenizer, device):
+    while True:
+        try:
+            batch_input = get_batch(batch_size, policy_model, policy_tokenizer, device)
+            return batch_input
+        except:
+            continue
+
+
 for step in tqdm(range(1000)):
     model = ppo_trainer.accelerator.unwrap_model(ppo_trainer.model)
-    batch_input = get_batch(args.ppo_config.batch_size,
-                            policy_model=model,
-                            policy_tokenizer=tokenizer,
-                            device=ppo_trainer.current_device)
-
+    batch_input = safty_get_batch(args.ppo_config.batch_size,
+                                  policy_model=model,
+                                  policy_tokenizer=tokenizer,
+                                  device=ppo_trainer.current_device)
     query_tensors = batch_input['query_tensors']
     response_tensors = batch_input['response_tensors']
     reward_tensors = batch_input['reward_tensors']
 
-    for i in range(len(query_tensors)):
-        print_rank_0(f'query: {tokenizer.decode(query_tensors[i])}')
-        print_rank_0(f'response: {tokenizer.decode(response_tensors[i])}')
-        print_rank_0(f'reward: {reward_tensors[i]}')
-        break
+    # for i in range(len(query_tensors)):
+    #     print_rank_0(f'query: {tokenizer.decode(query_tensors[i])}')
+    #     print_rank_0(f'response: {tokenizer.decode(response_tensors[i])}')
+    #     print_rank_0(f'reward: {reward_tensors[i]}')
+    #     break
 
     dist.barrier()
     # Run PPO step
