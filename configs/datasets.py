@@ -83,3 +83,6 @@ class agent_sft_gen_dataset(my_common_dataset_config):
 
 class agent_sft_act_dataset(my_common_dataset_config):
     dataset: str = "agent_sft_act_dataset"
+
+class agent_sft_gen_whitening_dataset(my_common_dataset_config):
+    dataset: str = "agent_sft_gen_whitening_dataset"

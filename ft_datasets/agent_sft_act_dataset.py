@@ -53,11 +53,11 @@ class AgentActDataset(Dataset):
 
     def __getitem__(self, index):
         item: Dict = self.datas[index]
-        return AgentActDataset.tokenize(item, self.tokenizer, self.max_words, self.do_padding)
+        prompt, label = AgentActDataset.prompting(item)
+        return agent_tokenize(self.tokenizer, prompt, label, self.max_words, self.do_padding)
 
     @staticmethod
-    def tokenize(item: Dict, tokenizer, max_words, do_padding):
-
+    def prompting(item: Dict):
         type = item['type']
         history = [x.replace('USER', 'user').replace('SYSTEM', 'you') for x in item['history']]
 
@@ -68,8 +68,7 @@ class AgentActDataset(Dataset):
             user_utterence=history[-1].replace('user: ', '')
         )
         label = json.dumps(item['label'])
-
-        return agent_tokenize(tokenizer, prompt, label, max_words, do_padding)
+        return prompt, label
 
 
 if __name__ == '__main__':

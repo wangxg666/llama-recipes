@@ -9,6 +9,7 @@ from .my_pre_train_dataset import get_my_pre_train_dataset
 from .my_agent_sft_dataset import MyAgentSFTDataset as get_my_agent_sft_dataset
 from .agent_sft_act_dataset import AgentActDataset as get_agent_sft_act_dataset
 from .agent_sft_gen_dataset import AgentSFTDataset as get_agent_sft_gen_dataset
+from .agent_sft_gen_whitening_dataset import AgentSFTWhiteningDataset as get_agent_sft_gen_whitening_dataset
 from .my_news_comment_dataset import NewsCommentDataset as get_my_news_comment_dataset
 from .my_news_comment_tokenized_dataset import NewsCommentDataset as get_my_news_comment_tokenized_dataset
 from .my_news_comment_dpo_dataset import NewsCommentDPODataset as get_my_news_comment_dpo_dataset

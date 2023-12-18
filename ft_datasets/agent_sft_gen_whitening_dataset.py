@@ -1,4 +1,6 @@
+import collections
 import os
+import random
 
 import torch
 import tqdm
@@ -11,56 +13,15 @@ from typing import Dict
 from ft_datasets.agent_sft_common import PERSONA_PROMPT_DICT, agent_tokenize
 
 
-ANSWER_TYPE_PROMPT = {
-    'casual_generation': (
-        '{persona}\n'
-        'Given the conversion history, your task is to generate the next response.\n'
-        'Generate an appropriate response; this response can be in one of the following two styles:\n'
-        '1. Interrogative, If you think that the user\'s needs have not been met, please ask for the necessary information to provide a more accurate understanding.\n'
-        '2. Direct response: If you believe the conversation is concluded, politely say goodbye; or other direct response based on the conversion history.\n'
-        'Here is the conversion history:\n{history}\n'
-        'and the user lastest utterence: \n{user_utterence}\n'
-        'and here is the slots you\'d better to ask rhetorically when outputting your response: \n{slots}\n'
-        'Please give your response:\n'
-    ),
-    'casual_generation_no_slots': (
-        '{persona}\n'
-        'Given the conversion history, your task is to generate the next response.\n'
-        'Generate an appropriate response; this response can be in one of the following two styles:\n'
-        '1. Interrogative, If you think that the user\'s needs have not been met, please ask for the necessary information to provide a more accurate understanding.\n'
-        '2. Direct response: If you believe the conversation is concluded, politely say goodbye; or other direct response based on the conversion history.\n'
-        'Here is the conversion history:\n{history}\n'
-        'and the user lastest utterence: \n{user_utterence}\n'
-        'Please generate a proper response based on the context.\n'
-        'Please give your response:\n'
-    ),
-    'rag_generation': (
-        '{persona}\n'
-        'Given the conversion history, user utterance, and query result from database, '
-        'please generate a appropriate answer based on the give conversion status.\n'
-        'Here is the conversion history:\n{history}\n'
-        'query result:\n{search_results}\n'
-        'the user lastest utterence: \n{user_utterence}\n'
-        'Please give your generation:\n'
-    ),
-    'api_generation': (
-        '{persona}\n'
-        'Given the conversion history, your task is the generate the formatted API for searching.\n'
-        'Here is the conversion history:\n{history}\n'
-        'the user lastest utterence: \n{user_utterence}\n'
-        'and here is the slots you\'d better to refer when generating the formatted API: \n{slots}\n'
-        'Please give your API:\n'
-    )
-}
-ANSWER_TYPE_PROMPT['default'] = ANSWER_TYPE_PROMPT['casual_generation']
+from ft_datasets.agent_sft_gen_dataset import ANSWER_TYPE_PROMPT
 
 
-class AgentSFTDataset(Dataset):
+class AgentSFTWhiteningDataset(Dataset):
     def __init__(self, dataset_config, tokenizer, partition="train", max_words=2048, do_padding=True, debug=False):
         type = 'train' if partition == 'train' else 'dev'
         input_files = [
-            f'{dataset_config.root}/{dataset_config.dataset_dir}/{type}.{task}.json'
-            for task in ['api', 'casual', 'rag']
+            f'{dataset_config.root}/{dataset_config.dataset_dir}/{type}.{taslot_key}.json'
+            for taslot_key in ['api', 'casual', 'rag']
         ]
         print(json.dumps(input_files, indent=2), flush=True)
         self.datas = []
@@ -72,6 +33,14 @@ class AgentSFTDataset(Dataset):
                 n = 100 if 'casual.json' in input_file else 200
                 self.datas.extend(datas[0:n])
 
+        self.service2slots_base = collections.defaultdict(set)
+        if partition == 'train':
+            input_file = f'{dataset_config.root}/{dataset_config.dataset_dir}/{type}.api.json'
+            datas = [json.loads(data) for data in open(input_file) if data.strip()]
+            for data in datas:
+                for key, slot_kv in data['label'].items():
+                    self.service2slots_base[key].update(slot_kv.keys())
+
         self.max_words = max_words
         self.do_padding = do_padding
         self.tokenizer = tokenizer
@@ -82,29 +51,46 @@ class AgentSFTDataset(Dataset):
 
     def __getitem__(self, index):
         item: Dict = self.datas[index]
-        prompt, label = AgentSFTDataset.prompting(item)
+        prompt, label = AgentSFTWhiteningDataset.prompting(item, self.service2slots_base)
         return agent_tokenize(self.tokenizer, prompt, label, self.max_words, self.do_padding)
 
     @staticmethod
-    def prompting(item: Dict):
+    def prompting(item: Dict, service2slots_base: Dict):
         type = item['type']
         history = [x.replace('USER', 'user').replace('SYSTEM', 'you') for x in item['history']]
 
         if type == 'api_generation':
             persona = PERSONA_PROMPT_DICT.get(item['action'], PERSONA_PROMPT_DICT['default'])
-            slots = {k: list(v) for k, v in item['label'].items()}
+            service2slots = {k: list(v) for k, v in item['label'].items()}
+
+            rnd = random.random()
+            if service2slots_base:
+                if rnd < 0.1:
+                    # remove from each action
+                    for service in service2slots.keys():
+                        slot_keys = service2slots[service]
+                        rm_slot_key = random.choice(slot_keys)
+                        service2slots[service] = [slot_key for slot_key in slot_keys if slot_key != rm_slot_key]
+                elif rnd < 0.2:
+                    # insert for each action
+                    for service in service2slots.keys():
+                        slot_keys = service2slots[service]
+                        ex_slot_keys = [slot_key for slot_key in service2slots_base.get(service, set()) if slot_key not in slot_keys]
+                        if ex_slot_keys:
+                            slot_keys.append(random.choice(ex_slot_keys))
+                        service2slots[service] = slot_keys
 
             prompt = ANSWER_TYPE_PROMPT[type].format(
                 persona=persona,
                 history=json.dumps(history[0:-1], indent=2),
                 user_utterence=history[-1].replace('user: ', ''),
-                slots=json.dumps(slots)
+                slots=json.dumps(service2slots)
             )
             label = json.dumps(item['label'], separators=(',', ':'))
 
         elif type == 'casual_generation':
             persona = PERSONA_PROMPT_DICT.get(item['action'], PERSONA_PROMPT_DICT['default'])
-            slots = {k: list(v) for k, v in item.get('asked_slots', {}).items()}
+            slots = {k: list(v) for k, v in item.get('aslot_keyed_slots', {}).items()}
 
             prompt = ANSWER_TYPE_PROMPT[type].format(
                 persona=persona,
