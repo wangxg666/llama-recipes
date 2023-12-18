@@ -71,24 +71,24 @@ args = tyro.cli(ScriptArguments)
 print(args)
 
 
-from torch.utils.data import Dataset
-class PPODataset(Dataset):
-    def __init__(self, size=10000):
-        self.size = size
-        self.data = list(range(size))
-
-    def __len__(self):
-        return self.size
-
-    def __getitem__(self, index):
-        return {'index': index}
-
-
-# We retrieve the dataloader by calling the `build_dataset` function.
-dataset = PPODataset(size=1000)
-
-def collator(data):
-    return dict((key, [d[key] for d in data]) for key in data[0])
+# from torch.utils.data import Dataset
+# class PPODataset(Dataset):
+#     def __init__(self, size=10000):
+#         self.size = size
+#         self.data = list(range(size))
+#
+#     def __len__(self):
+#         return self.size
+#
+#     def __getitem__(self, index):
+#         return {'index': index}
+#
+#
+# # We retrieve the dataloader by calling the `build_dataset` function.
+# dataset = PPODataset(size=1000)
+#
+# def collator(data):
+#     return dict((key, [d[key] for d in data]) for key in data[0])
 
 
 # set seed before initializing value head for deterministic eval
@@ -122,7 +122,7 @@ tokenizer = AutoTokenizer.from_pretrained(args.ppo_config.model_name)
 tokenizer.pad_token_id = tokenizer.eos_token_id
 
 # We then build the PPOTrainer, passing the model, the reference model, the tokenizer
-ppo_trainer = PPOTrainer(args.ppo_config, model, ref_model, tokenizer, dataset=dataset, data_collator=collator)
+ppo_trainer = PPOTrainer(args.ppo_config, model, ref_model, tokenizer, dataset=None, data_collator=None)
 
 # We then build the sentiment analysis pipeline, passing the model name and the
 # sentiment analysis pipeline arguments. Let's also make sure to set the device
@@ -138,16 +138,16 @@ if ds_plugin is not None and ds_plugin.is_zero3_init_enabled():
 from agent.generate_two_stage import get_batch
 import torch.distributed as dist
 
-for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
+for step in tqdm(range(1000)):
     model = ppo_trainer.accelerator.unwrap_model(ppo_trainer.model)
-    batch_input = get_batch(len(batch),
+    batch_input = get_batch(args.ppo_config.batch_size,
                             policy_model=model,
                             policy_tokenizer=tokenizer,
                             device=ppo_trainer.current_device)
 
-    query_tensors = batch['query_tensors']
-    response_tensors = batch['response_tensors']
-    reward_tensors = batch['reward_tensors']
+    query_tensors = batch_input['query_tensors']
+    response_tensors = batch_input['response_tensors']
+    reward_tensors = batch_input['reward_tensors']
 
     for i in range(len(query_tensors)):
         print_rank_0(f'query: {tokenizer.decode(query_tensors[i])}')
