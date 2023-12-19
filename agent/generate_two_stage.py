@@ -182,9 +182,8 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
             act_output = call_tgi(act_prompt, act_tgi_svr)
             act_output = json.loads(act_output)
             # print_rank_0('error of policy model for generation act, replace with ref model')
-
-        act_output = validate_action_response(act_output)
         print_rank_0('*' * 10, act_output, '*' * 10)
+        act_output = validate_action_response(act_output)
 
         ttype = 'api_generation' if act_output['action'] == 'search' else (
             'casual_generation' if act_output['slots'] else 'casual_generation_no_slots'

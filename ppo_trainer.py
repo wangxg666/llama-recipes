@@ -887,8 +887,8 @@ class PPOTrainer(BaseTrainer):
 
                             print_states(
                                 'step diff', masks,
-                                vars=[logprobs, logprobs_new, vpreds, vpreds_new],
-                                names=['policy old log probs', 'policy new log probs', 'vpred', 'vpred_new']
+                                vars=[logprobs, logprobs_new, vpreds, vpreds_new, mini_batch_dict['values'], mini_batch_dict['returns'], mini_batch_dict['advantages']],
+                                names=['policy old log probs', 'policy new log probs', 'vpred', 'vpred_new', 'values', 'returns', 'advantages']
                             )
 
                         all_stats.append(train_stats)
@@ -1200,9 +1200,9 @@ class PPOTrainer(BaseTrainer):
             reward[last_non_masked_index] += score
             rewards.append(reward)
 
-        print_states('compute reward', masks,
-                     vars=[logprobs, ref_logprobs],
-                     names=['policy log probs', 'reference log probs'])
+        # print_states('compute reward', masks,
+        #              vars=[logprobs, ref_logprobs],
+        #              names=['policy log probs', 'reference log probs'])
 
         return torch.stack(rewards), torch.stack(non_score_rewards)
 
@@ -1249,9 +1249,9 @@ class PPOTrainer(BaseTrainer):
         advantages = masked_whiten(advantages, mask)
         advantages = advantages.detach()
 
-        print_states('compute advantage', mask,
-                     vars=[values, returns, advantages],
-                     names=['values', 'returns', 'advantages'])
+        # print_states('compute advantage', mask,
+        #              vars=[values, returns, advantages],
+        #              names=['values', 'returns', 'advantages'])
 
         return values, advantages, returns
 
@@ -1306,9 +1306,9 @@ class PPOTrainer(BaseTrainer):
 
         loss = pg_loss + self.config.vf_coef * vf_loss
 
-        print_states('loss', mask,
-                     vars=[ratio, logprobs - old_logprobs, logprobs, old_logprobs, vf_losses1, pg_losses],
-                     names=['ratio', 'delta logprobs', 'logprobs', 'old_logporbs', 'vf_losses1', 'pg_losses'])
+        # print_states('loss', mask,
+        #              vars=[ratio, logprobs - old_logprobs, logprobs, old_logprobs, vf_losses1, pg_losses],
+        #              names=['ratio', 'delta logprobs', 'logprobs', 'old_logporbs', 'vf_losses1', 'pg_losses'])
 
         print_rank_0(f'loss, vf_loss = {vf_loss}, pg_loss = {pg_loss}, loss = {loss}')
 
@@ -1369,6 +1369,8 @@ class PPOTrainer(BaseTrainer):
         mask = data.pop("masks")
 
         kl_list = ((data["logprobs"] - data["ref_logprobs"]) * mask).sum(axis=-1)
+        print_rank_0(f'kl_dist = {kl_list.tolist()}')
+
         mean_kl = kl_list.mean()
         mean_entropy = (-data["logprobs"] * mask).sum(axis=-1).mean()
 

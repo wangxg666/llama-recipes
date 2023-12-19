@@ -8,7 +8,7 @@ OUTPUT_CHECKPOINT_DIR="${HOME}/models/rl/agent.ppo.v08"
 
 set -x NCCL_P2P_LEVEL "NVL"
 
-CUDA_VISIBLE_DEVICES="0,1,2,3" accelerate launch \
+CUDA_VISIBLE_DEVICES="0,1" accelerate launch \
   --config_file ${HOME}/llama-recipes/sh/ds_config.2.yaml \
   ../llama_ppo_online.py \
   --ppo_config.model_name "${REF_MODEL}" \
