@@ -5,8 +5,8 @@
     "scheduler": {
         "type": "WarmupLR",
         "params": {
-            "warmup_min_lr": 0.00000001,
-            "warmup_max_lr": 0.000005,
+            "warmup_min_lr": 1e-08,
+            "warmup_max_lr": 5e-6,
             "warmup_num_steps": 200
         }
     },

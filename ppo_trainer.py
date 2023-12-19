@@ -132,7 +132,6 @@ def to_list(data):
 
 def masked_mean(values: torch.Tensor, masks, axis=None, logging=False):
     """Compute mean of tensor with a masked values."""
-
     if logging:
         caller = getframeinfo(stack()[1][0])
         print_rank_0(caller.filename, caller.lineno)
@@ -1302,7 +1301,7 @@ class PPOTrainer(BaseTrainer):
         pg_losses = -advantages * ratio
         pg_losses2 = -advantages * torch.clamp(ratio, 1.0 - self.config.cliprange, 1.0 + self.config.cliprange)
 
-        pg_loss = masked_mean(torch.max(pg_losses, pg_losses2), mask, logging=False)
+        pg_loss = masked_mean(torch.max(pg_losses, pg_losses2), mask)
         pg_clipfrac = masked_mean(torch.gt(pg_losses2, pg_losses).float(), mask)
 
         loss = pg_loss + self.config.vf_coef * vf_loss
@@ -1313,7 +1312,7 @@ class PPOTrainer(BaseTrainer):
 
         print_rank_0(f'loss, vf_loss = {vf_loss}, pg_loss = {pg_loss}, loss = {loss}')
 
-        avg_ratio = masked_mean(ratio, mask, logging=True).item()
+        avg_ratio = masked_mean(ratio, mask).item()
         if avg_ratio > self.config.ratio_threshold:
             warnings.warn(
                 f"The average ratio of batch ({avg_ratio:.2f}) exceeds threshold {self.config.ratio_threshold:.2f}. Skipping batch."
@@ -1449,32 +1448,30 @@ class PPOTrainer(BaseTrainer):
         # Log only if we are in the main process
         if self.accelerator.is_main_process:
             logs = {}
-
-            # Log stats
-            if "query" not in batch.keys() and "response" not in batch.keys():
-                # warn the user that the game logs will not be logged
-                warnings.warn(
-                    "The game logs will not be logged because the batch does not contain the keys 'query' and "
-                    "'response'. "
-                )
-            elif self.config.log_with == "wandb":
-                import wandb
-
-                if any([column_to_log not in batch.keys() for column_to_log in columns_to_log]):
-                    raise ValueError(f"Columns to log {columns_to_log} are not present in the batch {batch.keys()}.")
-
-                batch_list = [batch[column_to_log] for column_to_log in columns_to_log]
-                if self.is_distributed:
-                    self.accelerator.wait_for_everyone()
-                    gathered_batch_list = []
-                    for batch in batch_list:
-                        flattened = gather_object(batch)
-                        gathered_batch_list.append(flattened)
-                    batch_list = gathered_batch_list
-
-                table_rows = [list(r) for r in zip(*batch_list, rewards.cpu().tolist())]
-                logs.update({"game_log": wandb.Table(columns=[*columns_to_log, "reward"], rows=table_rows)})
-
+            # # Log stats
+            # if "query" not in batch.keys() and "response" not in batch.keys():
+            #     # warn the user that the game logs will not be logged
+            #     warnings.warn(
+            #         "The game logs will not be logged because the batch does not contain the keys 'query' and "
+            #         "'response'. "
+            #     )
+            # elif self.config.log_with == "wandb":
+            #     import wandb
+            #
+            #     if any([column_to_log not in batch.keys() for column_to_log in columns_to_log]):
+            #         raise ValueError(f"Columns to log {columns_to_log} are not present in the batch {batch.keys()}.")
+            #
+            #     batch_list = [batch[column_to_log] for column_to_log in columns_to_log]
+            #     if self.is_distributed:
+            #         self.accelerator.wait_for_everyone()
+            #         gathered_batch_list = []
+            #         for batch in batch_list:
+            #             flattened = gather_object(batch)
+            #             gathered_batch_list.append(flattened)
+            #         batch_list = gathered_batch_list
+            #
+            #     table_rows = [list(r) for r in zip(*batch_list, rewards.cpu().tolist())]
+            #     logs.update({"game_log": wandb.Table(columns=[*columns_to_log, "reward"], rows=table_rows)})
             logs.update(stats)
 
             # manually cast in fp32 for bf16 torch tensors

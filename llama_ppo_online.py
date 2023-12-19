@@ -41,7 +41,7 @@ class ScriptArguments:
             query_dataset="",
             reward_model="",
             learning_rate=1e-8,
-            log_with=None,
+            log_with='wandb',
             mini_batch_size=4,
             batch_size=4,
             gradient_accumulation_steps=1,
@@ -151,7 +151,7 @@ def safty_get_batch(batch_size, policy_model, policy_tokenizer, device):
             continue
 
 
-for step in tqdm(range(100)):
+for step in tqdm(range(1000)):
     model = ppo_trainer.accelerator.unwrap_model(ppo_trainer.model)
     # batch_input = collections.defaultdict(list)
     # for _ in range(2):
@@ -171,13 +171,12 @@ for step in tqdm(range(100)):
     response_tensors = batch_input['response_tensors']
     reward_tensors = batch_input['reward_tensors']
 
-
-    for i in range(len(query_tensors)):
-        print(f'index = {i}, response = {response_tensors[i]}, text = {tokenizer.decode(response_tensors[i])}')
+    # for i in range(len(query_tensors)):
+    #     print(f'index = {i}, response = {response_tensors[i]}, text = {tokenizer.decode(response_tensors[i])}')
 
     dist.barrier()
     # Run PPO step
     stats = ppo_trainer.step(query_tensors, response_tensors, reward_tensors)
-    # ppo_trainer.log_stats(stats, batch, rewards, columns_to_log=["query", "response", "ref_response", "ref_rewards"])
+    ppo_trainer.log_stats(stats, {}, reward_tensors, columns_to_log=["query", "response", "ref_response", "ref_rewards"])
 
 ppo_trainer.model.save_pretrained(args.output_checkpoint_dir)
