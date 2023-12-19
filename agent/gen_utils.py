@@ -84,6 +84,13 @@ service2field_config = {
     'train': ['departure', 'destination', 'day', 'arriveby', 'leaveat', 'price', 'trainid', 'duration'],
 }
 
+service2slot_ask = {
+    'attraction': ['area', 'type', 'name'],
+    'restaurant': ['area', 'food', 'pricerange', 'type'],
+    'hotel': ['area', 'internet', 'parking', 'pricerange', 'stars', 'type'],
+    'train': ['departure', 'destination', 'day', 'arriveby', 'leaveat'],
+}
+
 service2prompt = {
     'attraction': ['a place to go', 'a trip', 'local attractions'],
     'restaurant': ['a place to eat', 'a restaurant'],

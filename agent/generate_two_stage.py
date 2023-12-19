@@ -6,6 +6,7 @@ import random
 import sys
 
 import accelerate
+import numpy as np
 import requests
 import logging
 
@@ -19,11 +20,15 @@ from ppo_trainer import PPOTrainer
 
 from ft_datasets.agent_sft_gen_dataset import AgentSFTDataset
 from ft_datasets.agent_sft_act_dataset import AgentActDataset, agent_tokenize
+import torch.distributed as dist
 
+def print_rank_0(*args):
+    try:
+        if dist.get_rank() == 0:
+            print(*args, flush=True)
+    except:
+        print(*args, flush=True)
 
-logging.basicConfig(level=logging.INFO,
-                    format='[%(asctime)s] [%(levelname)s] [%(filename)s:%(funcName)s:%(lineno)s]: %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S', )
 
 def call_tgi(prompt, tgi_server="http://209.51.170.51:1309"):
     client = Client(tgi_server)
@@ -46,17 +51,21 @@ def call_tgi_random(prompt, tgi_server="http://209.51.170.51:1309"):
     return response.generated_text
 
 
-def is_valid_action_response(output):
+def validate_action_response(output):
     try:
-        output = json.loads(output)
         if output['action'] not in {'chat', 'search'}:
-            return False
-        for k, v in output['slots'].items():
-            if not isinstance(v, list):
-                return False
-        return True
+            return {"action": "chat", "slots": {}}
+        if 'slots' not in output or not isinstance(output['slots'], dict):
+            return {"action": "chat", "slots": {}}
+        for k in output['slots']:
+            vs = output['slots'][k]
+            if not isinstance(vs, list):
+                del output['slots'][k]
+            else:
+                output['slots'][k] = [v.split('-')[-1] for v in output['slots'][k]]
+        return output
     except:
-        return False
+        return {"action": "chat", "slots": {}}
 
 
 def is_valid_api_response(output):
@@ -96,7 +105,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
     used_services = [services[0]]
     # if random.random() > 0.6:
     #     used_services.append(services[1])
-    # logging.info(f'current service is {json.dumps(used_services, indent=2)}')
+    # print_rank_0(f'current service is {json.dumps(used_services, indent=2)}')
 
     service2slots = {
         service: random.choice(db.service2db[service]) for service in used_services
@@ -108,6 +117,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
 
     simulater = GPTUserSimulator()
     turns = []
+    turn_id2input_ids = {}
     turn_no, turn_no_eos = 0, -1
 
     for i in range(8):
@@ -125,7 +135,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
             verbose=False
         )
         user_utterance = str(user_utterance)
-        logging.info(f'rank = {rank}, turn = {turn_no}, User: {user_utterance}')
+        # print_rank_0(f'rank = {rank}, turn = {turn_no}, User: {user_utterance}')
 
         turns.append({
             "turn_id": str(turn_no),
@@ -149,20 +159,37 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
             output = policy_model.generate(
                 **batch,
                 max_new_tokens=300,
-                do_sample=False,
                 temperature=1.0,
                 use_cache=True,
+                repetition_penalty=1.,
                 pad_token_id=policy_tokenizer.eos_token_id
             )[0]
             act_output = policy_tokenizer.decode(output, skip_special_tokens=True)[len(act_prompt):]
+            # print('gen', output[batch['input_ids'].shape[1]: -1].tolist())
+            # print('tok', policy_tokenizer.encode(act_prompt + act_output)[batch['input_ids'].shape[1]:])
+
+            turn_id2input_ids[str(turn_no)] = {
+                'query_tensor': batch['input_ids'][0].tolist(),
+                'response_tensor': output[batch['input_ids'].shape[1]: -1].tolist()
+            }
+
         else:
             act_output = call_tgi(act_prompt, act_tgi_svr)
-        act_output = json.loads(act_output)
+
+        try:
+            act_output = json.loads(act_output)
+        except:
+            act_output = call_tgi(act_prompt, act_tgi_svr)
+            act_output = json.loads(act_output)
+            # print_rank_0('error of policy model for generation act, replace with ref model')
+
+        act_output = validate_action_response(act_output)
+        print_rank_0('*' * 10, act_output, '*' * 10)
 
         ttype = 'api_generation' if act_output['action'] == 'search' else (
             'casual_generation' if act_output['slots'] else 'casual_generation_no_slots'
         )
-        logging.info(f'rank = {rank}, turn = {turn_no}, System Act: {ttype}, detail = {act_output}')
+        # print_rank_0(f'rank = {rank}, turn = {turn_no}, System Act: {ttype}, detail = {act_output}')
 
         gen_item = {
             'type': ttype,
@@ -196,7 +223,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
         if ttype != 'api_generation':
             # 反问或者闲聊
             gen_item['asked_slots'] = act_output['slots']
-            logging.info(f'rank = {rank}, turn = {turn_no}, directly chatting')
+            # print_rank_0(f'rank = {rank}, turn = {turn_no}, directly chatting')
             gen_output = get_gen_output(gen_item)
 
         else:
@@ -219,7 +246,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
             for service, slot_keys in act_output['slots'].items():
                 if service not in service2field_config:
                     continue
-                asked_slots[service] = [slot_key for slot_key in service2field_config[service] if slot_key not in slot_keys]
+                asked_slots[service] = [slot_key for slot_key in service2slot_ask[service] if slot_key not in slot_keys]
 
             # 根据检索结果判断是否需要强制反问
             need_ask = False
@@ -228,21 +255,20 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
             if len(search_results.get(service, [])) == 0:
                 # 如果检索结果为空，反问已有槽
                 asked_slots[service] = act_output['slots']
-            logging.info(f'rank = {rank}, turn = {turn_no}, System API: {api_output}, '
-                  f'result size = {len(search_results.get(service, []))}')
+            # print_rank_0(f'rank = {rank}, turn = {turn_no}, System API: {api_output}, result size = {len(search_results.get(service, []))}')
 
             if turn_no <= 6 and need_ask:
                 # turn num <= 6, 也就是前三轮，如果检索结果为空，或过多，都强转 Chat
                 # asked slots 是当前轮次缺少的slots
                 gen_item['type'] = 'casual_generation'
                 gen_item['asked_slots'] = asked_slots
-                logging.info(f'rank = {rank}, turn = {turn_no}, System API2ASK: {asked_slots}')
+                print_rank_0(f'rank = {rank}, turn = {turn_no}, System API2ASK: {asked_slots}')
 
                 gen_output = get_gen_output(gen_item)
                 if is_gen_out_no_response(gen_output) and len(search_results.get(service, [])) > 0:
                     # 转回复生成错误，需要API
                     need_api = True
-                    logging.info(f'rank = {rank}, turn = {turn_no}, chatting is invalid')
+                    print_rank_0(f'rank = {rank}, turn = {turn_no}, chatting is invalid')
             else:
                 need_api = True
 
@@ -265,7 +291,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
                 gen_item['search_results'] = search_results
                 gen_output = get_gen_output(gen_item)
 
-        logging.info(f'rank = {rank}, turn = {turn_no}, System Gen: {gen_output}')
+        # print_rank_0(f'rank = {rank}, turn = {turn_no}, System Gen: {gen_output}')
 
         turns.append({
             "turn_id": str(turn_no),
@@ -276,6 +302,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
         })
         if 'asked_slots' in gen_item:
             turns[-1]['asked_slots'] = gen_item['asked_slots']
+
         turn_no += 1
 
         if '[EOF]' in user_utterance:
@@ -292,24 +319,32 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
         reward = {} if not reward else reward[0]
     except:
         reward = {}
-    return used_services[0], turns, reward
+    return used_services[0], turns, reward, turn_id2input_ids
 
 
 def get_batch(batch_size=4,
               policy_model=None,
               policy_tokenizer=None,
               device=None):
-    service, turns, reward = generate_dialog(policy_model, policy_tokenizer, device)
+    service, turns, reward, turn_id2input_ids = generate_dialog(policy_model, policy_tokenizer, device)
 
+    n_gen_turn, n_api_turn = 0., 0.
     factor_sum = 0.
     for turn in turns:
         if ':' in turn['turn_id'] or 'turn_type' not in turn:
             continue
         factor_sum += 1.2 if turn['turn_type'] == 'api' else 0.8
+        if turn['turn_type'] == 'api':
+            n_api_turn += 1.
+        else:
+            n_gen_turn += 1.
     # 最后一轮的casual chat 不能占太多分，总分 -0.6
     factor_sum -= 0.6
     factor_accu = 0.
-    dialog_reward = reward.get('avg_score', 1.0)
+
+    scale = (0.5 * n_api_turn + n_gen_turn) / (n_api_turn + n_gen_turn)
+    dialog_reward = reward.get('avg_score', 1.0) * scale
+    print_rank_0(f'reward is {reward.get("avg_score", 1.)}, scale = {scale}, dialog reward = {dialog_reward}')
 
     key2turns = collections.defaultdict(list)
 
@@ -324,22 +359,25 @@ def get_batch(batch_size=4,
             turn = turns[idx + 2]
             turn_id = turn.get('turn_id', '')
             factor_accu += 0.8
-            key2turns['api'].append([turn_id, factor_accu / factor_sum * dialog_reward, api_generate_turn.get('reference', [])])
+            factor = 0.8
+            key2turns['api'].append([turn_id, factor / factor_sum * dialog_reward, api_generate_turn.get('reference', [])])
             all_utterances.append(turn['speaker'] + ': ' + turn['utterance'])
             idx += 3
         else:
             if speaker == SPEAKER_SYSTEM:
                 turn = turns[idx]
                 turn_id = turn.get('turn_id', '')
-                factor_accu += 1.2
+                factor = 1.2
+                factor_accu += factor
                 if idx == len(turns) - 1:
-                    factor_accu -= 0.6
-                key2turns['casual'].append([turn_id, factor_accu / factor_sum * dialog_reward, turn.get('asked_slots', {})])
+                    factor -= 0.6
+                key2turns['casual'].append([turn_id, factor / factor_sum * dialog_reward, turn.get('asked_slots', {})])
 
             all_utterances.append(speaker + ': ' + utterance)
             idx += 1
 
     prompts, labels, rewards = [], [], []
+    query_tensors, response_tensors = [], []
     from ft_datasets.agent_sft_act_dataset import AgentActDataset, agent_tokenize
     for key, turns in key2turns.items():
         for turn in turns:
@@ -352,6 +390,9 @@ def get_batch(batch_size=4,
             else:
                 action = 'chat'
                 slots = {k: list(v) for k, v in turn[-1].items()}
+
+            # print_rank_0(f'{turn_id}, {key} = {slots}')
+
             data = {
                 'dialog_id': '',
                 'turn_id': turn_id,
@@ -360,10 +401,19 @@ def get_batch(batch_size=4,
                 'history': all_utterances[0: turn_id],
                 'label': {'action': action, 'slots': slots}
             }
+
             prompt, label = AgentActDataset.prompting(data)
             prompts.append(prompt)
             labels.append(label)
             rewards.append(turn_reward)
+            query_tensors.append(turn_id2input_ids[str(turn_id)]['query_tensor'])
+            response_tensors.append(turn_id2input_ids[str(turn_id)]['response_tensor'])
+
+            # print(policy_tokenizer.decode(turn_id2input_ids[str(turn_id)]['response_tensor']))
+
+    # mean_reward = np.mean(rewards)
+    # std_reward = np.std(rewards)
+    # rewards = [(v - mean_reward) / std_reward for v in rewards]
 
     batch = {
         'query_tensors': [],
@@ -378,9 +428,16 @@ def get_batch(batch_size=4,
     for idx in index_list[0:batch_size]:
         prompt, label, reward = prompts[idx], labels[idx], rewards[idx]
         example = prompt + label
-        # logging.info(prompt+label)
+
         prompt = policy_tokenizer.encode(prompt)
         example = policy_tokenizer.encode(example) + [policy_tokenizer.eos_token_id]
+
+        # query_tensor = query_tensors[idx]
+        # response_tensor = response_tensors[idx]
+        # print('gen:', response_tensor)
+        # print('gen:', policy_tokenizer.decode(response_tensor))
+        # print('tok:', example[len(prompt):])
+        # print('tok:', label)
 
         batch['query_tensors'].append(torch.tensor(prompt))
         batch['response_tensors'].append(torch.tensor(example[len(prompt):]))

@@ -12,7 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import collections
 import json
+import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -23,10 +25,10 @@ from peft import LoraConfig
 from tqdm import tqdm
 from transformers import AutoTokenizer
 
-from trl import AutoModelForCausalLMWithValueHead, PPOConfig, set_seed
+from trl import PPOConfig, set_seed
 
 from ppo_trainer import PPOTrainer, print_rank_0
-
+from modeling_value_head import AutoModelForCausalLMWithValueHead
 
 tqdm.pandas()
 
@@ -38,7 +40,7 @@ class ScriptArguments:
             model_name="agent_sft_act_dataset.7b.2e-5.full.B16.E1.hf",
             query_dataset="",
             reward_model="",
-            learning_rate=1.41e-6,
+            learning_rate=1e-8,
             log_with=None,
             mini_batch_size=4,
             batch_size=4,
@@ -46,6 +48,7 @@ class ScriptArguments:
             early_stopping=False,
             target_kl=6.0,
             kl_penalty="kl",
+            vf_coef=0.1,
             seed=0,
             use_score_scaling=False,
             use_score_norm=False,
@@ -98,7 +101,6 @@ set_seed(args.ppo_config.seed)
 if not args.use_peft:
     ref_model = AutoModelForCausalLMWithValueHead.from_pretrained(
         args.ppo_config.model_name,
-        load_in_8bit=True,
         trust_remote_code=args.trust_remote_code
     )
     device_map = None
@@ -144,25 +146,34 @@ def safty_get_batch(batch_size, policy_model, policy_tokenizer, device):
         try:
             batch_input = get_batch(batch_size, policy_model, policy_tokenizer, device)
             return batch_input
-        except:
+        except Exception as e:
+            logging.error(f'error at generation batch, {e}')
             continue
 
 
-for step in tqdm(range(1000)):
+for step in tqdm(range(100)):
     model = ppo_trainer.accelerator.unwrap_model(ppo_trainer.model)
+    # batch_input = collections.defaultdict(list)
+    # for _ in range(2):
+    #     input = safty_get_batch(args.ppo_config.batch_size // 2,
+    #                             policy_model=model,
+    #                             policy_tokenizer=tokenizer,
+    #                             device=ppo_trainer.current_device)
+    #     for k, v in input.items():
+    #         batch_input[k].extend(v)
+
     batch_input = safty_get_batch(args.ppo_config.batch_size,
                                   policy_model=model,
                                   policy_tokenizer=tokenizer,
                                   device=ppo_trainer.current_device)
+
     query_tensors = batch_input['query_tensors']
     response_tensors = batch_input['response_tensors']
     reward_tensors = batch_input['reward_tensors']
 
-    # for i in range(len(query_tensors)):
-    #     print_rank_0(f'query: {tokenizer.decode(query_tensors[i])}')
-    #     print_rank_0(f'response: {tokenizer.decode(response_tensors[i])}')
-    #     print_rank_0(f'reward: {reward_tensors[i]}')
-    #     break
+
+    for i in range(len(query_tensors)):
+        print(f'index = {i}, response = {response_tensors[i]}, text = {tokenizer.decode(response_tensors[i])}')
 
     dist.barrier()
     # Run PPO step

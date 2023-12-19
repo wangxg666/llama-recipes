@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import inspect
-import json
 import math
 import os
 import time
@@ -53,27 +52,13 @@ from trl.core import (
     stack_dicts,
     stats_to_np,
 )
-import trl
 from trl.import_utils import is_torch_greater_2_0, is_xpu_available
 from trl.models import SUPPORTED_ARCHITECTURES, PreTrainedModelWrapper, create_reference_model
 from trl.trainer import AdaptiveKLController, BaseTrainer, FixedKLController, PPOConfig, RunningMoments
 
-import torch.distributed as dist
-
-import modeling_value_head
 
 if is_deepspeed_available():
     import deepspeed
-
-SUPPORTED_ARCHITECTURES = (
-    trl.models.modeling_value_head.AutoModelForCausalLMWithValueHead,
-    trl.models.modeling_value_head.AutoModelForSeq2SeqLMWithValueHead,
-    modeling_value_head.AutoModelForCausalLMWithValueHead,
-    modeling_value_head.AutoModelForSeq2SeqLMWithValueHead
-)
-
-from inspect import getframeinfo, stack
-
 
 MODEL_CARD_TEMPLATE = """---
 license: apache-2.0
@@ -118,59 +103,6 @@ inputs = tokenizer("Hello, my llama is cute", return_tensors="pt")
 outputs = model(**inputs, labels=inputs["input_ids"])
 ```
 """
-
-def print_rank_0(*args):
-    try:
-        if dist.get_rank() == 0:
-            print(*args, flush=True)
-    except:
-        print(*args, flush=True)
-
-def to_list(data):
-    return json.dumps(['{:+.2f}'.format(x) for x in data.tolist()])
-
-
-def masked_mean(values: torch.Tensor, masks, axis=None, logging=False):
-    """Compute mean of tensor with a masked values."""
-
-    if logging:
-        caller = getframeinfo(stack()[1][0])
-        print_rank_0(caller.filename, caller.lineno)
-        for i in range(masks.shape[0]):
-            inds = masks[i].nonzero()
-            start, end = inds[0], inds[-1]
-            print_rank_0(f'{i}, mask mean, start = {start}, end = {end}')
-            print_rank_0(f'{i}, values pos = {to_list(values[i][start: end])}')
-        print_rank_0((values * masks).sum(), masks.sum())
-
-    if axis is not None:
-        return (values * masks).sum(axis=axis) / masks.sum(axis=axis)
-    else:
-        return (values * masks).sum() / masks.sum()
-
-
-def print_states(task, masks, vars, names, force=False):
-    for i in range(masks.shape[0]):
-        if force:
-            print(f'\n\nposition at {i}')
-        else:
-            print_rank_0(f'\n\nposition at {i}')
-        inds = masks[i].nonzero()
-        start, end = inds[0], inds[-1]
-        if force:
-            print(f'{task}, mask pos = {start.item()}, {end.item()}', flush=True)
-        else:
-            print_rank_0(f'{task}, mask pos = {start.item()}, {end.item()}')
-
-        max_name_len = max([len(name) for name in names])
-
-        for var, name in zip(vars, names):
-            name = ' ' * (max_name_len - len(name)) + name
-            if force:
-                print(f'{name} = {to_list(var[i][start: end + 1])}', flush=True)
-            else:
-                print_rank_0(f'{name} = {to_list(var[i][start: end + 1])}')
-
 
 
 class PPOTrainer(BaseTrainer):
@@ -707,18 +639,15 @@ class PPOTrainer(BaseTrainer):
             bs, queries, responses, scores, response_masks
         )
         scores = torch.tensor(scores, device=self.current_device)
-
         if self.config.use_score_scaling:
             # Score scaling
             scores_mean, scores_std = self.running.update(scores)
             tensor_to_kwargs = dict(dtype=scores.dtype, device=scores.device)
             score_scaling_factor = self.running.std.to(**tensor_to_kwargs) + torch.finfo(scores.dtype).eps
             if self.config.use_score_norm:
-                print(self.running.mean.to(**tensor_to_kwargs), score_scaling_factor, flush=True)
                 scores = (scores - self.running.mean.to(**tensor_to_kwargs)) / score_scaling_factor
             else:
                 scores /= score_scaling_factor
-        print_rank_0(f'batch scores = {scores.tolist()}')
 
         if self.config.score_clip is not None:
             # Score clipping
@@ -742,7 +671,6 @@ class PPOTrainer(BaseTrainer):
         t = time.time()
 
         model_inputs = self.prepare_model_inputs(queries, responses)
-        print_rank_0('scores', scores.tolist(), 'model_inputs', model_inputs['input_ids'].shape)
 
         if self.is_distributed:
             pad_first = self.tokenizer.padding_side == "left"
@@ -756,7 +684,6 @@ class PPOTrainer(BaseTrainer):
             model_inputs["attention_mask"] = self.accelerator.pad_across_processes(
                 model_inputs["attention_mask"], dim=1, pad_index=0, pad_first=pad_first
             )
-
             if self.is_encoder_decoder:
                 model_inputs["decoder_input_ids"] = self.accelerator.pad_across_processes(
                     model_inputs["decoder_input_ids"],
@@ -811,7 +738,6 @@ class PPOTrainer(BaseTrainer):
             t = time.time()
             values, advantages, returns = self.compute_advantages(values, rewards, masks)
             timing["time/ppo/compute_advantages"] = time.time() - t
-        # rewards 没有 mask，包括 kl 散度
 
         # upcast to float32 to avoid dataset issues
         batch_dict = {
@@ -828,7 +754,7 @@ class PPOTrainer(BaseTrainer):
         t = time.time()
         all_stats = []
         early_stop = False
-        for ppo_epoch in range(self.config.ppo_epochs):
+        for _ in range(self.config.ppo_epochs):
             if early_stop:
                 break
             b_inds = np.random.permutation(bs)
@@ -839,9 +765,6 @@ class PPOTrainer(BaseTrainer):
                 for mini_batch_start in range(0, self.config.backward_batch_size, self.config.mini_batch_size):
                     mini_batch_end = mini_batch_start + self.config.mini_batch_size
                     mini_batch_inds = backward_batch_inds[mini_batch_start:mini_batch_end]
-                    mini_batch_inds = sorted(mini_batch_inds)
-                    print_rank_0(mini_batch_inds)
-
                     mini_batch_dict = {
                         "logprobs": batch_dict["logprobs"][mini_batch_inds],
                         "values": batch_dict["values"][mini_batch_inds],
@@ -863,37 +786,18 @@ class PPOTrainer(BaseTrainer):
                             mini_batch_dict["responses"],
                             model_inputs,
                             return_logits=True,
-                            is_training=True
                         )
-
                         train_stats = self.train_minibatch(
-                            old_logprobs=mini_batch_dict["logprobs"],
-                            values=mini_batch_dict["values"],
-                            logprobs=logprobs,
-                            logits=logits,
-                            vpreds=vpreds,
-                            mask=mini_batch_dict["masks"],
-                            advantages=mini_batch_dict["advantages"],
-                            returns=mini_batch_dict["returns"],
+                            mini_batch_dict["logprobs"],
+                            mini_batch_dict["values"],
+                            logprobs,
+                            logits,
+                            vpreds,
+                            mini_batch_dict["masks"],
+                            mini_batch_dict["advantages"],
+                            mini_batch_dict["returns"],
                         )
-
-                        with torch.no_grad():
-                            logprobs_new, _, vpreds_new, _ = self.batched_forward_pass(
-                                self.model,
-                                mini_batch_dict["queries"],
-                                mini_batch_dict["responses"],
-                                model_inputs,
-                                return_logits=True,
-                            )
-
-                            print_states(
-                                'step diff', masks,
-                                vars=[logprobs, logprobs_new, vpreds, vpreds_new],
-                                names=['policy old log probs', 'policy new log probs', 'vpred', 'vpred_new']
-                            )
-
                         all_stats.append(train_stats)
-
 
             # typically, early stopping is done at the epoch level
             if self.config.early_stopping:
@@ -1037,7 +941,6 @@ class PPOTrainer(BaseTrainer):
         model_inputs: dict,
         return_logits: bool = False,
         response_masks: Optional[torch.Tensor] = None,
-        is_training=False
     ):
         """
         Calculate model outputs in multiple batches.
@@ -1064,10 +967,7 @@ class PPOTrainer(BaseTrainer):
         all_masks = []
         all_values = []
 
-        if is_training:
-            model.train()
-        else:
-            model.eval()
+        model.eval()
 
         for i in range(math.ceil(bs / fbs)):
             input_kwargs = {key: value[i * fbs : (i + 1) * fbs] for key, value in model_inputs.items()}
@@ -1158,7 +1058,6 @@ class PPOTrainer(BaseTrainer):
         loss_p, loss_v, train_stats = self.loss(
             old_logprobs, values, logits, vpreds, logprobs, mask, advantages, returns
         )
-
         loss = loss_p + loss_v
         self.accelerator.backward(loss)
         if self.config.max_grad_norm is not None:
@@ -1179,7 +1078,6 @@ class PPOTrainer(BaseTrainer):
     ):
         """
         Compute per token rewards from scores and KL-penalty.
-        No Mask ?
 
         Args:
             scores (`torch.FloatTensor`):
@@ -1190,21 +1088,17 @@ class PPOTrainer(BaseTrainer):
                 Log probabilities of the reference model, shape (`batch_size`, `response_length`)
         """
         rewards, non_score_rewards = [], []
-        for i, (score, logprob, ref_logprob, mask) in enumerate(zip(scores, logprobs, ref_logprobs, masks)):
+        for score, logprob, ref_logprob, mask in zip(scores, logprobs, ref_logprobs, masks):
             # compute KL penalty (from difference in logprobs)
             kl = self._kl_penalty(logprob, ref_logprob)
             non_score_reward = -self.kl_ctl.value * kl
             non_score_rewards.append(non_score_reward)
             reward = non_score_reward.clone()
             last_non_masked_index = mask.nonzero()[-1]
+
             # reward is preference model score + KL penalty
             reward[last_non_masked_index] += score
             rewards.append(reward)
-
-        print_states('compute reward', masks,
-                     vars=[logprobs, ref_logprobs],
-                     names=['policy log probs', 'reference log probs'])
-
         return torch.stack(rewards), torch.stack(non_score_rewards)
 
     def _kl_penalty(self, logprob: torch.FloatTensor, ref_logprob: torch.FloatTensor) -> torch.FloatTensor:
@@ -1249,11 +1143,6 @@ class PPOTrainer(BaseTrainer):
         returns = advantages + values
         advantages = masked_whiten(advantages, mask)
         advantages = advantages.detach()
-
-        print_states('compute advantage', mask,
-                     vars=[values, returns, advantages],
-                     names=['values', 'returns', 'advantages'])
-
         return values, advantages, returns
 
     def loss(
@@ -1297,23 +1186,16 @@ class PPOTrainer(BaseTrainer):
         vf_clipfrac = masked_mean(torch.gt(vf_losses2, vf_losses1).float(), mask)
 
         ratio = torch.exp(logprobs - old_logprobs)
-        # ratio = torch.clamp(ratio, 1.0 - self.config.cliprange, 1.0 + self.config.cliprange)
 
         pg_losses = -advantages * ratio
         pg_losses2 = -advantages * torch.clamp(ratio, 1.0 - self.config.cliprange, 1.0 + self.config.cliprange)
 
-        pg_loss = masked_mean(torch.max(pg_losses, pg_losses2), mask, logging=False)
+        pg_loss = masked_mean(torch.max(pg_losses, pg_losses2), mask)
         pg_clipfrac = masked_mean(torch.gt(pg_losses2, pg_losses).float(), mask)
 
         loss = pg_loss + self.config.vf_coef * vf_loss
 
-        print_states('loss', mask,
-                     vars=[ratio, logprobs - old_logprobs, logprobs, old_logprobs, vf_losses1, pg_losses],
-                     names=['ratio', 'delta logprobs', 'logprobs', 'old_logporbs', 'vf_losses1', 'pg_losses'])
-
-        print_rank_0(f'loss, vf_loss = {vf_loss}, pg_loss = {pg_loss}, loss = {loss}')
-
-        avg_ratio = masked_mean(ratio, mask, logging=True).item()
+        avg_ratio = masked_mean(ratio, mask).item()
         if avg_ratio > self.config.ratio_threshold:
             warnings.warn(
                 f"The average ratio of batch ({avg_ratio:.2f}) exceeds threshold {self.config.ratio_threshold:.2f}. Skipping batch."
@@ -1386,15 +1268,6 @@ class PPOTrainer(BaseTrainer):
                 " sometimes this happens because the generation kwargs are not correctly set. Please make sure"
                 " that the generation kwargs are set correctly, or review your training hyperparameters."
             )
-
-        #     print_states('report state', mask,
-        #                  vars=[data["logprobs"], data["ref_logprobs"]],
-        #                  names=['    log probs', 'ref log probs'],
-        #                  force=True)
-        #
-        # print_states('report state', mask,
-        #              vars=[data["logprobs"], data["ref_logprobs"]],
-        #              names=['    log probs', 'ref log probs'])
 
         stats = {
             "objective/kl": mean_kl,
