@@ -221,9 +221,10 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
                 words = gen_output.split(' ')
                 for idx in range(len(words)):
                     if words[idx].isdigit() and 1 < int(words[idx]) < 20:
+                        if idx + 1 < len(words) and words[idx+1] == 'minutes':
+                            continue
                         words[idx] = random.choice(['some', 'many', 'several', 'various', 'multiple'])
                 gen_output = ' '.join(words)
-
             return gen_output
 
         need_api = False
