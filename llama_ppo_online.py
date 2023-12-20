@@ -152,6 +152,7 @@ def safty_get_batch(batch_size, policy_model, policy_tokenizer, device):
 
 
 for step in tqdm(range(1000)):
+    print('+' * 20, f'step = {step}', '+' * 20)
     model = ppo_trainer.accelerator.unwrap_model(ppo_trainer.model)
     # batch_input = collections.defaultdict(list)
     # for _ in range(2):
@@ -176,7 +177,7 @@ for step in tqdm(range(1000)):
 
     dist.barrier()
     # Run PPO step
-    stats = ppo_trainer.step(query_tensors, response_tensors, reward_tensors)
+    stats = ppo_trainer.step(query_tensors, response_tensors, reward_tensors, train_generation=step >= 20)
     ppo_trainer.log_stats(stats, {}, reward_tensors, columns_to_log=["query", "response", "ref_response", "ref_rewards"])
 
     if (step + 1) % 200 == 0:

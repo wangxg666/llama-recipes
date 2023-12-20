@@ -683,6 +683,7 @@ class PPOTrainer(BaseTrainer):
         responses: List[torch.LongTensor],
         scores: List[torch.FloatTensor],
         response_masks: Optional[List[torch.LongTensor]] = None,
+        train_generation: bool = True
     ):
         """
         Run a PPO optimisation step given a list of queries, model responses, and rewards.
@@ -828,6 +829,8 @@ class PPOTrainer(BaseTrainer):
         all_stats = []
         early_stop = False
         for ppo_epoch in range(self.config.ppo_epochs):
+            print('+' * 20, f'ppo_epoch = {ppo_epoch}', '+' * 20)
+
             if early_stop:
                 break
             b_inds = np.random.permutation(bs)
@@ -874,6 +877,7 @@ class PPOTrainer(BaseTrainer):
                             mask=mini_batch_dict["masks"],
                             advantages=mini_batch_dict["advantages"],
                             returns=mini_batch_dict["returns"],
+                            train_generation=train_generation
                         )
 
                         with torch.no_grad():
@@ -1133,6 +1137,7 @@ class PPOTrainer(BaseTrainer):
         mask: torch.LongTensor,
         advantages: torch.FloatTensor,
         returns: torch.FloatTensor,
+        train_generation: bool=True
     ):
         """
         Train one PPO minibatch
@@ -1155,7 +1160,7 @@ class PPOTrainer(BaseTrainer):
         """
         self.model.train()
         loss_p, loss_v, train_stats = self.loss(
-            old_logprobs, values, logits, vpreds, logprobs, mask, advantages, returns
+            old_logprobs, values, logits, vpreds, logprobs, mask, advantages, returns, train_generation
         )
 
         loss = loss_p + loss_v
@@ -1266,6 +1271,7 @@ class PPOTrainer(BaseTrainer):
         mask: torch.LongTensor,
         advantages: torch.FloatTensor,
         returns: torch.FloatTensor,
+        train_generation: bool=True
     ):
         """
         Calculate policy and value losses.
@@ -1304,6 +1310,10 @@ class PPOTrainer(BaseTrainer):
 
         pg_loss = masked_mean(torch.max(pg_losses, pg_losses2), mask)
         pg_clipfrac = masked_mean(torch.gt(pg_losses2, pg_losses).float(), mask)
+
+        # 训练前几步先只优化 Criticq
+        if not train_generation:
+            pg_loss = pg_loss * 0.0
 
         loss = pg_loss + self.config.vf_coef * vf_loss
 

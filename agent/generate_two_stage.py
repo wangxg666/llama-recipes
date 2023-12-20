@@ -98,9 +98,24 @@ def is_gen_out_no_response(response:str):
 act_tgi_svr = 'http://209.51.170.51:1308'
 gen_tgi_svr = 'http://209.51.170.51:1309'
 
-day = datetime.datetime.now().strftime('%Y-%m-%d_%H')
-cache = open(f'/home/paperspace/xingguang/datasets/ppo_cache/{day}.txt', 'w')
 
+class Cache:
+    def __init__(self):
+        self.root = '/home/paperspace/xingguang/datasets/ppo_cache/'
+        self.hour = datetime.datetime.now().strftime('%Y-%m-%d_%H')
+        self.sout = open(f'{self.root}/{self.hour}.txt', 'a')
+
+    def write(self, data):
+        hour = datetime.datetime.now().strftime('%Y-%m-%d_%H')
+        if hour != self.hour:
+            if self.sout:
+                self.sout.close()
+            self.hour = hour
+            self.sout = open(f'{self.root}/{self.hour}.txt', 'a')
+        self.sout.write(data)
+        self.sout.flush()
+
+cache = Cache()
 
 def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=None,
                     policy_tokenizer: transformers.models.llama.LlamaTokenizer=None,
@@ -340,7 +355,6 @@ def get_batch(batch_size=4,
         'dialog': turns,
         'reward': reward
     }) + '\n')
-    cache.flush()
 
     n_gen_turn, n_api_turn = 0., 0.
     factor_sum = 0.
