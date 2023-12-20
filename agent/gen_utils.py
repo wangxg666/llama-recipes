@@ -304,8 +304,9 @@ class GPTUserSimulator(GPTBase):
             f"- Each time, you can only output a single utterance based on the conversation history.\n"
             f"- Don't repeat asking if you have asked from the conversation history.\n"
             f"- Only output the newest utterance, don't output the conversation history.\n"
-            f"- If all your preference is satisfied, please try booking it if it's a hotel or restaurant.\n"
-            f"- If your preference and booking(may no booking) are ready, please say good bye or other words to end the conversion and output the mark `[EOF]`.\n"
+            f"- If all your preference is satisfied, please try booking it.\n"
+            f"- If your preference and booking are both ready or the agent informs you that the booking is not avaliable, "
+            f"please say good bye or other words to end the conversion, and output a extra mark `[EOF]`.\n"
             f"Please give your latest utterance:\n"
         )
 
