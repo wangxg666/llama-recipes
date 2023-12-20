@@ -98,7 +98,7 @@ def is_gen_out_no_response(response:str):
 act_tgi_svr = 'http://209.51.170.51:1308'
 gen_tgi_svr = 'http://209.51.170.51:1309'
 
-day = datetime.datetime.now().strftime('%Y-%m-%d %H')
+day = datetime.datetime.now().strftime('%Y-%m-%d_%H')
 cache = open(f'/home/paperspace/xingguang/datasets/ppo_cache/{day}.txt', 'w')
 
 
@@ -357,7 +357,7 @@ def get_batch(batch_size=4,
 
     scale = (0.5 * n_api_turn + n_gen_turn) / (n_api_turn + n_gen_turn)
     dialog_reward = reward.get('avg_score', 1.0) * scale
-    print_rank_0(f'reward is {reward.get("avg_score", 1.)}, scale = {scale}, dialog reward = {dialog_reward}')
+    print_rank_0(f'reward is {round(reward.get("avg_score", 1.), 5)}, scale = {round(scale, 5)}, dialog reward = {round(dialog_reward, 5)}')
 
     key2turns = collections.defaultdict(list)
 

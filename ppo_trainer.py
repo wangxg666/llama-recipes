@@ -717,7 +717,7 @@ class PPOTrainer(BaseTrainer):
                 scores = (scores - self.running.mean.to(**tensor_to_kwargs)) / score_scaling_factor
             else:
                 scores /= score_scaling_factor
-        print_rank_0(f'batch scores = {scores.tolist()}')
+        print_rank_0(f'batch scores = {[round(s, 5) for s in scores.tolist()]}')
 
         if self.config.score_clip is not None:
             # Score clipping
@@ -741,7 +741,7 @@ class PPOTrainer(BaseTrainer):
         t = time.time()
 
         model_inputs = self.prepare_model_inputs(queries, responses)
-        print_rank_0('scores', scores.tolist(), 'model_inputs', model_inputs['input_ids'].shape)
+        print_rank_0('scores', [round(s, 5) for s in scores.tolist()], 'model_inputs', model_inputs['input_ids'].shape)
 
         if self.is_distributed:
             pad_first = self.tokenizer.padding_side == "left"
