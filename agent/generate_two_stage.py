@@ -1,4 +1,5 @@
 import collections
+import datetime
 import json
 import os.path
 import pickle
@@ -97,6 +98,9 @@ def is_gen_out_no_response(response:str):
 act_tgi_svr = 'http://209.51.170.51:1308'
 gen_tgi_svr = 'http://209.51.170.51:1309'
 
+day = datetime.datetime.now().strftime('%Y-%m-%d %H')
+cache = open(f'/home/paperspace/xingguang/datasets/ppo_cache/{day}.txt', 'w')
+
 
 def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=None,
                     policy_tokenizer: transformers.models.llama.LlamaTokenizer=None,
@@ -120,6 +124,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
     turn_id2input_ids = {}
     turn_no, turn_no_eos = 0, -1
 
+    n_act_call, n_act_tgi_call = 0., 0.
     for i in range(8):
         service = used_services[0]
         service2fields = {
@@ -152,6 +157,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
             'label': ''
         }
         act_prompt, _ = AgentActDataset.prompting(act_item)
+        n_act_call += 1
         if policy_model is not None and policy_tokenizer is not None:
             current_device = device if device is not None else 'cuda'
             batch = policy_tokenizer(act_prompt, return_tensors="pt")
@@ -172,17 +178,19 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
                 'query_tensor': batch['input_ids'][0].tolist(),
                 'response_tensor': output[batch['input_ids'].shape[1]: -1].tolist()
             }
-
         else:
             act_output = call_tgi(act_prompt, act_tgi_svr)
 
         try:
             act_output = json.loads(act_output)
+            print_rank_0(f'rank = {rank}, turn = {turn_no}', '*' * 10, act_output, '*' * 10)
         except:
-            act_output = call_tgi(act_prompt, act_tgi_svr)
-            act_output = json.loads(act_output)
-            # print_rank_0('error of policy model for generation act, replace with ref model')
-        print_rank_0('*' * 10, act_output, '*' * 10)
+            act_output_r = call_tgi(act_prompt, act_tgi_svr)
+            print_rank_0(f'rank = {rank}, turn = {turn_no}', '*' * 10, act_output, '*' * 10)
+            print_rank_0(f'rank = {rank}, turn = {turn_no}', '+' * 10, act_output_r, '+' * 10)
+            act_output = json.loads(act_output_r)
+            n_act_tgi_call += 1.
+
         act_output = validate_action_response(act_output)
 
         ttype = 'api_generation' if act_output['action'] == 'search' else (
@@ -261,13 +269,13 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
                 # asked slots 是当前轮次缺少的slots
                 gen_item['type'] = 'casual_generation'
                 gen_item['asked_slots'] = asked_slots
-                print_rank_0(f'rank = {rank}, turn = {turn_no}, System API2ASK: {asked_slots}')
+                # print_rank_0(f'rank = {rank}, turn = {turn_no}, System API2ASK: {asked_slots}')
 
                 gen_output = get_gen_output(gen_item)
                 if is_gen_out_no_response(gen_output) and len(search_results.get(service, [])) > 0:
                     # 转回复生成错误，需要API
                     need_api = True
-                    print_rank_0(f'rank = {rank}, turn = {turn_no}, chatting is invalid')
+                    # print_rank_0(f'rank = {rank}, turn = {turn_no}, chatting is invalid')
             else:
                 need_api = True
 
@@ -318,6 +326,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
         reward = {} if not reward else reward[0]
     except:
         reward = {}
+    print(f'rank = {rank}, {n_act_tgi_call} of {n_act_call} act generation failed')
     return used_services[0], turns, reward, turn_id2input_ids
 
 
@@ -326,6 +335,11 @@ def get_batch(batch_size=4,
               policy_tokenizer=None,
               device=None):
     service, turns, reward, turn_id2input_ids = generate_dialog(policy_model, policy_tokenizer, device)
+    cache.write(json.dumps({
+        'dialog': turns,
+        'reward': reward
+    }) + '\n')
+    cache.flush()
 
     n_gen_turn, n_api_turn = 0., 0.
     factor_sum = 0.

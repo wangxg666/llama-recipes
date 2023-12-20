@@ -1246,7 +1246,8 @@ class PPOTrainer(BaseTrainer):
         advantages = torch.stack(advantages_reversed[::-1]).transpose(0, 1)
 
         returns = advantages + values
-        advantages = masked_whiten(advantages, mask)
+        # 去掉 Advantage whiten
+        # advantages = masked_whiten(advantages, mask)
         advantages = advantages.detach()
 
         # print_states('compute advantage', mask,

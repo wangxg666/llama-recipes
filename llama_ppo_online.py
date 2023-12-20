@@ -53,7 +53,7 @@ class ScriptArguments:
             use_score_scaling=False,
             use_score_norm=False,
             score_clip=None,
-            ppo_epochs=1,
+            ppo_epochs=2,
         )
     )
     """whether to use seq2seq models"""
@@ -179,4 +179,6 @@ for step in tqdm(range(1000)):
     stats = ppo_trainer.step(query_tensors, response_tensors, reward_tensors)
     ppo_trainer.log_stats(stats, {}, reward_tensors, columns_to_log=["query", "response", "ref_response", "ref_rewards"])
 
-ppo_trainer.model.save_pretrained(args.output_checkpoint_dir)
+    if (step + 1) % 200 == 0:
+        sub_dir = f'step_{str(1000 + step)[1:]}'
+        ppo_trainer.model.save_pretrained(args.output_checkpoint_dir + '/' + sub_dir)
