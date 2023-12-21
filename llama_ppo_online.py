@@ -72,8 +72,9 @@ class ScriptArguments:
     trust_remote_code: bool = field(default=False, metadata={"help": "Enable `trust_remote_code`"})
     output_checkpoint_dir: str = ''
 
-    use_critic_pre_train: bool = False
-    critic_pre_train_dir: str = ''
+    pre_train_critic: bool = False
+    pre_train_critic_data_dir: str = ''
+    pre_train_critic_checkpoint_dir: str = ''
 
 args = tyro.cli(ScriptArguments)
 
@@ -102,14 +103,21 @@ model = AutoModelForCausalLMWithValueHead.from_pretrained(
     peft_config=peft_config,
 )
 
-if args.use_critic_pre_train:
+if args.pre_train_critic:
     ref_model = model
+    # 冻结模型参数
+    for i, layer in enumerate(model.pretrained_model.model.layers):
+        for param in layer.parameters():
+            param.requires_grad = False
+    for param in model.pretrained_model.model.embed_tokens.parameters():
+        param.requires_grad = False
 
-if os.path.exists(f'{args.output_checkpoint_dir}/critic/pytorch_model.bin'):
-    state_dict = torch.load(f'{args.output_checkpoint_dir}/critic/pytorch_model.bin')
+
+if os.path.exists(f'{args.pre_train_critic_checkpoint_dir}/pytorch_model.bin'):
+    state_dict = torch.load(f'{args.pre_train_critic_checkpoint_dir}/pytorch_model.bin')
     state_dict = {k: v for k, v in state_dict.items() if 'v_head' in k}
     model.load_state_dict(state_dict, strict=False)
-    print_rank_0(f'load {json.dumps(state_dict.keys())} from pre-trained critic model')
+    print_rank_0(f'load {json.dumps(list(state_dict.keys()), indent=2)} from pre-trained critic model')
 
 tokenizer = AutoTokenizer.from_pretrained(args.ppo_config.model_name)
 
@@ -144,16 +152,15 @@ def safty_get_batch(batch_size, policy_model, policy_tokenizer, device):
             continue
 
 
-if args.use_critic_pre_train \
-        and os.path.exists(args.critic_pre_train_dir) \
+if args.pre_train_critic \
+        and os.path.exists(args.pre_train_critic_data_dir) \
         and dist.get_world_size() == 1:
-
 
     # critic 只在单卡状态下训练
     datas = []
-    for filename in os.listdir(args.critic_pre_train_dir):
-        datas.extend([json.loads(line) for line in open(f'{args.critic_pre_train_dir}/{filename}')])
-    print_rank_0(f'load {len(datas)} datas from {args.critic_pre_train_dir}')
+    for filename in os.listdir(args.pre_train_critic_data_dir):
+        datas.extend([json.loads(line) for line in open(f'{args.pre_train_critic_data_dir}/{filename}')])
+    print_rank_0(f'load {len(datas)} datas from {args.pre_train_critic_data_dir}')
 
     train_datas = {
         'query_tensors': [],
@@ -184,7 +191,7 @@ if args.use_critic_pre_train \
         stats = ppo_trainer.step(query_tensors, response_tensors, reward_tensors, train_generation=False)
         ppo_trainer.log_stats(stats, {}, reward_tensors,
                               columns_to_log=["query", "response", "ref_response", "ref_rewards"])
-    ppo_trainer.model.save_pretrained(args.output_checkpoint_dir + '/critic/')
+    ppo_trainer.model.save_pretrained(args.pre_train_critic_checkpoint_dir)
 
 else:
     for step in tqdm(range(1000)):
@@ -202,7 +209,7 @@ else:
 
         dist.barrier()
         # Run PPO step
-        stats = ppo_trainer.step(query_tensors, response_tensors, reward_tensors, train_generation=step >= 20)
+        stats = ppo_trainer.step(query_tensors, response_tensors, reward_tensors, train_generation=True)
         ppo_trainer.log_stats(stats, {}, reward_tensors, columns_to_log=["query", "response", "ref_response", "ref_rewards"])
 
         if (step + 1) % 200 == 0:

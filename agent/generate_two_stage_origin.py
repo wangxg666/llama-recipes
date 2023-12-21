@@ -504,6 +504,13 @@ if __name__ == '__main__':
         idxs = [i for i in range(len(train_datas['query_tensors']))]
         random.shuffle(idxs)
 
+        rewards = [x.item() for x in train_datas["reward_tensors"]]
+        print(f'reward mean = {np.mean(rewards)}, std = {np.std(rewards)}, max = {np.max(rewards)}, min = {np.min(rewards)}')
+
+        lengths = [len(q.tolist() + r.tolist()) for q, r in zip(train_datas['query_tensors'], train_datas['response_tensors'])]
+        print(f'length mean = {np.mean(lengths)}, std = {np.std(lengths)}, max = {np.max(lengths)}, min = {np.min(lengths)}')
+
+
         batch_size = 4
         eos = (len(idxs) // batch_size) * batch_size
         for bos in range(0, eos, batch_size):
@@ -514,5 +521,4 @@ if __name__ == '__main__':
             query_tensors = batch_input['query_tensors']
             response_tensors = batch_input['response_tensors']
             reward_tensors = batch_input['reward_tensors']
-            print(bos, len(query_tensors), len(response_tensors), len(reward_tensors))
 
