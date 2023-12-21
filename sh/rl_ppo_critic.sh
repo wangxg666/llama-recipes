@@ -16,6 +16,8 @@ CUDA_VISIBLE_DEVICES="0" accelerate launch \
   --config_file ${HOME}/llama-recipes/sh/ds_config.2.critic.yaml \
   ../llama_ppo_online.py \
   --ppo_config.model_name "${REF_MODEL}" \
-  --use_critic_pre_train \
+  --ppo_config.batch_size 8 \
+  --ppo_config.mini_batch_size 8 \
+  --pre_train_critic \
   --pre_train_critic_data_dir "${PRE_TRAIN_CRITIC_DATA_DIR}" \
   --pre_train_critic_checkpoint_dir "${PRE_TRAIN_CRITIC_CHECKPOINT_DIR}"

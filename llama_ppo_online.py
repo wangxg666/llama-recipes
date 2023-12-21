@@ -55,7 +55,7 @@ class ScriptArguments:
             use_score_scaling=False,
             use_score_norm=False,
             score_clip=None,
-            ppo_epochs=2,
+            ppo_epochs=1,
         )
     )
     """whether to use seq2seq models"""
@@ -113,8 +113,11 @@ if args.pre_train_critic:
         param.requires_grad = False
 
 
-if os.path.exists(f'{args.pre_train_critic_checkpoint_dir}/pytorch_model.bin'):
-    state_dict = torch.load(f'{args.pre_train_critic_checkpoint_dir}/pytorch_model.bin')
+if os.path.exists(f'{args.pre_train_critic_checkpoint_dir}'):
+    state_dict = {}
+    for filename in os.listdir(f'{args.pre_train_critic_checkpoint_dir}'):
+        if filename.startswith('pytorch_model') and filename.endswith('.bin'):
+            state_dict.update(torch.load(f'{args.pre_train_critic_checkpoint_dir}/{filename}'))
     state_dict = {k: v for k, v in state_dict.items() if 'v_head' in k}
     model.load_state_dict(state_dict, strict=False)
     print_rank_0(f'load {json.dumps(list(state_dict.keys()), indent=2)} from pre-trained critic model')
@@ -140,7 +143,6 @@ if ds_plugin is not None and ds_plugin.is_zero3_init_enabled():
 
 from agent.generate_two_stage_origin import get_batch, parse_dialog
 import torch.distributed as dist
-
 
 def safty_get_batch(batch_size, policy_model, policy_tokenizer, device):
     while True:
@@ -180,7 +182,7 @@ if args.pre_train_critic \
     eos = (len(idxs) // args.ppo_config.batch_size) * args.ppo_config.batch_size
     for bos in range(0, eos, args.ppo_config.batch_size):
         batch_input = {
-            k: [v[idx] for idx in idxs[bos: bos+4]]
+            k: [v[idx] for idx in idxs[bos: bos+args.ppo_config.batch_size]]
             for k, v in train_datas.items()
         }
         query_tensors = batch_input['query_tensors']

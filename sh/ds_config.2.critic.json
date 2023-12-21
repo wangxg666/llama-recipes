@@ -5,9 +5,9 @@
     "scheduler": {
         "type": "WarmupLR",
         "params": {
-            "warmup_min_lr": 5e-7,
-            "warmup_max_lr": 5e-6,
-            "warmup_num_steps": 200
+            "warmup_min_lr": 2e-6,
+            "warmup_max_lr": 2e-5,
+            "warmup_num_steps": 100
         }
     },
     "zero_optimization": {
@@ -26,5 +26,5 @@
     "gradient_accumulation_steps": 1,
     "gradient_clipping": 1.0,
     "train_batch_size": "auto",
-    "train_micro_batch_size_per_gpu": 4
+    "train_micro_batch_size_per_gpu": 8
 }

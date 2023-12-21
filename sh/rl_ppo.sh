@@ -13,11 +13,11 @@ mkdir -p ../logs/
 hour=$(date +"%Y-%m-%d_%H")
 
 
-CUDA_VISIBLE_DEVICES="0" accelerate launch \
+CUDA_VISIBLE_DEVICES="0,1" accelerate launch \
   --config_file ${HOME}/llama-recipes/sh/ds_config.2.ppo.yaml \
   ../llama_ppo_online.py \
   --ppo_config.model_name "${REF_MODEL}" \
   --ppo_config.query_dataset "${QUERY_DATASET}" \
   --output_checkpoint_dir "${OUTPUT_CHECKPOINT_DIR}" \
-  --pre_trained_critic_checkpoint_dir "${PRE_TRAIN_CRITIC_CHECKPOINT_DIR}" \
+  --pre_train_critic_checkpoint_dir "${PRE_TRAIN_CRITIC_CHECKPOINT_DIR}" \
   > ../logs/ppo.train.${hour}.log &
