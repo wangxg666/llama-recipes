@@ -47,7 +47,8 @@ def is_valid_api_response(output):
 if __name__ == '__main__':
     input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v08'
 
-    act_tgi_svr = 'http://209.51.170.51:1308'
+    # act_tgi_svr = 'http://209.51.170.51:1308'
+    act_tgi_svr = 'http://172.83.13.53:1308'
     gen_tgi_svr = 'http://209.51.170.51:1309'
 
     counter = collections.defaultdict(float)
@@ -61,7 +62,7 @@ if __name__ == '__main__':
 
     key2prediction = {}
 
-    sout = open(f'{input_dir}/dev.pred.7b.13b-whitening.json', 'w')
+    sout = open(f'{input_dir}/dev.pred.7b.13b-rl.json', 'w')
 
     datas = [data for data in open(f'{input_dir}/dev.act.json')]
     for data in tqdm.tqdm(datas):

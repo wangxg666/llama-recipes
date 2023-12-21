@@ -72,7 +72,7 @@ def pretty_percent(num):
 
 
 if __name__ == '__main__':
-    input_file = '/home/paperspace/xingguang/datasets/agent_sft.v08/dev.pred.7b.13b-whitening.json'
+    input_file = '/home/paperspace/xingguang/datasets/agent_sft.v08/dev.pred.7b.13b-rl.json'
 
     real_types, pred_types = [], []
     total_tp, total_fp, total_fn, joint_match, total_api_casual = 0., 0., 0., 0., 0.

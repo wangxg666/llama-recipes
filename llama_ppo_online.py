@@ -15,6 +15,8 @@
 import collections
 import json
 import logging
+import os
+import random
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -70,34 +72,16 @@ class ScriptArguments:
     trust_remote_code: bool = field(default=False, metadata={"help": "Enable `trust_remote_code`"})
     output_checkpoint_dir: str = ''
 
+    use_critic_pre_train: bool = False
+    critic_pre_train_dir: str = ''
+
 args = tyro.cli(ScriptArguments)
-print(args)
-
-
-# from torch.utils.data import Dataset
-# class PPODataset(Dataset):
-#     def __init__(self, size=10000):
-#         self.size = size
-#         self.data = list(range(size))
-#
-#     def __len__(self):
-#         return self.size
-#
-#     def __getitem__(self, index):
-#         return {'index': index}
-#
-#
-# # We retrieve the dataloader by calling the `build_dataset` function.
-# dataset = PPODataset(size=1000)
-#
-# def collator(data):
-#     return dict((key, [d[key] for d in data]) for key in data[0])
-
 
 # set seed before initializing value head for deterministic eval
 set_seed(args.ppo_config.seed)
 
 # Now let's build the model, the reference model, and the tokenizer.
+
 if not args.use_peft:
     ref_model = AutoModelForCausalLMWithValueHead.from_pretrained(
         args.ppo_config.model_name,
@@ -118,6 +102,15 @@ model = AutoModelForCausalLMWithValueHead.from_pretrained(
     peft_config=peft_config,
 )
 
+if args.use_critic_pre_train:
+    ref_model = model
+
+if os.path.exists(f'{args.output_checkpoint_dir}/critic/pytorch_model.bin'):
+    state_dict = torch.load(f'{args.output_checkpoint_dir}/critic/pytorch_model.bin')
+    state_dict = {k: v for k, v in state_dict.items() if 'v_head' in k}
+    model.load_state_dict(state_dict, strict=False)
+    print_rank_0(f'load {json.dumps(state_dict.keys())} from pre-trained critic model')
+
 tokenizer = AutoTokenizer.from_pretrained(args.ppo_config.model_name)
 
 # Some tokenizers like GPT-2's don't have a padding token by default, so we set one here.
@@ -137,7 +130,7 @@ if ds_plugin is not None and ds_plugin.is_zero3_init_enabled():
     with ds_plugin.zero3_init_context_manager(enable=False):
         pass
 
-from agent.generate_two_stage import get_batch
+from agent.generate_two_stage_origin import get_batch, parse_dialog
 import torch.distributed as dist
 
 
@@ -151,35 +144,67 @@ def safty_get_batch(batch_size, policy_model, policy_tokenizer, device):
             continue
 
 
-for step in tqdm(range(1000)):
-    print('+' * 20, f'step = {step}', '+' * 20)
-    model = ppo_trainer.accelerator.unwrap_model(ppo_trainer.model)
-    # batch_input = collections.defaultdict(list)
-    # for _ in range(2):
-    #     input = safty_get_batch(args.ppo_config.batch_size // 2,
-    #                             policy_model=model,
-    #                             policy_tokenizer=tokenizer,
-    #                             device=ppo_trainer.current_device)
-    #     for k, v in input.items():
-    #         batch_input[k].extend(v)
+if args.use_critic_pre_train \
+        and os.path.exists(args.critic_pre_train_dir) \
+        and dist.get_world_size() == 1:
 
-    batch_input = safty_get_batch(args.ppo_config.batch_size,
-                                  policy_model=model,
-                                  policy_tokenizer=tokenizer,
-                                  device=ppo_trainer.current_device)
 
-    query_tensors = batch_input['query_tensors']
-    response_tensors = batch_input['response_tensors']
-    reward_tensors = batch_input['reward_tensors']
+    # critic 只在单卡状态下训练
+    datas = []
+    for filename in os.listdir(args.critic_pre_train_dir):
+        datas.extend([json.loads(line) for line in open(f'{args.critic_pre_train_dir}/{filename}')])
+    print_rank_0(f'load {len(datas)} datas from {args.critic_pre_train_dir}')
 
-    # for i in range(len(query_tensors)):
-    #     print(f'index = {i}, response = {response_tensors[i]}, text = {tokenizer.decode(response_tensors[i])}')
+    train_datas = {
+        'query_tensors': [],
+        'response_tensors': [],
+        'reward_tensors': []
+    }
 
-    dist.barrier()
-    # Run PPO step
-    stats = ppo_trainer.step(query_tensors, response_tensors, reward_tensors, train_generation=step >= 20)
-    ppo_trainer.log_stats(stats, {}, reward_tensors, columns_to_log=["query", "response", "ref_response", "ref_rewards"])
+    for data in tqdm(datas):
+        batch_input = parse_dialog(data['dialog'], data['reward'], batch_size=-1, policy_tokenizer=tokenizer)
+        for key, val in batch_input.items():
+            train_datas[key].extend(val)
+    print_rank_0(f'load {len(train_datas["query_tensors"])} training datas')
 
-    if (step + 1) % 200 == 0:
-        sub_dir = f'step_{str(1000 + step)[1:]}'
-        ppo_trainer.model.save_pretrained(args.output_checkpoint_dir + '/' + sub_dir)
+    idxs = [i for i in range(len(train_datas['query_tensors']))]
+    random.shuffle(idxs)
+
+    eos = (len(idxs) // args.ppo_config.batch_size) * args.ppo_config.batch_size
+    for bos in range(0, eos, args.ppo_config.batch_size):
+        batch_input = {
+            k: [v[idx] for idx in idxs[bos: bos+4]]
+            for k, v in train_datas.items()
+        }
+        query_tensors = batch_input['query_tensors']
+        response_tensors = batch_input['response_tensors']
+        reward_tensors = batch_input['reward_tensors']
+        print(bos, len(query_tensors), len(response_tensors), len(reward_tensors))
+
+        stats = ppo_trainer.step(query_tensors, response_tensors, reward_tensors, train_generation=False)
+        ppo_trainer.log_stats(stats, {}, reward_tensors,
+                              columns_to_log=["query", "response", "ref_response", "ref_rewards"])
+    ppo_trainer.model.save_pretrained(args.output_checkpoint_dir + '/critic/')
+
+else:
+    for step in tqdm(range(1000)):
+        print('+' * 20, f'step = {step}', '+' * 20)
+        model = ppo_trainer.accelerator.unwrap_model(ppo_trainer.model)
+
+        batch_input = safty_get_batch(args.ppo_config.batch_size,
+                                      policy_model=model,
+                                      policy_tokenizer=tokenizer,
+                                      device=ppo_trainer.current_device)
+
+        query_tensors = batch_input['query_tensors']
+        response_tensors = batch_input['response_tensors']
+        reward_tensors = batch_input['reward_tensors']
+
+        dist.barrier()
+        # Run PPO step
+        stats = ppo_trainer.step(query_tensors, response_tensors, reward_tensors, train_generation=step >= 20)
+        ppo_trainer.log_stats(stats, {}, reward_tensors, columns_to_log=["query", "response", "ref_response", "ref_rewards"])
+
+        if (step + 1) % 200 == 0:
+            sub_dir = f'step_{str(1000 + step)[1:]}'
+            ppo_trainer.model.save_pretrained(args.output_checkpoint_dir + '/' + sub_dir)

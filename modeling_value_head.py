@@ -42,6 +42,15 @@ class ValueHead(nn.Module):
                 if hasattr(config.decoder, "hidden_size"):
                     hidden_size = config.decoder.hidden_size
 
+        self.summary = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size * 2),
+            nn.PReLU(),
+            nn.Dropout(summary_dropout_prob) if summary_dropout_prob else nn.Identity(),
+            nn.Linear(hidden_size * 2, hidden_size),
+            nn.PReLU(),
+            nn.Dropout(summary_dropout_prob) if summary_dropout_prob else nn.Identity(),
+            nn.Linear(hidden_size, 1)
+        )
         self.summary = nn.Linear(hidden_size, 1)
 
         self.flatten = nn.Flatten()

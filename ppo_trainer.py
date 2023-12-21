@@ -889,10 +889,16 @@ class PPOTrainer(BaseTrainer):
                                 return_logits=True,
                             )
 
+                            # print_states(
+                            #     'step diff', masks,
+                            #     vars=[logprobs, logprobs_new, vpreds, vpreds_new, mini_batch_dict['values'], mini_batch_dict['returns'], mini_batch_dict['advantages']],
+                            #     names=['policy old log probs', 'policy new log probs', 'vpred', 'vpred_new', 'values', 'returns', 'advantages']
+                            # )
+
                             print_states(
                                 'step diff', masks,
-                                vars=[logprobs, logprobs_new, vpreds, vpreds_new, mini_batch_dict['values'], mini_batch_dict['returns'], mini_batch_dict['advantages']],
-                                names=['policy old log probs', 'policy new log probs', 'vpred', 'vpred_new', 'values', 'returns', 'advantages']
+                                vars=[vpreds, vpreds_new, mini_batch_dict['values'], mini_batch_dict['returns'], mini_batch_dict['advantages']],
+                                names=['vpred', 'vpred_new', 'values', 'returns', 'advantages']
                             )
 
                         all_stats.append(train_stats)
@@ -1163,7 +1169,11 @@ class PPOTrainer(BaseTrainer):
             old_logprobs, values, logits, vpreds, logprobs, mask, advantages, returns, train_generation
         )
 
-        loss = loss_p + loss_v
+        if train_generation:
+            loss = loss_p + loss_v
+        else:
+            loss = loss_v / self.config.vf_coef
+
         self.accelerator.backward(loss)
         if self.config.max_grad_norm is not None:
             if self.accelerator.sync_gradients:
@@ -1399,11 +1409,6 @@ class PPOTrainer(BaseTrainer):
                 " that the generation kwargs are set correctly, or review your training hyperparameters."
             )
 
-        #     print_states('report state', mask,
-        #                  vars=[data["logprobs"], data["ref_logprobs"]],
-        #                  names=['    log probs', 'ref log probs'],
-        #                  force=True)
-        #
         # print_states('report state', mask,
         #              vars=[data["logprobs"], data["ref_logprobs"]],
         #              names=['    log probs', 'ref log probs'])
