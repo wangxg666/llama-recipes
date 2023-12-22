@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
     key2prediction = {}
 
-    sout = open(f'{input_dir}/dev.pred.7b.13b-rl.json', 'w')
+    sout = open(f'{input_dir}/dev.pred.7b.13b-rl.v2.399.json', 'w')
 
     datas = [data for data in open(f'{input_dir}/dev.act.json')]
     for data in tqdm.tqdm(datas):

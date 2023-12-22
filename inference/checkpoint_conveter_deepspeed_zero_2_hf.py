@@ -50,14 +50,16 @@ if __name__ == "__main__":
     model = LlamaForCausalLM.from_pretrained(args.model_ref)
     ref_keys = model.state_dict().keys()
 
-    state_dict = torch.load(f'{args.checkpoint_dir}/pytorch_model.bin')
+    import os
+    state_dict = {}
+    for filename in os.listdir(f'{args.checkpoint_dir}'):
+        if filename.startswith('pytorch_model') and filename.endswith('.bin'):
+            state_dict.update(torch.load(f'{args.checkpoint_dir}/{filename}'))
     new_keys = state_dict.keys()
 
-    for key in [
-        'v_head.summary.bias',
-        'v_head.summary.weight'
-    ]:
-        del state_dict[key]
+    for key in list(state_dict.keys()):
+        if 'v_head' in key:
+            del state_dict[key]
 
     model.load_state_dict(state_dict)
     model.half()

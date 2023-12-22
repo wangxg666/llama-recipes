@@ -51,5 +51,57 @@
             "USER: That will be all, thank you."
         ],
         "label":"You're welcome. Enjoy your time in Cambridge!"
-    }
+    },
+    {
+    "dialog_id":"pmul1248",
+    "turn_id":7,
+    "type":"rag_generation",
+    "action":"attraction",
+    "history":[
+        "USER: Thankyou, I am looking for a trian that leaves on friday. I am also wanting it to leave after 12:30.",
+        "SYSTEM: The TR3685 leaves at 13:00. Need a ticket?",
+        "USER: That is going to stevenage, correct?",
+        "SYSTEM: No it is going to london kings cross, do you need to go to stevenage?",
+        "USER: Yes, I must go to Stevenage. How much is a ticket?",
+        "SYSTEM: The cost is 12.80 pounds for all trains leaving Cambridge to Stevenage on Friday. Would you like to book a seat?",
+        "USER: First tell me about the attractions in town in the west."
+    ],
+    "search_results":{
+        "attraction":[
+            {
+                "address":"cafe jello gallery, 13 magdalene street",
+                "area":"west",
+                "entrance fee":"free",
+                "id":"7",
+                "location":[
+                    52.22,
+                    0.09
+                ],
+                "name":"cafe jello gallery",
+                "openhours":"it opens from 10:30 a.m. to 5:30 p.m. thursday to saturday",
+                "phone":"01223312112",
+                "postcode":"cb30af",
+                "pricerange":"free",
+                "type":"museum"
+            },
+            {
+                "address":"2-3 castle street",
+                "area":"west",
+                "entrance fee":"3.50 pounds",
+                "id":"9",
+                "location":[
+                    52.21,
+                    0.11
+                ],
+                "name":"cambridge and county folk museum",
+                "openhours":"it opens from monday to saturday, 10 a.m. to 5 p.m. while on sunday it opens from 2 p.m. to 5 p.m.",
+                "phone":"01223355159",
+                "postcode":"cb30aq",
+                "pricerange":"moderate",
+                "type":"museum"
+            }
+        ]
+    },
+    "label":"What kind of attraction are you interested in?"
+}
 ]

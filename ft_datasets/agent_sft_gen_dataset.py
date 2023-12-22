@@ -13,26 +13,43 @@ from ft_datasets.agent_sft_common import PERSONA_PROMPT_DICT, agent_tokenize
 
 ANSWER_TYPE_PROMPT = {
     'casual_generation': (
-        '{persona}\n'
-        'Given the conversion history, your task is to generate the next response.\n'
-        'Generate an appropriate response; this response can be in one of the following two styles:\n'
-        '1. Interrogative, If you think that the user\'s needs have not been met, please ask for the necessary information to provide a more accurate understanding.\n'
-        '2. Direct response: If you believe the conversation is concluded, politely say goodbye; or other direct response based on the conversion history.\n'
-        'Here is the conversion history:\n{history}\n'
-        'and the user lastest utterence: \n{user_utterence}\n'
-        'and here is the slots you\'d better to ask rhetorically when outputting your response: \n{slots}\n'
-        'Please give your response:\n'
+        # '{persona}\n'
+        # 'Given the conversion history, your task is to generate the next response.\n'
+        # 'Generate an appropriate response; this response should be in the following styles:\n'
+        # '1. Interrogative, If you think that the user\'s needs have not been met, please ask for the necessary information to provide a more accurate understanding.\n'
+        # '2. Direct response: Directly response the user need based on the conversion history.\n'
+        # 'Here is the conversion history:\n{history}\n'
+        # 'and the user lastest utterence: \n{user_utterence}\n'
+        # 'and here is the slots you\'d better to ask rhetorically when outputting your response: \n{slots}\n'
+        # 'Please give your response:\n'
+        "{persona}\n"
+        "Given the conversation history:\n{history}\n"
+        "And the necessary fields of information you deem crucial for effective assistance:\n{slots}\n"
+        "Generate the next response to the user's latest comment: \n{user_utterence}.\n"
+        "Your response must adhere strictly to one of the following two types:\n"
+        "1. Querying: If you believe you need additional information to fully understand the user's needs, you should ask further questions. For example, if a user is asking for a restaurant recommendation but hasn't mentioned their preferred price range, which you consider essential for successful assistance, you should inquire about that in this round.\n"
+        "2. Confirmation: Alternatively, you may choose to repeat or verify the needs that the user has expressed to ensure that your assistance aligns with their actual requirements.\n"
+        "Now, take a deep breath and think step-by-step, your next response should be:\n"
     ),
     'casual_generation_no_slots': (
-        '{persona}\n'
-        'Given the conversion history, your task is to generate the next response.\n'
-        'Generate an appropriate response; this response can be in one of the following two styles:\n'
-        '1. Interrogative, If you think that the user\'s needs have not been met, please ask for the necessary information to provide a more accurate understanding.\n'
-        '2. Direct response: If you believe the conversation is concluded, politely say goodbye; or other direct response based on the conversion history.\n'
-        'Here is the conversion history:\n{history}\n'
-        'and the user lastest utterence: \n{user_utterence}\n'
-        'Please generate a proper response based on the context.\n'
-        'Please give your response:\n'
+        # '{persona}\n'
+        # 'Given the conversion history, your task is to generate the next response.\n'
+        # 'Generate an appropriate response; this response should be in the following styles:\n'
+        # '- If you believe the conversation is concluded, politely say goodbye; or other direct response based on the conversion history.\n'
+        # '- Other response that is not directly influence the users purpose'
+        # 'Here is the conversion history:\n{history}\n'
+        # 'and the user lastest utterence: \n{user_utterence}\n'
+        # 'Please generate a proper response based on the context.\n'
+        # 'Please give your response:\n'
+        "{persona}\n"
+        "Given the conversation history:\n{history}\n"
+        "Generate the next response to the user's latest reply: \n{user_utterence}.\n"
+        "Your response must adhere strictly to one of the following two types:\n"
+        "1. Concluding Sentence: If it seems that the user is looking to end the assistance, conclude your conversation appropriately. This may include, but is not limited to, saying goodbye.\n"
+        "2. Connecting Sentence: If the user has not ended the interaction or introduced any new requirements, you may opt for a connecting sentence to maintain the flow of the conversation. "
+        "For example, if the user expresses gratitude for your assistance but hasn't concluded the interaction, you could respond with, \"You're welcome! Is there anything else I can assist you with?\"."
+        "Should the user ask a question that significantly diverges from the previous topic, you may selectively answer and politely inquire whether they wish to return to the main topic.\n"
+        "Now, take a deep breath and think step-by-step, your next response should be:\n"
     ),
     'rag_generation': (
         '{persona}\n'
@@ -143,4 +160,5 @@ if __name__ == '__main__':
 
     items = json.load(open('./datas/agent_sft_gen_data.json'))
     for item in items:
-        output = AgentSFTDataset.tokenize(item, tokenizer, 1024, True)
+        prompt, label = AgentSFTDataset.prompting(item)
+        print(prompt + label, '\n\n')

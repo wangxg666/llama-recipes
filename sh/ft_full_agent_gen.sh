@@ -5,7 +5,7 @@ MODEL_TYPE="13b"
 WORK_DIR="/home/paperspace/xingguang/models/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="agent_sft_gen_dataset"
-DATASET_DIR="agent_sft.v08"
+DATASET_DIR="agent_sft.v09"
 
 LR=2e-5
 BATCH_SIZE=4
