@@ -42,16 +42,16 @@ class ValueHead(nn.Module):
                 if hasattr(config.decoder, "hidden_size"):
                     hidden_size = config.decoder.hidden_size
 
-        # self.summary = nn.Sequential(
-        #     nn.Linear(hidden_size, hidden_size * 2),
-        #     nn.PReLU(),
-        #     nn.Dropout(summary_dropout_prob) if summary_dropout_prob else nn.Identity(),
-        #     nn.Linear(hidden_size * 2, hidden_size),
-        #     nn.PReLU(),
-        #     nn.Dropout(summary_dropout_prob) if summary_dropout_prob else nn.Identity(),
-        #     nn.Linear(hidden_size, 1)
-        # )
-        self.summary = nn.Linear(hidden_size, 1)
+        self.summary = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size * 2),
+            nn.PReLU(),
+            nn.Dropout(summary_dropout_prob) if summary_dropout_prob else nn.Identity(),
+            nn.Linear(hidden_size * 2, hidden_size),
+            nn.PReLU(),
+            nn.Dropout(summary_dropout_prob) if summary_dropout_prob else nn.Identity(),
+            nn.Linear(hidden_size, 1)
+        )
+        # self.summary = nn.Linear(hidden_size, 1)
 
         self.flatten = nn.Flatten()
 
@@ -62,8 +62,8 @@ class ValueHead(nn.Module):
 
         # For now force upcast in fp32 if needed. Let's keep the
         # output in fp32 for numerical stability.
-        if output.dtype != self.summary.weight.dtype:
-            output = output.to(self.summary.weight.dtype)
+        if output.dtype != self.summary[0].weight.dtype:
+            output = output.to(self.summary[0].weight.dtype)
 
         output = self.summary(output)
         return output
@@ -145,8 +145,12 @@ class AutoModelForCausalLMWithValueHead(PreTrainedModelWrapper):
             # do nothing
             pass
         elif init_strategy == "normal":
-            self.v_head.summary.weight.data.normal_(mean=0.0, std=initializer_range)
-            self.v_head.summary.bias.data.zero_()
+            for layer in self.v_head.summary:
+                if isinstance(layer, torch.nn.Linear):
+                    layer.weight.data.normal_(mean=0.0, std=initializer_range)
+                    layer.bias.data.zero_()
+            # self.v_head.summary.weight.data.normal_(mean=0.0, std=initializer_range)
+            # self.v_head.summary.bias.data.zero_()
 
     def forward(
         self,
@@ -187,8 +191,8 @@ class AutoModelForCausalLMWithValueHead(PreTrainedModelWrapper):
         lm_logits = base_model_output.logits
         loss = base_model_output.loss
 
-        if last_hidden_state.device != self.v_head.summary.weight.device:
-            last_hidden_state = last_hidden_state.to(self.v_head.summary.weight.device)
+        if last_hidden_state.device != self.v_head.summary[0].weight.device:
+            last_hidden_state = last_hidden_state.to(self.v_head.summary[0].weight.device)
 
         value = self.v_head(last_hidden_state).squeeze(-1)
 
@@ -400,8 +404,12 @@ class AutoModelForSeq2SeqLMWithValueHead(PreTrainedModelWrapper):
             # do nothing
             pass
         elif init_strategy == "normal":
-            self.v_head.summary.weight.data.normal_(mean=0.0, std=initializer_range)
-            self.v_head.summary.bias.data.zero_()
+            for layer in self.v_head.summary:
+                if isinstance(layer, torch.nn.Linear):
+                    layer.weight.data.normal_(mean=0.0, std=initializer_range)
+                    layer.bias.data.zero_()
+            # self.v_head.summary.weight.data.normal_(mean=0.0, std=initializer_range)
+            # self.v_head.summary.bias.data.zero_()
 
     def forward(
         self,

@@ -305,8 +305,10 @@ class GPTUserSimulator(GPTBase):
             f"- Don't repeat asking if you have asked from the conversation history.\n"
             f"- Only output the newest utterance, don't output the conversation history.\n"
             f"- If all your preference is satisfied, please try booking it.\n"
-            f"- If your preference and booking are both ready or the agent informs you that the booking is not avaliable, "
-            f"please say good bye or other words to end the conversion, and output a extra mark `[EOF]`.\n"
+            f"  - If your booking is ready and the agent told you the booking number, please end the conversion.\n"
+            f"  - If your booking is refused by the agent which due to the resource is not avaliable, please end the conversion.\n"
+            f"- If no booking is needed, please end the conversion directly.\n"
+            f"When endding the conversion, please say good bye or other words, and output a extra mark `[EOF]`.\n"
             f"Please give your latest utterance:\n"
         )
 

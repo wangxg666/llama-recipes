@@ -196,7 +196,7 @@ if args.pre_train_critic \
     ppo_trainer.model.save_pretrained(args.pre_train_critic_checkpoint_dir)
 
 else:
-    for step in tqdm(range(1000)):
+    for step in tqdm(range(2000)):
         print('+' * 20, f'step = {step}', '+' * 20)
         model = ppo_trainer.accelerator.unwrap_model(ppo_trainer.model)
 

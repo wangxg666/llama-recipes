@@ -71,16 +71,27 @@ def pretty_percent(num):
     return f'{round(num * 100, 2)}%'
 
 
-if __name__ == '__main__':
-    input_file = '/home/paperspace/xingguang/datasets/agent_sft.v08/dev.pred.7b.13b-rl.v2.399.json'
+def get_action(obj):
+    if obj['type'] == 'api_generation':
+        return 'search'
+    elif obj['type'] == 'casual_generation_no_slots':
+        return 'chat'
+    elif obj['type'] == 'casual_generation':
+        return 'ask'
+    else:
+        return 'error'
 
-    real_types, pred_types = [], []
+
+if __name__ == '__main__':
+    input_file = '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s1.gen.json'
+
+    real_actions, pred_actions = [], []
     total_tp, total_fp, total_fn, joint_match, total_api_casual = 0., 0., 0., 0., 0.
 
     for data in open(input_file):
         obj = json.loads(data)
-        real_types.append(obj['real_gen']['type'])
-        pred_types.append(obj['pred_gen']['type'])
+        real_actions.append(get_action(obj['real_gen']))
+        pred_actions.append(get_action(obj['pred_gen']))
 
         if obj['real_gen']['type'] == 'api_generation' or obj['pred_gen']['type'] == 'api_generation':
             api_config_real = obj['real_gen']['label'] if obj['real_gen']['type'] == 'api_generation' else {}
@@ -104,22 +115,10 @@ if __name__ == '__main__':
         'JGA': pretty_percent(joint_match / total_api_casual)
     }))
 
-    types = list(set(real_types) | set(pred_types))
-    type2id = {t: i for i, t in enumerate(types)}
-    y_true = [type2id[t] for t in real_types]
-    y_pred = [type2id[t] for t in pred_types]
-
-    from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
-    cm = confusion_matrix(y_true=y_true, y_pred=y_pred)
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=types)
-    disp.plot()
-    plt.savefig('cm.jpg')
-    n2n = {
-        'casual_generation_no_slots': 'casual',
-        'casual_generation': 'ask',
-        'api_generation': 'api',
-
-    }
-    target_names = [n2n.get(tt, tt) for tt in types]
-    print(f'classification_report\n', classification_report(y_true=y_true, y_pred=y_pred, target_names=target_names))
+    from sklearn.metrics import classification_report
+    actions = sorted(list(set(real_actions) | set(pred_actions)))
+    action2id = {t: i for i, t in enumerate(actions)}
+    y_true = [action2id[act] for act in real_actions]
+    y_pred = [action2id[act] for act in pred_actions]
+    print(f'classification_report\n', classification_report(y_true=y_true, y_pred=y_pred, target_names=actions))
 

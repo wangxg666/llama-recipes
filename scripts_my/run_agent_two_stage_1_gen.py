@@ -62,7 +62,12 @@ if __name__ == '__main__':
 
     key2prediction = {}
 
-    sout = open(f'{input_dir}/dev.pred.7b.13b.json', 'w')
+    key2act = {}
+    for data in open(f'{input_dir}/dev.pred.7b.13b.s0.act.json'):
+        obj = json.loads(data)
+        key2act[obj['key']] = obj['pred_act']
+
+    sout = open(f'{input_dir}/dev.pred.7b.13b.s1.gen.json', 'w')
 
     datas = [data for data in open(f'{input_dir}/dev.act.json')]
     for data in tqdm.tqdm(datas):
@@ -73,23 +78,7 @@ if __name__ == '__main__':
             counter['sample_is_missing'] += 1
             continue
 
-        prompt, label = AgentActDataset.prompting(act_obj)
-
-        output = {}
-        for _ in range(3):
-            try:
-                output = call_tgi(prompt, act_tgi_svr)
-                if is_valid_action_response(output):
-                    break
-            except Exception as e:
-                print(e)
-                continue
-
-        if not is_valid_action_response(output):
-            counter['decision_maker_error'] += 1
-            continue
-
-        act_output = json.loads(output)
+        act_output = key2act[key]
 
         ttype = 'api_generation' if act_output['action'] == 'search' else (
             'casual_generation' if act_output['slots'] else 'casual_generation_no_slots'
@@ -125,9 +114,7 @@ if __name__ == '__main__':
             'pred_gen': {
                 'type': gen_obj['type'],
                 'label': gen_output,
-            },
-            'pred_act': act_output,
-            'real_act': act_obj['label']
+            }
         }) + '\n')
         sout.flush()
         counter['success'] += 1

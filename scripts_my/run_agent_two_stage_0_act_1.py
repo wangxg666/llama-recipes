@@ -48,7 +48,7 @@ if __name__ == '__main__':
     input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v09'
 
     # act_tgi_svr = 'http://209.51.170.51:1308'
-    act_tgi_svr = 'http://172.83.13.53:1308'
+    act_tgi_svr = 'http://172.83.13.53:1309'
     gen_tgi_svr = 'http://209.51.170.51:1309'
 
     counter = collections.defaultdict(float)
@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
     key2prediction = {}
 
-    sout = open(f'{input_dir}/dev.pred.7b.13b.json', 'w')
+    sout = open(f'{input_dir}/dev.pred.7b.13b.s0.act.rl.199.json', 'w')
 
     datas = [data for data in open(f'{input_dir}/dev.act.json')]
     for data in tqdm.tqdm(datas):
@@ -91,41 +91,8 @@ if __name__ == '__main__':
 
         act_output = json.loads(output)
 
-        ttype = 'api_generation' if act_output['action'] == 'search' else (
-            'casual_generation' if act_output['slots'] else 'casual_generation_no_slots'
-        )
-
-        gen_obj = copy.deepcopy(act_obj)
-        gen_obj['type'] = ttype
-        if ttype == 'api_generation':
-            gen_obj['label'] = act_output['slots']
-        elif ttype == 'casual_generation':
-            gen_obj['asked_slots'] = act_output['slots']
-        prompt, _ = AgentSFTDataset.prompting(gen_obj)
-        output = call_tgi(prompt, gen_tgi_svr)
-
-        if gen_obj['type'] == 'api_generation':
-            if not is_valid_api_response(output):
-                for _ in range(2):
-                    output = call_tgi(prompt, gen_tgi_svr)
-                    if is_valid_api_response(output):
-                        break
-                if not is_valid_api_response(output):
-                    counter['generation_api_error'] += 1
-                    continue
-            gen_output = json.loads(output)
-        else:
-            gen_output = output
-
         sout.write(json.dumps({
-            'real_gen': {
-                'type': key2sample[key]['type'],
-                'label': key2sample[key]['label'],
-            },
-            'pred_gen': {
-                'type': gen_obj['type'],
-                'label': gen_output,
-            },
+            'key': key,
             'pred_act': act_output,
             'real_act': act_obj['label']
         }) + '\n')

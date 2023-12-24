@@ -2,12 +2,16 @@
 set -x
 
 HOME_DIR="/home/paperspace/xingguang"
+GPU=${1}
+PORT=${2}
+MODEL=${3}
 
+echo ${PORT}
 
 sudo docker run \
-  --gpus "device=0" \
-  --shm-size 4g -p 1308:80 -v ${HOME_DIR}:/data ghcr.io/huggingface/text-generation-inference:1.0.3 \
-  --model-id /data/models/rl/agent.ppo.v08/step_399.hf \
+  --gpus "device=${GPU}" \
+  --shm-size 4g -p ${PORT}:80 -v ${HOME_DIR}:/data ghcr.io/huggingface/text-generation-inference:1.0.3 \
+  --model-id /data/models/${MODEL}/ \
   --dtype bfloat16 \
   --max-total-tokens 4096 \
   --cuda-memory-fraction 0.4 \

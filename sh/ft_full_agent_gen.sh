@@ -11,7 +11,7 @@ LR=2e-5
 BATCH_SIZE=4
 EPOCH=1
 
-TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}"
+TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}.${DATASET_DIR}"
 ts=$(date +"%Y-%m-%d")
 
 cd ..
