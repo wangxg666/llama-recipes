@@ -141,7 +141,8 @@ if ds_plugin is not None and ds_plugin.is_zero3_init_enabled():
     with ds_plugin.zero3_init_context_manager(enable=False):
         pass
 
-from agent.generate_two_stage_origin import get_batch, parse_dialog
+# from agent.generate_two_stage_origin import get_batch, parse_dialog
+from agent.generate_two_stage_replace import get_batch, parse_dialog
 import torch.distributed as dist
 
 def safty_get_batch(batch_size, policy_model, policy_tokenizer, device):
