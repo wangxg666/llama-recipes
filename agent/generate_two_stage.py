@@ -260,7 +260,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
                     'slot_values': {f'{service}-{k}': [v] for k, v in api_output.get(service, {}).items()}
                 }]
             }
-            search_results = requests.post(url='http://35.91.154.68:80/do_search', data=json.dumps(req_data)).json()
+            search_results = requests.post(url='http://35.86.252.8:1201/do_search', data=json.dumps(req_data)).json()
 
             # 判断 missing 的slots，方便反问，missing 的
             asked_slots = {}
@@ -335,7 +335,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
     ]
     try:
         reward = requests.post(
-            'http://35.91.154.68:80/do_reward', data=json.dumps({'dialog': dialog})
+            'http://35.86.252.8:1201/do_reward', data=json.dumps({'dialog': dialog})
         ).json().get('report', [])
         reward = {} if not reward else reward[0]
     except:

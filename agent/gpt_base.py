@@ -38,7 +38,7 @@ class GPTBase:
 
         content = ''
         try:
-            resp = requests.post('http://35.91.154.68:80/do', data=json.dumps({'prompt': prompt})).json()
+            resp = requests.post('http://35.86.252.8:1201/do', data=json.dumps({'prompt': prompt})).json()
             content = resp.get('content', '')
 
             if kwargs.get('verbose', False):

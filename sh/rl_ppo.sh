@@ -4,8 +4,8 @@ set -x
 HOME="/home/paperspace/xingguang"
 REF_MODEL="${HOME}/models/agent_sft_act_dataset.v09.7b.2e-5.full.B16.E1.hf"
 QUERY_DATASET=""
-OUTPUT_CHECKPOINT_DIR="${HOME}/models/rl/agent.ppo.v09"
-PRE_TRAIN_CRITIC_CHECKPOINT_DIR="${HOME}/models/rl/agent.ppo.v09/critic"
+OUTPUT_CHECKPOINT_DIR="${HOME}/models/rl/agent.ppo.v09.v02"
+PRE_TRAIN_CRITIC_CHECKPOINT_DIR="${HOME}/models/rl/agent.ppo.v09.v02/critic"
 
 set -x NCCL_P2P_LEVEL "NVL"
 

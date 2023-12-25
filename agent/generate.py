@@ -147,7 +147,7 @@ def generate_dialog(ppo_trainer):
                     'slot_values': {f'{service}-{k}': [v] for k, v in answer.get(service, {}).items()}
                 }]
             }
-            items = requests.post(url='http://35.91.154.68:80/do_search', data=json.dumps(data)).json()
+            items = requests.post(url='http://35.86.252.8:1201/do_search', data=json.dumps(data)).json()
 
             rag_response = call_tgi_service('rag_generation', service, turns, items)
             # print(f'rank = {rank}, turn = {turn_no}, Agent (RAG): {rag_response}', flush=True)
@@ -181,7 +181,7 @@ def generate_dialog(ppo_trainer):
     ]
     try:
         reward = requests.post(
-            'http://35.91.154.68:80/do_reward', data=json.dumps({'dialog': dialog})
+            'http://35.86.252.8:1201/do_reward', data=json.dumps({'dialog': dialog})
         ).json().get('report', [])
         reward = {} if not reward else reward[0]
     except:

@@ -256,7 +256,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
                     'slot_values': {f'{service}-{k}': [v] for k, v in api_output.get(service, {}).items()}
                 }]
             }
-            search_results = requests.post(url='http://35.91.154.68:80/do_search', data=json.dumps(req_data)).json()
+            search_results = requests.post(url='http://35.86.252.8:1201/do_search', data=json.dumps(req_data)).json()
 
             turns.append({
                 "turn_id": f'{str(turn_no-1)}::follow_by_user_select_api',
@@ -299,7 +299,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
     ]
     try:
         reward = requests.post(
-            'http://35.91.154.68:80/do_reward', data=json.dumps({'dialog': dialog})
+            'http://35.86.252.8:1201/do_reward', data=json.dumps({'dialog': dialog})
         ).json().get('report', [])
         reward = {} if not reward else reward[0]
     except:
@@ -577,38 +577,38 @@ if __name__ == '__main__':
         model_name_or_path = 'meta-llama/Llama-2-13b-hf'
         policy_tokenizer = LlamaTokenizer.from_pretrained(model_name_or_path)
 
-        # policy_model = LlamaForCausalLM.from_pretrained('/home/paperspace/xingguang/models/agent_sft_act_dataset.v09.7b.2e-5.full.B16.E1.hf')
-        # policy_model.to('cuda')
-        # get_batch(4, policy_model, policy_tokenizer)
+        policy_model = LlamaForCausalLM.from_pretrained('/home/paperspace/xingguang/models/agent_sft_act_dataset.v09.7b.2e-5.full.B16.E1.hf')
+        policy_model.to('cuda')
+        get_batch(4, policy_model, policy_tokenizer)
 
-        critic_pre_train_dir = '/home/paperspace/xingguang/datasets/ppo_cache'
-        datas = []
-        for filename in os.listdir(critic_pre_train_dir):
-            try:
-                datas.extend([json.loads(line) for line in open(f'{critic_pre_train_dir}/{filename}')])
-            except:
-                pass
-        # for data in datas:
-        #     parse_dialog(data['dialog'], data['reward'], batch_size=-1, policy_tokenizer=policy_tokenizer)
-
-        train_datas = collections.defaultdict(list)
-        for data in tqdm.tqdm(datas):
-            batch_input = parse_dialog(data['dialog'], data['reward'], batch_size=-1, policy_tokenizer=policy_tokenizer)
-            for key, val in batch_input.items():
-                train_datas[key].extend(val)
-        print_rank_0(f'load {len(train_datas["query_tensors"])} training datas')
-
-        idxs = [i for i in range(len(train_datas['query_tensors']))]
-        random.shuffle(idxs)
-
-        rewards = [x.item() for x in train_datas["reward_tensors"]]
-        print(f'reward mean = {np.mean(rewards)}, std = {np.std(rewards)}, max = {np.max(rewards)}, min = {np.min(rewards)}')
-
-        lengths = [len(q.tolist() + r.tolist()) for q, r in zip(train_datas['query_tensors'], train_datas['response_tensors'])]
-        print(f'length mean = {np.mean(lengths)}, std = {np.std(lengths)}, max = {np.max(lengths)}, min = {np.min(lengths)}')
-
-        print(json.dumps(weight2count, indent=2))
-        print(json.dumps(turn_type2count, indent=2))
+        # critic_pre_train_dir = '/home/paperspace/xingguang/datasets/ppo_cache'
+        # datas = []
+        # for filename in os.listdir(critic_pre_train_dir):
+        #     try:
+        #         datas.extend([json.loads(line) for line in open(f'{critic_pre_train_dir}/{filename}')])
+        #     except:
+        #         pass
+        # # for data in datas:
+        # #     parse_dialog(data['dialog'], data['reward'], batch_size=-1, policy_tokenizer=policy_tokenizer)
+        #
+        # train_datas = collections.defaultdict(list)
+        # for data in tqdm.tqdm(datas):
+        #     batch_input = parse_dialog(data['dialog'], data['reward'], batch_size=-1, policy_tokenizer=policy_tokenizer)
+        #     for key, val in batch_input.items():
+        #         train_datas[key].extend(val)
+        # print_rank_0(f'load {len(train_datas["query_tensors"])} training datas')
+        #
+        # idxs = [i for i in range(len(train_datas['query_tensors']))]
+        # random.shuffle(idxs)
+        #
+        # rewards = [x.item() for x in train_datas["reward_tensors"]]
+        # print(f'reward mean = {np.mean(rewards)}, std = {np.std(rewards)}, max = {np.max(rewards)}, min = {np.min(rewards)}')
+        #
+        # lengths = [len(q.tolist() + r.tolist()) for q, r in zip(train_datas['query_tensors'], train_datas['response_tensors'])]
+        # print(f'length mean = {np.mean(lengths)}, std = {np.std(lengths)}, max = {np.max(lengths)}, min = {np.min(lengths)}')
+        #
+        # print(json.dumps(weight2count, indent=2))
+        # print(json.dumps(turn_type2count, indent=2))
 
         # batch_size = 4
         # eos = (len(idxs) // batch_size) * batch_size
