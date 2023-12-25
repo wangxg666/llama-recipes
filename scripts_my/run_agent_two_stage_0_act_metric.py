@@ -33,7 +33,7 @@ def print_action_metric(pred_actions, real_actions):
 
 
 if __name__ == '__main__':
-    input_file = '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.199.json'
+    input_file = '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.0599.json'
 
     pred_actions, real_actions = [], []
 

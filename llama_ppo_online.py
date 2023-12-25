@@ -161,7 +161,10 @@ if args.pre_train_critic \
     # critic 只在单卡状态下训练
     datas = []
     for filename in os.listdir(args.pre_train_critic_data_dir):
-        datas.extend([json.loads(line) for line in open(f'{args.pre_train_critic_data_dir}/{filename}')])
+        try:
+            datas.extend([json.loads(line) for line in open(f'{args.pre_train_critic_data_dir}/{filename}')])
+        except:
+            continue
     print_rank_0(f'load {len(datas)} datas from {args.pre_train_critic_data_dir}')
 
     train_datas = {
@@ -215,5 +218,5 @@ else:
         ppo_trainer.log_stats(stats, {}, reward_tensors, columns_to_log=["query", "response", "ref_response", "ref_rewards"])
 
         if (step + 1) % 200 == 0:
-            sub_dir = f'step_{str(1000 + step)[1:]}'
+            sub_dir = f'step_{str(10000 + step)[1:]}'
             ppo_trainer.model.save_pretrained(args.output_checkpoint_dir + '/' + sub_dir)

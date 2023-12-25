@@ -1,5 +1,6 @@
 import collections
 import copy
+import multiprocessing
 import os
 import json
 import time
@@ -44,25 +45,8 @@ def is_valid_api_response(output):
         return False
 
 
-if __name__ == '__main__':
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v09'
-
-    # act_tgi_svr = 'http://209.51.170.51:1308'
-    act_tgi_svr = 'http://172.83.13.53:1308'
-    gen_tgi_svr = 'http://209.51.170.51:1309'
-
-    counter = collections.defaultdict(float)
-
-    key2sample = {}
-    for filename in ['dev.api.json', 'dev.casual.json']:
-        for data in open(f'{input_dir}/{filename}'):
-            obj = json.loads(data)
-            key = f'{obj["dialog_id"]}_{obj["turn_id"]}'
-            key2sample[key] = obj
-
-    key2prediction = {}
-
-    sout = open(f'{input_dir}/dev.pred.7b.13b.s0.act.rl.799.json', 'w')
+def run(tgi_svr, output_file):
+    sout = open(output_file, 'w')
 
     datas = [data for data in open(f'{input_dir}/dev.act.json')]
     for data in tqdm.tqdm(datas):
@@ -78,7 +62,7 @@ if __name__ == '__main__':
         output = {}
         for _ in range(3):
             try:
-                output = call_tgi(prompt, act_tgi_svr)
+                output = call_tgi(prompt, tgi_svr)
                 if is_valid_action_response(output):
                     break
             except Exception as e:
@@ -98,4 +82,38 @@ if __name__ == '__main__':
         }) + '\n')
         sout.flush()
         counter['success'] += 1
-    print(json.dumps(counter, indent=2))
+    print(tgi_svr, json.dumps(counter, indent=2))
+
+
+if __name__ == '__main__':
+    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v09'
+
+    counter = collections.defaultdict(float)
+    key2sample = {}
+    for filename in ['dev.api.json', 'dev.casual.json']:
+        for data in open(f'{input_dir}/{filename}'):
+            obj = json.loads(data)
+            key = f'{obj["dialog_id"]}_{obj["turn_id"]}'
+            key2sample[key] = obj
+
+    key2prediction = {}
+
+
+    tgi_svr2output_file = {
+        'http://172.83.13.53:1301': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.0599.json',
+        'http://172.83.13.53:1302': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.0799.json',
+        'http://172.83.13.53:1303': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.0999.json',
+        'http://172.83.13.53:1304': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.1199.json',
+        'http://172.83.13.53:1305': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.1399.json',
+    }
+
+    pool = multiprocessing.Pool(len(tgi_svr2output_file))
+    for tgi_svr, output_file in tgi_svr2output_file.items():
+        pool.apply_async(
+            func=run,
+            args=(tgi_svr, output_file)
+        )
+    pool.close()
+    pool.join()
+    # for tgi_svr, output_file in tgi_svr2output_file.items():
+    #     run(tgi_svr, output_file)

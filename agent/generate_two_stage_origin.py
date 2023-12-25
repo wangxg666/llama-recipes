@@ -236,14 +236,14 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
                 gen_output = ' '.join(words)
             return gen_output
 
-        need_api = False
         if ttype != 'api_generation':
+            need_api = False
             # 反问或者闲聊
             gen_item['asked_slots'] = act_output['slots']
             # print_rank_0(f'rank = {rank}, turn = {turn_no}, directly chatting')
             gen_output = get_gen_output(gen_item)
-
         else:
+            need_api = True
             gen_item['label'] = act_output['slots']
             api_prompt, _ = AgentSFTDataset.prompting(gen_item)
             api_output = call_tgi(api_prompt, gen_tgi_svr)
@@ -309,6 +309,10 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
 
 
 def compute_reward_weight(turns, dialog_reward):
+    if dialog_reward > 0:
+        dialog_reward = math.sqrt(dialog_reward)
+    else:
+        dialog_reward = -math.sqrt(-dialog_reward)
     turn2reward_weight = {}
     for i, turn in enumerate(turns):
         if ':' in turn['turn_id'] or 'turn_type' not in turn:
@@ -335,21 +339,102 @@ def compute_reward_weight(turns, dialog_reward):
             else:
                 weight = 1.2 if dialog_reward else -0.2
         turn2reward_weight[turn['turn_id']] = weight
-    return turn2reward_weight
+    return dialog_reward, turn2reward_weight
+
+
+turn_type2count = collections.defaultdict(float)
+
+def compute_reward_weight_v2(turns, dialog_reward):
+    dialog_reward = (dialog_reward + 10) / 4
+    turn2reward_weight = {}
+    i = 0
+    dialog_slot_keys = set()
+    while i < len(turns):
+        turn = turns[i]
+        speaker = turn['speaker']
+        utterance = turn['utterance']
+        weight = 1.
+        if utterance == 'GenAPIConfig':
+            slots = simplify_params(turn['reference'])
+            if i+2 >= len(turns):
+                break
+            turn = turns[i+2]
+            turn_id = turn['turn_id']
+            slots = {k: v for k, v in slots.items() if len(v) > 0}
+            if not slots:
+                # 检索必须要槽位，如果没有，reward惩罚最大
+                weight -= 0.5
+            elif len(slots) > 1:
+                # 多个service检索槽位，惩罚略小
+                weight -= 0.3
+            else:
+                # 检索，判断slot key数量
+                slot_keys = list(slots.values())[0]
+                missing_slot_keys = [slot_key for slot_key in dialog_slot_keys if slot_key not in slot_keys]
+                if len(slot_keys) == 0:
+                    # 有检索意图，但检索槽位为空
+                    weight -= 0.4
+                elif len(missing_slot_keys) > 0:
+                    # 丢失历史检索槽位惩罚
+                    weight -= 0.1 * len(missing_slot_keys)
+                else:
+                    # 正常检索，不奖励，不惩罚
+                    dialog_slot_keys.update([x.split('-')[-1] for x in slot_keys])
+
+                # 如果 slot key 带 `-`，降低reward
+                if len([slot_key for slot_key in slot_keys if '-' in slot_key]) > 0:
+                    weight -= 0.1
+            turn2reward_weight[turn_id] = weight
+            i += 2
+        elif speaker == 'SYSTEM':
+            asked_slots = turn.get('asked_slots', {})
+            asked_slots = {k: v for k, v in asked_slots.items() if len(v) > 0}
+            if len(asked_slots) > 1:
+                # 只有一个service，如果有多个service，reward为
+                weight -= 0.3
+            elif len(asked_slots) == 0:
+                if i == len(turns) - 1:
+                    # 最后一轮的槽位可空，其他都不应该为空，但 Chat 这个行为本身值得鼓励
+                    weight += 0.1
+                else:
+                    # 中间流程，不鼓励闲聊
+                    weight -= 0.1
+            else:
+                # 有反问意图，判断slot key数量
+                slot_keys = list(asked_slots.values())[0]
+                repeated_aks_slot_keys = [slot_key for slot_key in slot_keys if slot_key in dialog_slot_keys]
+
+                if len(slot_keys) == 0:
+                    # slot key 为空，失败答案，reward 为 0
+                    weight -= 0.2
+                elif len(repeated_aks_slot_keys) > 0:
+                    # 重复反问的槽位，降低reward
+                    weight -= 0.05 * len(repeated_aks_slot_keys)
+                else:
+                    # 正常反问，略正的 reward
+                    weight += 0.3
+                # 如果 slot key 带 `-`，降低reward
+                if len([slot_key for slot_key in slot_keys if '-' in slot_key]) > 0:
+                    weight -= 0.1
+        i += 1
+
+        weight = max(0.5, weight)
+        weight = min(1.5, weight)
+        turn2reward_weight[turn['turn_id']] = weight
+    return dialog_reward, turn2reward_weight
+
+
+weight2count = collections.defaultdict(float)
 
 
 def parse_dialog(turns, reward, batch_size, policy_tokenizer):
-    dialog_reward = reward.get('avg_score', 0.)
-    if dialog_reward > 0:
-        dialog_reward = math.sqrt(dialog_reward)
-    else:
-        dialog_reward = -math.sqrt(-dialog_reward)
+    dialog_reward, turn2reward_weight = compute_reward_weight_v2(turns, reward.get('avg_score', 0.))
 
-    turn2reward_weight = compute_reward_weight(turns, dialog_reward)
+    for weight in turn2reward_weight.values():
+        weight2count[str(weight)] += 1
 
-    # 最后一轮的casual chat 不能占太多分，总分 -0.6
-    factor_sum = math.sqrt(sum([x**2 for x in turn2reward_weight.values()]))
-    if factor_sum == 0.:
+    weight_sum = math.sqrt(sum([x**2 for x in turn2reward_weight.values()]))
+    if weight_sum == 0.:
         return {}
 
     key2turns = collections.defaultdict(list)
@@ -364,22 +449,22 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
             api_generate_turn = turns[idx]
             turn = turns[idx + 2]
             turn_id = turn.get('turn_id', '')
-            turn_factor = turn2reward_weight[turn_id]
+            turn_weight = turn2reward_weight[turn_id]
             key2turns['api'].append(
-                [turn_id, turn_factor / factor_sum * dialog_reward, api_generate_turn.get('reference', [])]
+                [turn_id, turn_weight / weight_sum * dialog_reward, api_generate_turn.get('reference', [])]
             )
             all_utterances.append(turn['speaker'] + ': ' + turn['utterance'])
             idx += 3
-            # print(turn_id, turn_factor, turn_factor / factor_sum * dialog_reward)
+            # print(turn_id, turn_weight, turn_weight / weight_sum * dialog_reward)
         else:
             if speaker == SPEAKER_SYSTEM:
                 turn = turns[idx]
                 turn_id = turn.get('turn_id', '')
-                turn_factor = turn2reward_weight[turn_id]
+                turn_weight = turn2reward_weight[turn_id]
                 key2turns['casual'].append(
-                    [turn_id, turn_factor / factor_sum * dialog_reward, turn.get('asked_slots', {})]
+                    [turn_id, turn_weight / weight_sum * dialog_reward, turn.get('asked_slots', {})]
                 )
-                # print(turn_id, turn_factor, turn_factor / factor_sum * dialog_reward)
+                # print(turn_id, turn_weight, turn_weight / weight_sum * dialog_reward)
             all_utterances.append(speaker + ': ' + utterance)
             idx += 1
 
@@ -480,34 +565,39 @@ if __name__ == '__main__':
         model_name_or_path = 'meta-llama/Llama-2-13b-hf'
         policy_tokenizer = LlamaTokenizer.from_pretrained(model_name_or_path)
 
-        policy_model = LlamaForCausalLM.from_pretrained('/home/paperspace/xingguang/models/agent_sft_act_dataset.v09.7b.2e-5.full.B16.E1.hf')
-        policy_model.to('cuda')
-        get_batch(4, policy_model, policy_tokenizer)
+        # policy_model = LlamaForCausalLM.from_pretrained('/home/paperspace/xingguang/models/agent_sft_act_dataset.v09.7b.2e-5.full.B16.E1.hf')
+        # policy_model.to('cuda')
+        # get_batch(4, policy_model, policy_tokenizer)
 
-        # critic_pre_train_dir = '/home/paperspace/xingguang/datasets/ppo_cache'
-        # datas = []
-        # for filename in os.listdir(critic_pre_train_dir):
-        #     datas.extend([json.loads(line) for line in open(f'{critic_pre_train_dir}/{filename}')])
-        # # for data in datas:
-        # #     parse_dialog(data['dialog'], data['reward'], batch_size=-1, policy_tokenizer=policy_tokenizer)
-        #
-        # train_datas = collections.defaultdict(list)
-        # for data in tqdm.tqdm(datas):
-        #     batch_input = parse_dialog(data['dialog'], data['reward'], batch_size=-1, policy_tokenizer=policy_tokenizer)
-        #     for key, val in batch_input.items():
-        #         train_datas[key].extend(val)
-        # print_rank_0(f'load {len(train_datas["query_tensors"])} training datas')
-        #
-        # idxs = [i for i in range(len(train_datas['query_tensors']))]
-        # random.shuffle(idxs)
-        #
-        # rewards = [x.item() for x in train_datas["reward_tensors"]]
-        # print(f'reward mean = {np.mean(rewards)}, std = {np.std(rewards)}, max = {np.max(rewards)}, min = {np.min(rewards)}')
-        #
-        # lengths = [len(q.tolist() + r.tolist()) for q, r in zip(train_datas['query_tensors'], train_datas['response_tensors'])]
-        # print(f'length mean = {np.mean(lengths)}, std = {np.std(lengths)}, max = {np.max(lengths)}, min = {np.min(lengths)}')
-        #
-        #
+        critic_pre_train_dir = '/home/paperspace/xingguang/datasets/ppo_cache'
+        datas = []
+        for filename in os.listdir(critic_pre_train_dir):
+            try:
+                datas.extend([json.loads(line) for line in open(f'{critic_pre_train_dir}/{filename}')])
+            except:
+                pass
+        # for data in datas:
+        #     parse_dialog(data['dialog'], data['reward'], batch_size=-1, policy_tokenizer=policy_tokenizer)
+
+        train_datas = collections.defaultdict(list)
+        for data in tqdm.tqdm(datas):
+            batch_input = parse_dialog(data['dialog'], data['reward'], batch_size=-1, policy_tokenizer=policy_tokenizer)
+            for key, val in batch_input.items():
+                train_datas[key].extend(val)
+        print_rank_0(f'load {len(train_datas["query_tensors"])} training datas')
+
+        idxs = [i for i in range(len(train_datas['query_tensors']))]
+        random.shuffle(idxs)
+
+        rewards = [x.item() for x in train_datas["reward_tensors"]]
+        print(f'reward mean = {np.mean(rewards)}, std = {np.std(rewards)}, max = {np.max(rewards)}, min = {np.min(rewards)}')
+
+        lengths = [len(q.tolist() + r.tolist()) for q, r in zip(train_datas['query_tensors'], train_datas['response_tensors'])]
+        print(f'length mean = {np.mean(lengths)}, std = {np.std(lengths)}, max = {np.max(lengths)}, min = {np.min(lengths)}')
+
+        print(json.dumps(weight2count, indent=2))
+        print(json.dumps(turn_type2count, indent=2))
+
         # batch_size = 4
         # eos = (len(idxs) // batch_size) * batch_size
         # for bos in range(0, eos, batch_size):
@@ -518,4 +608,5 @@ if __name__ == '__main__':
         #     query_tensors = batch_input['query_tensors']
         #     response_tensors = batch_input['response_tensors']
         #     reward_tensors = batch_input['reward_tensors']
-
+        #
+        #
