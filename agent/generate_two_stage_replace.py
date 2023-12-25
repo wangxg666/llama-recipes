@@ -551,15 +551,10 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
         'reward_tensors': []
     }
 
-    for chat_prompt, chat_label, chat_reward in zip(chat_prompts, chat_labels, chat_rewards):
-        example = chat_prompt + chat_label
-        prompt = policy_tokenizer.encode(chat_prompt)
-        example = policy_tokenizer.encode(example) + [policy_tokenizer.eos_token_id]
-        batch['query_tensors'].append(torch.tensor(prompt))
-        batch['response_tensors'].append(torch.tensor(example[len(prompt):]))
-        batch['reward_tensors'].append(torch.tensor([chat_reward]))
-        if len(batch['query_tensors']) >= batch_size:
-            break
+    # 强制replace过轮次的数据，不用首保chat
+    search_labels.extend(chat_labels)
+    search_prompts.extend(chat_prompts)
+    search_rewards.extend(chat_rewards)
 
     index_list = list(range(len(search_prompts)))
     if batch_size != -1:
