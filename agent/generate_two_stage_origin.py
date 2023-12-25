@@ -468,7 +468,9 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
             all_utterances.append(speaker + ': ' + utterance)
             idx += 1
 
-    prompts, labels, rewards = [], [], []
+    chat_prompts, chat_labels, chat_rewards = [], [], []
+    search_prompts, search_labels, search_rewards = [], [], []
+
     from ft_datasets.agent_sft_act_dataset import AgentActDataset
     for key, turns in key2turns.items():
         for turn in turns:
@@ -481,7 +483,6 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
             else:
                 action = 'chat'
                 slots = {k: list(v) for k, v in turn[-1].items()}
-            # print_rank_0(f'{turn_id}, {key} = {slots}')
 
             data = {
                 'dialog_id': '',
@@ -493,9 +494,15 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
             }
 
             prompt, label = AgentActDataset.prompting(data)
-            prompts.append(prompt)
-            labels.append(label)
-            rewards.append(turn_reward)
+
+            if key == 'api':
+                chat_prompts.append(prompt)
+                chat_labels.append(label)
+                chat_rewards.append(turn_reward)
+            else:
+                search_prompts.append(prompt)
+                search_labels.append(label)
+                search_rewards.append(turn_reward)
 
     # mean_reward = np.mean(rewards)
     # std_reward = np.std(rewards)
@@ -506,30 +513,35 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
         'response_tensors': [],
         'reward_tensors': []
     }
-    index_list = list(range(len(prompts)))
+
+    for chat_prompt, chat_label, chat_reward in zip(chat_prompts, chat_labels, chat_rewards):
+        example = chat_prompt + chat_label
+        prompt = policy_tokenizer.encode(chat_prompt)
+        example = policy_tokenizer.encode(example) + [policy_tokenizer.eos_token_id]
+        batch['query_tensors'].append(torch.tensor(prompt))
+        batch['response_tensors'].append(torch.tensor(example[len(prompt):]))
+        batch['reward_tensors'].append(torch.tensor([chat_reward]))
+        if len(batch['query_tensors']) >= batch_size:
+            break
+
+    index_list = list(range(len(search_prompts)))
     if batch_size != -1:
-        while len(index_list) <= batch_size:
+        need_size = batch_size - len(batch['query_tensors'])
+        while len(index_list) < need_size:
             index_list += index_list
         random.shuffle(index_list)
-        index_list = index_list[0: batch_size]
+        index_list = index_list[0: need_size]
 
     for idx in index_list:
-        prompt, label, reward = prompts[idx], labels[idx], rewards[idx]
-        example = prompt + label
+        search_prompt, search_label, search_reward = search_prompts[idx], search_labels[idx], search_rewards[idx]
+        example = search_prompt + search_label
 
-        prompt = policy_tokenizer.encode(prompt)
+        prompt = policy_tokenizer.encode(search_prompt)
         example = policy_tokenizer.encode(example) + [policy_tokenizer.eos_token_id]
-
-        # query_tensor = query_tensors[idx]
-        # response_tensor = response_tensors[idx]
-        # print('gen:', response_tensor)
-        # print('gen:', policy_tokenizer.decode(response_tensor))
-        # print('tok:', example[len(prompt):])
-        # print('tok:', label)
 
         batch['query_tensors'].append(torch.tensor(prompt))
         batch['response_tensors'].append(torch.tensor(example[len(prompt):]))
-        batch['reward_tensors'].append(torch.tensor([reward]))
+        batch['reward_tensors'].append(torch.tensor([search_reward]))
     return batch
 
 
