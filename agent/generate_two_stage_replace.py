@@ -392,6 +392,8 @@ def compute_reward_weight_v2(turns, dialog_reward):
         utterance = turn['utterance']
         weight = 1.
         if utterance == 'GenAPIConfig':
+            # search weight 固定减 0.2
+            weight -= 0.2
             slots = simplify_params(turn['reference'])
             if i+2 >= len(turns):
                 break
@@ -415,7 +417,7 @@ def compute_reward_weight_v2(turns, dialog_reward):
                     # 丢失历史检索槽位惩罚
                     weight -= 0.1 * len(missing_slot_keys)
                 else:
-                    # 正常检索，不奖励，不惩罚
+                    # 正常检索
                     dialog_slot_keys.update([x.split('-')[-1] for x in slot_keys])
 
                 # 如果 slot key 带 `-`，降低reward
@@ -449,14 +451,11 @@ def compute_reward_weight_v2(turns, dialog_reward):
                     weight -= 0.05 * len(repeated_aks_slot_keys)
                 else:
                     # 正常反问，略正的 reward
-                    weight += 0.3
+                    weight += 0.5
                 # 如果 slot key 带 `-`，降低reward
                 if len([slot_key for slot_key in slot_keys if '-' in slot_key]) > 0:
                     weight -= 0.1
         i += 1
-
-        weight = max(0.5, weight)
-        weight = min(1.5, weight)
         turn2reward_weight[turn['turn_id']] = weight
     return dialog_reward, turn2reward_weight
 

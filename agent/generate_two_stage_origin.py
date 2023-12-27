@@ -201,6 +201,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
             n_act_tgi_call += 1.
 
         act_output = validate_action_response(act_output)
+        print_rank_0(f'rank = {rank}, turn = {turn_no}, act = {act_output}')
 
         ttype = 'api_generation' if act_output['action'] == 'search' else (
             'casual_generation' if act_output['slots'] else 'casual_generation_no_slots'
@@ -355,6 +356,8 @@ def compute_reward_weight_v2(turns, dialog_reward):
         utterance = turn['utterance']
         weight = 1.
         if utterance == 'GenAPIConfig':
+            # search weight 固定减 0.2
+            weight -= 0.2
             slots = simplify_params(turn['reference'])
             if i+2 >= len(turns):
                 break
@@ -378,7 +381,7 @@ def compute_reward_weight_v2(turns, dialog_reward):
                     # 丢失历史检索槽位惩罚
                     weight -= 0.1 * len(missing_slot_keys)
                 else:
-                    # 正常检索，不奖励，不惩罚
+                    # 正常检索
                     dialog_slot_keys.update([x.split('-')[-1] for x in slot_keys])
 
                 # 如果 slot key 带 `-`，降低reward
@@ -412,14 +415,11 @@ def compute_reward_weight_v2(turns, dialog_reward):
                     weight -= 0.05 * len(repeated_aks_slot_keys)
                 else:
                     # 正常反问，略正的 reward
-                    weight += 0.3
+                    weight += 0.5
                 # 如果 slot key 带 `-`，降低reward
                 if len([slot_key for slot_key in slot_keys if '-' in slot_key]) > 0:
                     weight -= 0.1
         i += 1
-
-        weight = max(0.5, weight)
-        weight = min(1.5, weight)
         turn2reward_weight[turn['turn_id']] = weight
     return dialog_reward, turn2reward_weight
 
@@ -495,7 +495,7 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
 
             prompt, label = AgentActDataset.prompting(data)
 
-            if key == 'api':
+            if key == 'casual':
                 chat_prompts.append(prompt)
                 chat_labels.append(label)
                 chat_rewards.append(turn_reward)
@@ -503,10 +503,6 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
                 search_prompts.append(prompt)
                 search_labels.append(label)
                 search_rewards.append(turn_reward)
-
-    # mean_reward = np.mean(rewards)
-    # std_reward = np.std(rewards)
-    # rewards = [(v - mean_reward) / std_reward for v in rewards]
 
     batch = {
         'query_tensors': [],
@@ -523,6 +519,11 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
         batch['reward_tensors'].append(torch.tensor([chat_reward]))
         if len(batch['query_tensors']) >= batch_size:
             break
+
+    if not search_prompts:
+        search_prompts = chat_prompts
+        search_labels = chat_labels
+        search_rewards = chat_rewards
 
     index_list = list(range(len(search_prompts)))
     if batch_size != -1:
