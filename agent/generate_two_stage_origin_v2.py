@@ -121,24 +121,6 @@ class Cache:
 
 cache = Cache()
 
-
-def get_ask_slots(service, slots):
-    service2ask_slots = {
-        'attraction': ['area', 'type'],
-        'restaurant': ['area', 'food', 'pricerange', 'type'],
-        'hotel': ['area', 'internet', 'parking', 'pricerange', 'stars', 'type'],
-        'train': ['departure', 'destination'],
-    }
-    if service not in service2ask_slots:
-        return {service: []}
-
-    need_asked_slots = [slot_key for slot_key in service2ask_slots[service] if slot_key not in slots]
-    if not need_asked_slots:
-        return {service: []}
-    else:
-        return {service: [random.choice(need_asked_slots)]}
-
-
 def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=None,
                     policy_tokenizer: transformers.models.llama.LlamaTokenizer=None,
                     device=None):
@@ -167,12 +149,16 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
             )) if service in service2field_config else db.get_keys(service)
         }
 
-        user_utterance = simulater(
-            history=[turn['utterance'] for turn in turns if ':' not in turn['turn_id']],
-            service2fields=service2fields,
-            service2preference=service2preference,
-            verbose=False
-        )
+        for _ in range(3):
+            user_utterance = simulater(
+                history=[turn['utterance'] for turn in turns if ':' not in turn['turn_id']],
+                service2fields=service2fields,
+                service2preference=service2preference,
+                verbose=False
+            )
+            if len(user_utterance.split(' ')) >= 5:
+                break
+
         user_utterance = str(user_utterance)
         print_rank_0(f'rank = {rank}, turn = {turn_no}, User: {user_utterance}')
 
@@ -219,7 +205,6 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
             n_act_tgi_call += 1.
 
         act_output = validate_action_response(act_output)
-        print_rank_0(f'rank = {rank}, turn = {turn_no}, act = {act_output}')
 
         ttype = 'api_generation' if act_output['action'] == 'search' else (
             'casual_generation' if act_output['slots'] else 'casual_generation_no_slots'
@@ -275,42 +260,24 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
                     'slot_values': {f'{service}-{k}': [v] for k, v in api_output.get(service, {}).items()}
                 }]
             }
-            # 查看是否有可以询问的槽位
-            asked_slots = get_ask_slots(service, api_output.get(service, {}))
             search_results = requests.post(url='http://35.86.252.8:1201/do_search', data=json.dumps(req_data)).json()
 
-            if '[EOF]' in user_utterance:
-                need_api = False
-                gen_item['type'] = 'casual_generation_no_slots'
-                print_rank_0(f'rank = {rank}, turn = {turn_no}, convert to casual by user [EOF]')
-
-            elif len(search_results.get(service, [])) >= 3 and asked_slots[service]:
-                # 检索结果过多，而且有适合反问的槽位，改为反问轮次
-                need_api = False
-                gen_item['type'] = 'casual_generation'
-                gen_item['asked_slots'] = asked_slots
-                print_rank_0(f'rank = {rank}, turn = {turn_no}, convert to ask, '
-                             f'ract = {asked_slots}, search results = {len(search_results.get(service, []))}')
-
-            else:
-                turns.append({
-                    "turn_id": f'{str(turn_no-1)}::follow_by_user_select_api',
-                    "speaker": "SYSTEM",
-                    "actions": [f"{service.capitalize()}-Inform"],
-                    "utterance": 'GenAPIConfig',
-                    'reference': req_data['api_configs']
-                })
-                turns.append({
-                    "turn_id": f"{turn_no - 1}:follow_by_user_call_api",
-                    "speaker": "SYSTEM",
-                    "actions": [f"{service.capitalize()}-Inform"],
-                    "utterance": "DoAPICall",
-                    "reference": search_results,
-                })
-                gen_item['type'] = 'rag_generation'
-                gen_item['search_results'] = search_results
-                print_rank_0(f'rank = {rank}, turn = {turn_no}, search results = {len(search_results.get(service, []))}')
-
+            turns.append({
+                "turn_id": f'{str(turn_no-1)}::follow_by_user_select_api',
+                "speaker": "SYSTEM",
+                "actions": [f"{service.capitalize()}-Inform"],
+                "utterance": 'GenAPIConfig',
+                'reference': req_data['api_configs']
+            })
+            turns.append({
+                "turn_id": f"{turn_no - 1}:follow_by_user_call_api",
+                "speaker": "SYSTEM",
+                "actions": [f"{service.capitalize()}-Inform"],
+                "utterance": "DoAPICall",
+                "reference": search_results,
+            })
+            gen_item['type'] = 'rag_generation'
+            gen_item['search_results'] = search_results
             gen_output = get_gen_output(gen_item)
 
         print_rank_0(f'rank = {rank}, turn = {turn_no}, System Gen: {gen_output}')
@@ -392,6 +359,8 @@ def compute_reward_weight_v2(turns, dialog_reward):
         utterance = turn['utterance']
         weight = 1.
         if utterance == 'GenAPIConfig':
+            # search weight 固定减 0.2
+            weight -= 0.2
             slots = simplify_params(turn['reference'])
             if i+2 >= len(turns):
                 break
@@ -415,7 +384,7 @@ def compute_reward_weight_v2(turns, dialog_reward):
                     # 丢失历史检索槽位惩罚
                     weight -= 0.1 * len(missing_slot_keys)
                 else:
-                    # 正常检索，不奖励，不惩罚
+                    # 正常检索
                     dialog_slot_keys.update([x.split('-')[-1] for x in slot_keys])
 
                 # 如果 slot key 带 `-`，降低reward
@@ -449,14 +418,11 @@ def compute_reward_weight_v2(turns, dialog_reward):
                     weight -= 0.05 * len(repeated_aks_slot_keys)
                 else:
                     # 正常反问，略正的 reward
-                    weight += 0.3
+                    weight += 0.5
                 # 如果 slot key 带 `-`，降低reward
                 if len([slot_key for slot_key in slot_keys if '-' in slot_key]) > 0:
                     weight -= 0.1
         i += 1
-
-        weight = max(0.5, weight)
-        weight = min(1.5, weight)
         turn2reward_weight[turn['turn_id']] = weight
     return dialog_reward, turn2reward_weight
 
@@ -532,7 +498,7 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
 
             prompt, label = AgentActDataset.prompting(data)
 
-            if key != 'api':
+            if key == 'casual':
                 chat_prompts.append(prompt)
                 chat_labels.append(label)
                 chat_rewards.append(turn_reward)
@@ -541,20 +507,21 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
                 search_labels.append(label)
                 search_rewards.append(turn_reward)
 
-    # mean_reward = np.mean(rewards)
-    # std_reward = np.std(rewards)
-    # rewards = [(v - mean_reward) / std_reward for v in rewards]
-
     batch = {
         'query_tensors': [],
         'response_tensors': [],
         'reward_tensors': []
     }
 
-    # 强制replace过轮次的数据，不用首保chat
-    search_labels.extend(chat_labels)
-    search_prompts.extend(chat_prompts)
-    search_rewards.extend(chat_rewards)
+    for chat_prompt, chat_label, chat_reward in zip(chat_prompts, chat_labels, chat_rewards):
+        example = chat_prompt + chat_label
+        prompt = policy_tokenizer.encode(chat_prompt)
+        example = policy_tokenizer.encode(example) + [policy_tokenizer.eos_token_id]
+        batch['query_tensors'].append(torch.tensor(prompt))
+        batch['response_tensors'].append(torch.tensor(example[len(prompt):]))
+        batch['reward_tensors'].append(torch.tensor([chat_reward]))
+        if len(batch['query_tensors']) >= batch_size:
+            break
 
     index_list = list(range(len(search_prompts)))
     if batch_size != -1:
@@ -563,6 +530,11 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
             index_list += index_list
         random.shuffle(index_list)
         index_list = index_list[0: need_size]
+
+    if not search_prompts:
+        search_prompts = chat_prompts
+        search_labels = chat_labels
+        search_rewards = chat_rewards
 
     for idx in index_list:
         search_prompt, search_label, search_reward = search_prompts[idx], search_labels[idx], search_rewards[idx]
@@ -611,9 +583,7 @@ if __name__ == '__main__':
 
         policy_model = LlamaForCausalLM.from_pretrained('/home/paperspace/xingguang/models/agent_sft_act_dataset.v09.7b.2e-5.full.B16.E1.hf')
         policy_model.to('cuda')
-
-        for i in range(10):
-            get_batch(4, policy_model, policy_tokenizer)
+        get_batch(4, policy_model, policy_tokenizer)
 
         # critic_pre_train_dir = '/home/paperspace/xingguang/datasets/ppo_cache'
         # datas = []

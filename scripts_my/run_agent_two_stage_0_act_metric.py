@@ -33,67 +33,70 @@ def print_action_metric(pred_actions, real_actions):
 
 
 if __name__ == '__main__':
-    input_file = '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.0599.json'
+    for input_file in [
+        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v02.2199.json',
+    ]:
+        print(input_file)
+        pred_actions, real_actions = [], []
 
-    pred_actions, real_actions = [], []
+        def get_action(obj):
+            if obj['action'] == 'search':
+                return 'search'
+            elif obj['action'] == 'chat':
+                return 'ask' if obj['slots'] else 'chat'
+            else:
+                return 'error'
 
-    def get_action(obj):
-        if obj['action'] == 'search':
-            return 'search'
-        elif obj['action'] == 'chat':
-            return 'ask' if obj['slots'] else 'chat'
-        else:
-            return 'error'
-
-    for data in open(input_file):
-        obj = json.loads(data)
-        real_actions.append(get_action(obj['real_act']))
-        pred_actions.append(get_action(obj['pred_act']))
-    print_action_metric(pred_actions, real_actions)
-
-    for action in sorted(list(set(real_actions))) + ['all']:
-        total_tp, total_fp, total_fn, joint_match, total_n = 0., 0., 0., 0., 0.
         for data in open(input_file):
             obj = json.loads(data)
+            real_actions.append(get_action(obj['real_act']))
+            pred_actions.append(get_action(obj['pred_act']))
+        print_action_metric(pred_actions, real_actions)
 
-            real_act = get_action(obj['real_act'])
-            pred_act = get_action(obj['pred_act'])
+        for action in sorted(list(set(real_actions))) + ['all']:
+            total_tp, total_fp, total_fn, joint_match, total_n = 0., 0., 0., 0., 0.
+            for data in open(input_file):
+                obj = json.loads(data)
 
-            if action != 'all' and real_act != action and pred_act != action:
-                continue
+                real_act = get_action(obj['real_act'])
+                pred_act = get_action(obj['pred_act'])
 
-            total_n += 1
+                if action != 'all' and real_act != action and pred_act != action:
+                    continue
 
-            real_slots = get_slots(obj['real_act']['slots'])
-            pred_slots = get_slots(obj['pred_act']['slots'])
+                total_n += 1
 
-            has_fn, has_fp = False, False
-            for service, real_slot_keys in real_slots.items():
-                real_slot_keys = set(real_slot_keys)
-                pred_slot_keys = set(pred_slots.get(service, []))
-                for real_slot_key in real_slot_keys:
-                    if real_slot_key not in pred_slot_keys:
-                        total_fn += 1
-                        has_fn = True
-                    else:
-                        total_tp += 1
-                for pred_slot_key in pred_slot_keys:
-                    if pred_slot_key not in real_slot_keys:
-                        total_fp += 1
-                        has_fp = True
-            if not has_fn and not has_fp and pred_act == real_act:
-                joint_match += 1
+                real_slots = get_slots(obj['real_act']['slots'])
+                pred_slots = get_slots(obj['pred_act']['slots'])
 
-        slot_p = total_tp / (total_tp + total_fp + 1e-10)
-        slot_r = total_tp / (total_tp + total_fn + 1e-10)
-        slot_f1 = 2 * slot_p * slot_r / (slot_p + slot_r + 1e-10)
+                has_fn, has_fp = False, False
+                for service, real_slot_keys in real_slots.items():
+                    real_slot_keys = set(real_slot_keys)
+                    pred_slot_keys = set(pred_slots.get(service, []))
+                    for real_slot_key in real_slot_keys:
+                        if real_slot_key not in pred_slot_keys:
+                            total_fn += 1
+                            has_fn = True
+                        else:
+                            total_tp += 1
+                    for pred_slot_key in pred_slot_keys:
+                        if pred_slot_key not in real_slot_keys:
+                            total_fp += 1
+                            has_fp = True
+                if not has_fn and not has_fp and pred_act == real_act:
+                    joint_match += 1
 
-        print((action + '        ')[0:8] + json.dumps({
-            'SlotF': pretty_percent(slot_f1),
-            'SlotP': pretty_percent(slot_p),
-            'SlotR': pretty_percent(slot_r),
-            'JGA': pretty_percent(joint_match / total_n)
-        }))
+            slot_p = total_tp / (total_tp + total_fp + 1e-10)
+            slot_r = total_tp / (total_tp + total_fn + 1e-10)
+            slot_f1 = 2 * slot_p * slot_r / (slot_p + slot_r + 1e-10)
+
+            print((action + '        ')[0:8] + json.dumps({
+                'SlotF': pretty_percent(slot_f1),
+                'SlotP': pretty_percent(slot_p),
+                'SlotR': pretty_percent(slot_r),
+                'JGA': pretty_percent(joint_match / total_n)
+            }))
+        print('')
 
 
 

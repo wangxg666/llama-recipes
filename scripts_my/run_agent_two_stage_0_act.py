@@ -100,11 +100,7 @@ if __name__ == '__main__':
 
 
     tgi_svr2output_file = {
-        'http://172.83.13.53:1301': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.0599.json',
-        'http://172.83.13.53:1302': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.0799.json',
-        'http://172.83.13.53:1303': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.0999.json',
-        'http://172.83.13.53:1304': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.1199.json',
-        'http://172.83.13.53:1305': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.1399.json',
+        'http://172.83.13.53:1306': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v02.2199.json',
     }
 
     pool = multiprocessing.Pool(len(tgi_svr2output_file))
