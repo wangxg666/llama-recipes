@@ -28,15 +28,16 @@ def print_action_metric(pred_actions, real_actions):
     y_true = [action2id[t] for t in real_actions]
     y_pred = [action2id[t] for t in pred_actions]
 
-    from sklearn.metrics import classification_report
+    from sklearn.metrics import classification_report, confusion_matrix
     print(f'classification_report\n', classification_report(y_true=y_true, y_pred=y_pred, target_names=actions))
 
+    print(f'confusion matrix\n', confusion_matrix(y_true=y_true, y_pred=y_pred))
 
 if __name__ == '__main__':
     for input_file in [
         '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v03.0399.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v03.0799.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v03.1199.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v03.0799.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v03.1199.json',
         '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v03.1599.json',
     ]:
         print(input_file)

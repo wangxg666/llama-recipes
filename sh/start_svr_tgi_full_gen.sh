@@ -2,10 +2,11 @@
 set -x
 
 HOME_DIR="/home/paperspace/xingguang"
+#HOME_DIR="/mnt/share16t/xingguang/"
 
 
 sudo docker run \
-  --gpus "device=4" \
+  --gpus "device=0" \
   --shm-size 4g -p 1309:80 -v ${HOME_DIR}:/data ghcr.io/huggingface/text-generation-inference:1.0.3 \
   --model-id /data/models/agent_sft_gen_dataset.v09.13b.2e-5.full.B16.E1.hf \
   --dtype bfloat16 \
