@@ -829,7 +829,7 @@ class PPOTrainer(BaseTrainer):
         all_stats = []
         early_stop = False
         for ppo_epoch in range(self.config.ppo_epochs):
-            print('+' * 20, f'ppo_epoch = {ppo_epoch}', '+' * 20)
+            print_rank_0('+' * 20, f'ppo_epoch = {ppo_epoch}', '+' * 20)
 
             if early_stop:
                 break
@@ -895,11 +895,11 @@ class PPOTrainer(BaseTrainer):
                             #     names=['policy old log probs', 'policy new log probs', 'vpred', 'vpred_new', 'values', 'returns', 'advantages']
                             # )
 
-                            print_states(
-                                'step diff', masks,
-                                vars=[vpreds, vpreds_new, mini_batch_dict['values'], mini_batch_dict['returns'], mini_batch_dict['advantages']],
-                                names=['vpred', 'vpred_new', 'values', 'returns', 'advantages']
-                            )
+                            # print_states(
+                            #     'step diff', masks,
+                            #     vars=[vpreds, vpreds_new, mini_batch_dict['values'], mini_batch_dict['returns'], mini_batch_dict['advantages']],
+                            #     names=['vpred', 'vpred_new', 'values', 'returns', 'advantages']
+                            # )
 
                         all_stats.append(train_stats)
 
