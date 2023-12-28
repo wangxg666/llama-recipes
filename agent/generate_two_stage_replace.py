@@ -386,6 +386,9 @@ def compute_reward_weight_v2(turns, dialog_reward):
     turn2reward_weight = {}
     i = 0
     dialog_slot_keys = set()
+
+    search_delta = -0.2
+
     while i < len(turns):
         turn = turns[i]
         speaker = turn['speaker']
@@ -434,10 +437,10 @@ def compute_reward_weight_v2(turns, dialog_reward):
             elif len(asked_slots) == 0:
                 if i == len(turns) - 1:
                     # 最后一轮的槽位可空，其他都不应该为空，但 Chat 这个行为本身值得鼓励
-                    weight += 0.1
+                    weight -= 0.2
                 else:
                     # 中间流程，不鼓励闲聊
-                    weight -= 0.1
+                    weight -= 0.3
             else:
                 # 有反问意图，判断slot key数量
                 slot_keys = list(asked_slots.values())[0]
