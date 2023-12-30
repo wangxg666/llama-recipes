@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import math
+import random
 
 import numpy as np
 import requests
@@ -202,10 +203,10 @@ def compute_reward_weight_v2(turns, dialog_reward):
             elif len(asked_slots) == 0:
                 if i == len(turns) - 1:
                     # 最后一轮的槽位可空，其他都不应该为空，但 Chat 这个行为本身并没有过多价值
-                    weight -= 0.05
+                    weight -= 0.6
                 else:
                     # 中间流程，不鼓励闲聊
-                    weight -= 0.2
+                    weight -= 0.8
             else:
                 # 有反问意图，判断slot key数量
                 slot_keys = list(asked_slots.values())[0]
@@ -219,7 +220,7 @@ def compute_reward_weight_v2(turns, dialog_reward):
                     weight -= 0.2 * len(repeated_aks_slot_keys)
                 else:
                     # 正常反问，略正的 reward
-                    weight += 0.5
+                    weight += 1.
                 # 如果 slot key 带 `-`，降低reward
                 if len([slot_key for slot_key in slot_keys if '-' in slot_key]) > 0:
                     weight -= 0.1
@@ -279,7 +280,7 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
 
     from ft_datasets.agent_sft_act_dataset import AgentActDataset
     for key, turns in key2turns.items():
-        for turn in turns:
+        for idx, turn in enumerate(turns):
             turn_id = int(turn[0])
             turn_reward = turn[1]
 
@@ -302,6 +303,8 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
             prompt, label = AgentActDataset.prompting(data)
 
             if key == 'casual':
+                if len(turns) == (idx + 1) and random.random() <= 0.9:
+                    continue
                 chat_prompts.append(prompt)
                 chat_labels.append(label)
                 chat_rewards.append(turn_reward)
@@ -315,6 +318,8 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
         'response_tensors': [],
         'reward_tensors': []
     }
+
+    print(len(chat_labels), len(search_labels))
 
     # 强制replace过轮次的数据，不用首保chat
     search_labels.extend(chat_labels)

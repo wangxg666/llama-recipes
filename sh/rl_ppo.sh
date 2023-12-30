@@ -3,12 +3,13 @@ set -x
 
 HOME="/home/paperspace/xingguang"
 CKPT_HOME="/mnt/share16t/xingguang/"
+CKPT_HOME="${HOME}"
 
 REF_MODEL="${HOME}/models/agent_sft_act_dataset.v09.7b.2e-5.full.B16.E1.hf"
-PRE_TRAIN_CRITIC_CHECKPOINT_DIR="${HOME}/models/rl/agent.ppo.v09.v04/critic"
+PRE_TRAIN_CRITIC_CHECKPOINT_DIR="${HOME}/models/rl/agent.ppo.v09.v05/critic"
 
 QUERY_DATASET=""
-OUTPUT_CHECKPOINT_DIR="${CKPT_HOME}/models/rl/agent.ppo.v09.v04"
+OUTPUT_CHECKPOINT_DIR="${CKPT_HOME}/models/rl/agent.ppo.v09.v05"
 
 set -x NCCL_P2P_LEVEL "NVL"
 

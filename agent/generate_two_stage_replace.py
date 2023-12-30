@@ -5,7 +5,7 @@ def get_ask_slots(service, slots):
     service2ask_slots = {
         'attraction': ['area', 'type'],
         'restaurant': ['area', 'food', 'pricerange'],
-        'hotel': ['area', 'internet', 'parking', 'pricerange', 'stars', 'type'],
+        'hotel': ['area', 'internet', 'parking', 'pricerange', 'stars'],
         'train': ['departure', 'destination', 'leaveat'],
     }
     if service not in service2ask_slots:
@@ -163,7 +163,7 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
                 gen_item['type'] = 'casual_generation_no_slots'
                 print_rank_0(f'rank = {rank}, turn = {turn_no}, convert to casual by user [EOF]')
 
-            elif len(search_results.get(service, [])) >= 3 and asked_slots[service]:
+            elif len(search_results.get(service, [])) >= 3 and asked_slots[service] and len(turns) <= 4:
                 # 检索结果过多，而且有适合反问的槽位，改为反问轮次
                 need_api = False
                 gen_item['type'] = 'casual_generation'
