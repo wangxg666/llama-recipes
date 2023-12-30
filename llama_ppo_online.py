@@ -219,5 +219,5 @@ else:
         ppo_trainer.log_stats(stats, {}, reward_tensors, columns_to_log=["query", "response", "ref_response", "ref_rewards"])
 
         if (step + 1) % 200 == 0:
-            sub_dir = f'step_{str(10000 + step)[1:]}'
+            sub_dir = f'step_{str(10000 + step + 1)[1:]}'
             ppo_trainer.model.save_pretrained(args.output_checkpoint_dir + '/' + sub_dir)

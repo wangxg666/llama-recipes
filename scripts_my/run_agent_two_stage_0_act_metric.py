@@ -35,10 +35,14 @@ def print_action_metric(pred_actions, real_actions):
 
 if __name__ == '__main__':
     for input_file in [
-        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v03.0399.json',
-        # '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v03.0799.json',
-        # '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v03.1199.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v03.1599.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.0200.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.0400.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.0600.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.0800.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.1000.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.1200.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.1400.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.1600.json',
     ]:
         print(input_file)
         pred_actions, real_actions = [], []

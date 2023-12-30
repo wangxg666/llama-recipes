@@ -100,10 +100,14 @@ if __name__ == '__main__':
 
 
     tgi_svr2output_file = {
-        'http://172.83.13.53:1304': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v03.0399.json',
-        'http://172.83.13.53:1305': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v03.0799.json',
-        'http://172.83.13.53:1306': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v03.1199.json',
-        'http://172.83.13.53:1307': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v03.1599.json',
+        'http://172.83.13.53:1301': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.0200.json',
+        'http://172.83.13.53:1302': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.0400.json',
+        'http://172.83.13.53:1303': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.0600.json',
+        'http://172.83.13.53:1304': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.0800.json',
+        'http://172.83.13.53:1305': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.1000.json',
+        'http://172.83.13.53:1306': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.1200.json',
+        'http://172.83.13.53:1307': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.1400.json',
+        'http://172.83.13.53:1308': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.1600.json',
     }
 
     pool = multiprocessing.Pool(len(tgi_svr2output_file))

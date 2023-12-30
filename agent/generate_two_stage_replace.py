@@ -4,9 +4,9 @@ from agent.generate_two_stage_utils import *
 def get_ask_slots(service, slots):
     service2ask_slots = {
         'attraction': ['area', 'type'],
-        'restaurant': ['area', 'food', 'pricerange', 'type'],
+        'restaurant': ['area', 'food', 'pricerange'],
         'hotel': ['area', 'internet', 'parking', 'pricerange', 'stars', 'type'],
-        'train': ['departure', 'destination'],
+        'train': ['departure', 'destination', 'leaveat'],
     }
     if service not in service2ask_slots:
         return {service: []}
