@@ -35,14 +35,7 @@ def print_action_metric(pred_actions, real_actions):
 
 if __name__ == '__main__':
     for input_file in [
-        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.0200.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.0400.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.0600.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.0800.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.1000.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.1200.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.1400.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s0.act.rl.v04.1600.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v09.1/dev.act.pred.7b.json',
     ]:
         print(input_file)
         pred_actions, real_actions = [], []
@@ -51,7 +44,9 @@ if __name__ == '__main__':
             if obj['action'] == 'search':
                 return 'search'
             elif obj['action'] == 'chat':
-                return 'ask' if obj['slots'] else 'chat'
+                return 'chat'
+            elif obj['action'] == 'asking':
+                return 'asking'
             else:
                 return 'error'
 

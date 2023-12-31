@@ -27,7 +27,7 @@ def call_tgi(prompt, tgi_server="http://209.51.170.51:1309"):
 def is_valid_action_response(output):
     try:
         output = json.loads(output)
-        if output['action'] not in {'chat', 'search'}:
+        if output['action'] not in {'chat', 'search', 'asking'}:
             return False
         for k, v in output['slots'].items():
             if not isinstance(v, list):
@@ -48,7 +48,7 @@ def is_valid_api_response(output):
 def run(tgi_svr, output_file):
     sout = open(output_file, 'w')
 
-    datas = [data for data in open(f'{input_dir}/dev.act.json')]
+    datas = [data for data in open(f'{input_dir}/{split}.act.json')]
     for data in tqdm.tqdm(datas):
         act_obj = json.loads(data)
         key = f'{act_obj["dialog_id"]}_{act_obj["turn_id"]}'
@@ -86,28 +86,20 @@ def run(tgi_svr, output_file):
 
 
 if __name__ == '__main__':
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v09'
+    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v09.1'
 
-    counter = collections.defaultdict(float)
+    split = 'test'
+
     key2sample = {}
-    for filename in ['dev.api.json', 'dev.casual.json']:
+    for filename in [f'{split}.api.json', f'{split}.casual.json']:
         for data in open(f'{input_dir}/{filename}'):
             obj = json.loads(data)
             key = f'{obj["dialog_id"]}_{obj["turn_id"]}'
             key2sample[key] = obj
 
-    key2prediction = {}
-
-
+    counter = collections.defaultdict(float)
     tgi_svr2output_file = {
-        'http://172.83.13.53:1301': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.0200.json',
-        'http://172.83.13.53:1302': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.0400.json',
-        'http://172.83.13.53:1303': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.0600.json',
-        'http://172.83.13.53:1304': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.0800.json',
-        'http://172.83.13.53:1305': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.1000.json',
-        'http://172.83.13.53:1306': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.1200.json',
-        'http://172.83.13.53:1307': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.1400.json',
-        'http://172.83.13.53:1308': f'{input_dir}/dev.pred.7b.13b.s0.act.rl.v04.1600.json',
+        'http://172.83.13.53:1307': f'{input_dir}/{split}.act.pred.7b.json',
     }
 
     pool = multiprocessing.Pool(len(tgi_svr2output_file))

@@ -35,7 +35,7 @@ if __name__ == '__main__':
         model_name_or_path = 'meta-llama/Llama-2-13b-hf'
         policy_tokenizer = LlamaTokenizer.from_pretrained(model_name_or_path)
 
-        policy_model = LlamaForCausalLM.from_pretrained('/home/paperspace/xingguang/models/agent_sft_act_dataset.v09.7b.2e-5.full.B16.E1.hf')
+        policy_model = LlamaForCausalLM.from_pretrained('/home/paperspace/xingguang/models/agent_sft_act_dataset.7b.2e-5.full.B8.E1.agent_sft.v09.1.hf')
         policy_model.to('cuda')
 
         for i in range(10):

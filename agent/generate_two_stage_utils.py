@@ -47,7 +47,7 @@ def call_tgi_random(prompt, tgi_server="http://209.51.170.51:1309"):
 
 def validate_action_response(output):
     try:
-        if output['action'] not in {'chat', 'search'}:
+        if output['action'] not in {'chat', 'search', 'asking'}:
             return {"action": "chat", "slots": {}}
         if 'slots' not in output or not isinstance(output['slots'], dict):
             return {"action": "chat", "slots": {}}

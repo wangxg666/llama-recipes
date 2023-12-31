@@ -45,16 +45,18 @@ def is_valid_api_response(output):
 
 
 if __name__ == '__main__':
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v09'
+    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v09.1'
 
     # act_tgi_svr = 'http://209.51.170.51:1308'
     act_tgi_svr = 'http://172.83.13.53:1308'
-    gen_tgi_svr = 'http://209.51.170.51:1309'
+    # gen_tgi_svr = 'http://209.51.170.51:1309'
+    gen_tgi_svr = 'http://172.83.13.53:1309'
 
+    split = 'test'
     counter = collections.defaultdict(float)
 
     key2sample = {}
-    for filename in ['dev.api.json', 'dev.casual.json']:
+    for filename in [f'{split}.api.json', f'{split}.casual.json']:
         for data in open(f'{input_dir}/{filename}'):
             obj = json.loads(data)
             key = f'{obj["dialog_id"]}_{obj["turn_id"]}'
@@ -63,13 +65,13 @@ if __name__ == '__main__':
     key2prediction = {}
 
     key2act = {}
-    for data in open(f'{input_dir}/dev.pred.7b.13b.s0.act.json'):
+    for data in open(f'{input_dir}/{split}.act.pred.7b.json'):
         obj = json.loads(data)
         key2act[obj['key']] = obj['pred_act']
 
-    sout = open(f'{input_dir}/dev.pred.7b.13b.s1.gen.json', 'w')
+    sout = open(f'{input_dir}/{split}.gen.pred.7b.json', 'w')
 
-    datas = [data for data in open(f'{input_dir}/dev.act.json')]
+    datas = [data for data in open(f'{input_dir}/{split}.act.json')]
     for data in tqdm.tqdm(datas):
         act_obj = json.loads(data)
         key = f'{act_obj["dialog_id"]}_{act_obj["turn_id"]}'
@@ -80,10 +82,12 @@ if __name__ == '__main__':
 
         act_output = key2act[key]
 
-        ttype = 'api_generation' if act_output['action'] == 'search' else (
-            'casual_generation' if act_output['slots'] else 'casual_generation_no_slots'
-        )
-
+        action2ttype = {
+            'search': 'api_generation',
+            'asking': 'casual_generation',
+            'chat': 'casual_generation_no_slots',
+        }
+        ttype = action2ttype.get(act_output['action'], 'api_generation')
         gen_obj = copy.deepcopy(act_obj)
         gen_obj['type'] = ttype
         if ttype == 'api_generation':

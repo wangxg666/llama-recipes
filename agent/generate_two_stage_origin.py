@@ -1,11 +1,13 @@
 from agent.generate_two_stage_utils import *
 
 
-def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=None,
+def generate_dialog(step,
+                    policy_model: transformers.models.llama.LlamaForCausalLM=None,
                     policy_tokenizer: transformers.models.llama.LlamaTokenizer=None,
                     device=None):
-    random.shuffle(services)
-    used_services = [services[0]]
+    # random.shuffle(services)
+    # used_services = [services[0]]
+    used_services = [services[step % len(services)]]
     print_rank_0(f'current service is {json.dumps(used_services, indent=2)}')
 
     service2slots = {
@@ -189,11 +191,12 @@ def generate_dialog(policy_model: transformers.models.llama.LlamaForCausalLM=Non
     return used_services[0], turns, reward
 
 
-def get_batch(batch_size=4,
+def get_batch(step,
+              batch_size=4,
               policy_model=None,
               policy_tokenizer=None,
               device=None):
-    service, turns, reward = generate_dialog(policy_model, policy_tokenizer, device)
+    service, turns, reward = generate_dialog(step, policy_model, policy_tokenizer, device)
     cache.write(json.dumps({
         'dialog': turns,
         'reward': reward

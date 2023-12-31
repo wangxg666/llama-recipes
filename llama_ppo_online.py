@@ -76,7 +76,11 @@ class ScriptArguments:
     pre_train_critic_data_dir: str = ''
     pre_train_critic_checkpoint_dir: str = ''
 
+    gpus: str = "0"
+
 args = tyro.cli(ScriptArguments)
+
+os.environ['CUDA_VISIBLE_DEVICES'] = args.gpus
 
 # set seed before initializing value head for deterministic eval
 set_seed(args.ppo_config.seed)
@@ -142,13 +146,13 @@ if ds_plugin is not None and ds_plugin.is_zero3_init_enabled():
         pass
 
 # from agent.generate_two_stage_origin import get_batch, parse_dialog
-from agent.generate_two_stage_replace import get_batch, parse_dialog
+from agent.generate_two_stage_origin import get_batch, parse_dialog
 import torch.distributed as dist
 
-def safty_get_batch(batch_size, policy_model, policy_tokenizer, device):
+def safty_get_batch(step, batch_size, policy_model, policy_tokenizer, device):
     while True:
         try:
-            batch_input = get_batch(batch_size, policy_model, policy_tokenizer, device)
+            batch_input = get_batch(step, batch_size, policy_model, policy_tokenizer, device)
             return batch_input
         except Exception as e:
             logging.error(f'error at generation batch, {e}')
@@ -204,7 +208,8 @@ else:
         print('+' * 20, f'step = {step}', '+' * 20)
         model = ppo_trainer.accelerator.unwrap_model(ppo_trainer.model)
 
-        batch_input = safty_get_batch(args.ppo_config.batch_size,
+        batch_input = safty_get_batch(step,
+                                      args.ppo_config.batch_size,
                                       policy_model=model,
                                       policy_tokenizer=tokenizer,
                                       device=ppo_trainer.current_device)

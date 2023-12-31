@@ -5,7 +5,7 @@ MODEL_TYPE="7b"
 WORK_DIR="/home/paperspace/xingguang/models/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="agent_sft_act_dataset"
-DATASET_DIR="agent_sft.v09"
+DATASET_DIR="agent_sft.v09.1"
 
 LR=2e-5
 BATCH_SIZE=8
@@ -27,7 +27,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --dataset_dir "${DATASET_DIR}" \
   --save_model \
   --pure_bf16 \
-  --output_dir "${WORK_DIR}/${DATASET_NAME}.${TAG}"/ \
+  --output_dir "/mnt/share16t/xingguang/models/${DATASET_NAME}.${TAG}"/ \
   --lr ${LR} \
   --valid_batch_size ${BATCH_SIZE} \
   --train_batch_size ${BATCH_SIZE} \

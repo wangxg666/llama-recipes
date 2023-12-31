@@ -83,7 +83,7 @@ def get_action(obj):
 
 
 if __name__ == '__main__':
-    input_file = '/home/paperspace/xingguang/datasets/agent_sft.v09/dev.pred.7b.13b.s1.gen.json'
+    input_file = '/home/paperspace/xingguang/datasets/agent_sft.v09.1/test.gen.pred.7b.json'
 
     real_actions, pred_actions = [], []
     total_tp, total_fp, total_fn, joint_match, total_api_casual = 0., 0., 0., 0., 0.
