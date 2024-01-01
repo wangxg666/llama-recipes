@@ -283,22 +283,23 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
         for idx, turn in enumerate(turns):
             turn_id = int(turn[0])
             turn_reward = turn[1]
-
+            turn_slots = {k: list(v) for k, v in simplify_params(turn[-1]).items()}
             if key == 'api':
-                action = 'search'
-                slots = {k: list(v) for k, v in simplify_params(turn[-1]).items()}
+                turn_action = 'search'
+            elif len(turn_slots):
+                turn_action = 'asking'
             else:
-                action = 'chat'
-                slots = {k: list(v) for k, v in turn[-1].items()}
+                turn_action = 'chat'
 
             data = {
                 'dialog_id': '',
                 'turn_id': turn_id,
                 'type': 'act_selection',
-                'action': action,
+                'action': turn_action,
                 'history': all_utterances[0: turn_id],
-                'label': {'action': action, 'slots': slots}
+                'label': {'action': turn_action, 'slots': turn_slots}
             }
+            print({'action': turn_action, 'slots': turn_slots})
 
             prompt, label = AgentActDataset.prompting(data)
 

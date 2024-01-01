@@ -68,13 +68,14 @@ def generate_dialog(step,
                 repetition_penalty=1.,
                 pad_token_id=policy_tokenizer.eos_token_id
             )[0]
-            act_output = policy_tokenizer.decode(output, skip_special_tokens=True)[len(act_prompt):]
+            act_output_raw = policy_tokenizer.decode(output, skip_special_tokens=True)[len(act_prompt):]
+            act_output_raw = act_output_raw.split('\n')[0]
 
         else:
-            act_output = call_tgi(act_prompt, act_tgi_svr)
+            act_output_raw = call_tgi(act_prompt, act_tgi_svr)
 
         try:
-            act_output = json.loads(act_output)
+            act_output = json.loads(act_output_raw)
             print_rank_0(f'rank = {rank}, turn = {turn_no}, act = {act_output}')
         except:
             act_output_r = call_tgi(act_prompt, act_tgi_svr)
@@ -173,6 +174,7 @@ def generate_dialog(step,
         })
         if 'asked_slots' in gen_item:
             turns[-1]['asked_slots'] = gen_item['asked_slots']
+            turns[-1]['direct_output'] = act_output_raw
 
         turn_no += 1
 
