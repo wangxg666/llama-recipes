@@ -39,7 +39,7 @@ if __name__ == '__main__':
         policy_model.to('cuda')
 
         for i in range(10):
-            get_batch(4, policy_model, policy_tokenizer)
+            get_batch(i, 4, policy_model, policy_tokenizer)
 
     if args.view_reward:
         model_name_or_path = 'meta-llama/Llama-2-13b-hf'

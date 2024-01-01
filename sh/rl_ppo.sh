@@ -24,7 +24,7 @@ nohup accelerate launch \
   --gpus "0" \
   --ppo_config.model_name "${REF_MODEL}" \
   --ppo_config.query_dataset "${QUERY_DATASET}" \
-  --ppo_config.ppo_epochs 1 \
+  --ppo_config.ppo_epochs 2 \
   --output_checkpoint_dir "${OUTPUT_CHECKPOINT_DIR}" \
   --pre_train_critic_checkpoint_dir "${PRE_TRAIN_CRITIC_CHECKPOINT_DIR}" \
   >../logs/ppo.train.${hour}.log &

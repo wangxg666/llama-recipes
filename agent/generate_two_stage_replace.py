@@ -85,18 +85,19 @@ def generate_dialog(step,
                 repetition_penalty=1.,
                 pad_token_id=policy_tokenizer.eos_token_id
             )[0]
-            act_output = policy_tokenizer.decode(output, skip_special_tokens=True)[len(act_prompt):]
+            act_output_str = policy_tokenizer.decode(output, skip_special_tokens=True)[len(act_prompt):]
+            act_output_str = act_output_str.split('\n')[0]
 
         else:
-            act_output = call_tgi(act_prompt, act_tgi_svr)
+            act_output_str = call_tgi(act_prompt, act_tgi_svr)
 
         try:
-            act_output = json.loads(act_output)
+            act_output = json.loads(act_output_str)
             print_rank_0(f'rank = {rank}, turn = {turn_no}, act = {act_output}')
         except:
-            act_output_r = call_tgi(act_prompt, act_tgi_svr)
-            print_rank_0(f'rank = {rank}, turn = {turn_no}, act = {act_output}, react = {act_output_r}')
-            act_output = json.loads(act_output_r)
+            act_output_str_fix = call_tgi(act_prompt, act_tgi_svr)
+            print_rank_0(f'rank = {rank}, turn = {turn_no}, act = {act_output_str}, react = {act_output_str_fix}')
+            act_output = json.loads(act_output_str_fix)
             n_act_tgi_call += 1.
 
         act_output = validate_action_response(act_output)
@@ -229,22 +230,27 @@ def generate_dialog(step,
     return used_services[0], turns, reward
 
 
-def get_batch(step, batch_size=4,
+def get_batch(step,
+              batch_size=4,
               policy_model=None,
               policy_tokenizer=None,
               device=None):
 
     for _ in range(3):
-        service, turns, reward = generate_dialog(step, policy_model, policy_tokenizer, device)
+        service, turns, reward = generate_dialog(
+            step=step,
+            policy_model=policy_model,
+            policy_tokenizer=policy_tokenizer,
+            device=device
+        )
         batch = parse_dialog(turns, reward, batch_size, policy_tokenizer)
         if len(batch['query_tensors']) != batch_size:
             continue
-        else:
-            cache.write(json.dumps({
-                'dialog': turns,
-                'reward': reward
-            }) + '\n')
-            return batch
+        cache.write(json.dumps({
+            'dialog': turns,
+            'reward': reward
+        }) + '\n')
+        return batch
 
 
 if __name__ == '__main__':

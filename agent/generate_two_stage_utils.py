@@ -283,13 +283,15 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
         for idx, turn in enumerate(turns):
             turn_id = int(turn[0])
             turn_reward = turn[1]
-            turn_slots = {k: list(v) for k, v in simplify_params(turn[-1]).items()}
             if key == 'api':
                 turn_action = 'search'
-            elif len(turn_slots):
+                turn_slots = {k: list(v) for k, v in simplify_params(turn[-1]).items()}
+            elif len(turn[-1]):
                 turn_action = 'asking'
+                turn_slots = {k: list(v) for k, v in turn[-1].items()}
             else:
                 turn_action = 'chat'
+                turn_slots = {}
 
             data = {
                 'dialog_id': '',
