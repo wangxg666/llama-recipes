@@ -107,7 +107,6 @@ def generate_dialog(step,
             'asking': 'casual_generation',
             'chat': 'casual_generation_no_slots',
         }
-
         ttype = action2ttype.get(act_output['action'], 'api_generation')
         # print_rank_0(f'rank = {rank}, turn = {turn_no}, System Act: {ttype}, detail = {act_output}')
 

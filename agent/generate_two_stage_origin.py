@@ -85,9 +85,12 @@ def generate_dialog(step,
         act_output = validate_action_response(act_output)
         print_rank_0(f'rank = {rank}, turn = {turn_no}, act = {act_output}')
 
-        ttype = 'api_generation' if act_output['action'] == 'search' else (
-            'casual_generation' if act_output['slots'] else 'casual_generation_no_slots'
-        )
+        action2ttype = {
+            'search': 'api_generation',
+            'asking': 'casual_generation',
+            'chat': 'casual_generation_no_slots',
+        }
+        ttype = action2ttype.get(act_output['action'], 'api_generation')
         # print_rank_0(f'rank = {rank}, turn = {turn_no}, System Act: {ttype}, detail = {act_output}')
 
         gen_item = {

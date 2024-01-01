@@ -6,7 +6,7 @@ HOME_DIR="/home/paperspace/xingguang"
 
 
 sudo docker run \
-  --gpus "device=0" \
+  --gpus "device=2" \
   --shm-size 4g -p 1309:80 -v ${HOME_DIR}:/data ghcr.io/huggingface/text-generation-inference:1.0.3 \
   --model-id /data/models/agent_sft_gen_dataset.13b.2e-5.full.B4.E1.agent_sft.v09.1.hf \
   --dtype bfloat16 \
