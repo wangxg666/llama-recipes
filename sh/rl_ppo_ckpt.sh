@@ -18,7 +18,8 @@ hour=$(date +"%Y-%m-%d_%H")
 
 set -x CUDA_VISIBLE_DEVICES "4"
 
-nohup accelerate launch \
+#nohup
+accelerate launch \
   --config_file ${HOME}/llama-recipes/sh/ds_config.2.ppo.yaml \
   ../llama_ppo_online.py \
   --gpus "0" \
@@ -27,4 +28,6 @@ nohup accelerate launch \
   --ppo_config.ppo_epochs 2 \
   --output_checkpoint_dir "${OUTPUT_CHECKPOINT_DIR}" \
   --pre_train_critic_checkpoint_dir "${PRE_TRAIN_CRITIC_CHECKPOINT_DIR}" \
-  >../logs/ppo.train.${hour}.log &
+  --breakpoint_checkpoint_dir "${OUTPUT_CHECKPOINT_DIR}/step_0200/"
+#  \
+#  >../logs/ppo.train.${hour}.log &

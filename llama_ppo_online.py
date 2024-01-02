@@ -76,6 +76,8 @@ class ScriptArguments:
     pre_train_critic_data_dir: str = ''
     pre_train_critic_checkpoint_dir: str = ''
 
+    breakpoint_checkpoint_dir: str = ''
+
     gpus: str = "0"
 
 args = tyro.cli(ScriptArguments)
@@ -125,6 +127,17 @@ if os.path.exists(f'{args.pre_train_critic_checkpoint_dir}'):
     state_dict = {k: v for k, v in state_dict.items() if 'v_head' in k}
     model.load_state_dict(state_dict, strict=False)
     print_rank_0(f'load {json.dumps(list(state_dict.keys()), indent=2)} from pre-trained critic model')
+
+
+if os.path.exists(f'{args.breakpoint_checkpoint_dir}'):
+    state_dict = {}
+    for filename in os.listdir(f'{args.breakpoint_checkpoint_dir}'):
+        if filename.startswith('pytorch_model') and filename.endswith('.bin'):
+            state_dict.update(torch.load(f'{args.breakpoint_checkpoint_dir}/{filename}'))
+    state_dict = {f'pretrained_model.{k}' if 'v_head' not in k else k: v for k, v in state_dict.items()}
+    print(f'load from {args.breakpoint_checkpoint_dir}, param = {json.dumps(list(state_dict.keys()), indent=2)}')
+    model.load_state_dict(state_dict)
+
 
 tokenizer = AutoTokenizer.from_pretrained(args.ppo_config.model_name)
 
@@ -204,7 +217,16 @@ if args.pre_train_critic \
     ppo_trainer.model.save_pretrained(args.pre_train_critic_checkpoint_dir)
 
 else:
+    if args.breakpoint_checkpoint_dir:
+        begin = [x for x in args.breakpoint_checkpoint_dir.split('/') if 'step_' in x][0]
+        begin = int(begin.replace('step_', ''))
+    else:
+        begin = 0
+
     for step in tqdm(range(5000)):
+        if step < begin:
+            continue
+
         print('+' * 20, f'step = {step}', '+' * 20)
         model = ppo_trainer.accelerator.unwrap_model(ppo_trainer.model)
 
