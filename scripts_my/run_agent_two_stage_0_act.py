@@ -88,7 +88,7 @@ def run(tgi_svr, output_file):
 if __name__ == '__main__':
     input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v09.1'
 
-    split = 'dev'
+    split = 'test'
 
     key2sample = {}
     for filename in [f'{split}.api.json', f'{split}.casual.json']:
@@ -99,7 +99,10 @@ if __name__ == '__main__':
 
     counter = collections.defaultdict(float)
     tgi_svr2output_file = {
-        'http://209.51.170.51:1307': f'{input_dir}/{split}.act.pred.7b.auto_gen.refine.json',
+        # 'http://209.51.170.51:1307': f'{input_dir}/{split}.act.pred.7b.auto_gen.refine.json',
+        'http://172.83.13.53:1501': f'{input_dir}/{split}.act.pred.7b.rl.replace.step_0200.json',
+        'http://172.83.13.53:1502': f'{input_dir}/{split}.act.pred.7b.rl.replace.step_0400.json',
+        'http://172.83.13.53:1503': f'{input_dir}/{split}.act.pred.7b.rl.replace.step_0600.json',
     }
 
     pool = multiprocessing.Pool(len(tgi_svr2output_file))

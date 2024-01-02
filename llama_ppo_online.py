@@ -72,6 +72,8 @@ class ScriptArguments:
     trust_remote_code: bool = field(default=False, metadata={"help": "Enable `trust_remote_code`"})
     output_checkpoint_dir: str = ''
 
+    replace: bool = False
+
     pre_train_critic: bool = False
     pre_train_critic_data_dir: str = ''
     pre_train_critic_checkpoint_dir: str = ''
@@ -158,8 +160,10 @@ if ds_plugin is not None and ds_plugin.is_zero3_init_enabled():
     with ds_plugin.zero3_init_context_manager(enable=False):
         pass
 
-# from agent.generate_two_stage_origin import get_batch, parse_dialog
-from agent.generate_two_stage_replace import get_batch, parse_dialog
+if args.replace:
+    from agent.generate_two_stage_replace import get_batch, parse_dialog
+else:
+    from agent.generate_two_stage_origin import get_batch, parse_dialog
 import torch.distributed as dist
 
 def safty_get_batch(step, batch_size, policy_model, policy_tokenizer, device):
@@ -223,7 +227,7 @@ else:
     else:
         begin = 0
 
-    for step in tqdm(range(5000)):
+    for step in tqdm(range(1000)):
         if step < begin:
             continue
 
@@ -245,6 +249,6 @@ else:
         stats = ppo_trainer.step(query_tensors, response_tensors, reward_tensors, train_generation=True)
         ppo_trainer.log_stats(stats, {}, reward_tensors, columns_to_log=["query", "response", "ref_response", "ref_rewards"])
 
-        if (step + 1) % 200 == 0:
+        if (step + 1) % 100 == 0:
             sub_dir = f'step_{str(10000 + step + 1)[1:]}'
             ppo_trainer.model.save_pretrained(args.output_checkpoint_dir + '/' + sub_dir)

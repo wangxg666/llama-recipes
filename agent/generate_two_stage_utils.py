@@ -1,4 +1,5 @@
 import argparse
+import collections
 import datetime
 import math
 import random
@@ -275,20 +276,19 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
             all_utterances.append(speaker + ': ' + utterance)
             idx += 1
 
-    chat_prompts, chat_labels, chat_rewards = [], [], []
-    search_prompts, search_labels, search_rewards = [], [], []
-
+    all_prompts, all_labels, all_rewards = [], [], []
     from ft_datasets.agent_sft_act_dataset import AgentActDataset
     for key, turns in key2turns.items():
         for idx, turn in enumerate(turns):
             turn_id = int(turn[0])
             turn_reward = turn[1]
+            turn_slots = turn[-1]
             if key == 'api':
                 turn_action = 'search'
-                turn_slots = {k: list(v) for k, v in simplify_params(turn[-1]).items()}
-            elif len(turn[-1]):
+                turn_slots = {k: list(v) for k, v in simplify_params(turn_slots).items()}
+            elif turn_slots:
                 turn_action = 'asking'
-                turn_slots = {k: list(v) for k, v in turn[-1].items()}
+                turn_slots = {k: list(v) for k, v in turn_slots.items()}
             else:
                 turn_action = 'chat'
                 turn_slots = {}
@@ -305,49 +305,42 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
 
             prompt, label = AgentActDataset.prompting(data)
 
-            if key == 'casual':
-                if len(turns) == (idx + 1) and random.random() <= 0.9:
-                    continue
-                chat_prompts.append(prompt)
-                chat_labels.append(label)
-                chat_rewards.append(turn_reward)
-            else:
-                search_prompts.append(prompt)
-                search_labels.append(label)
-                search_rewards.append(turn_reward)
+            if key == 'casual' and len(turns) == (idx + 1) and random.random() <= 0.9:
+                continue
+            all_labels.append(label)
+            all_prompts.append(prompt)
+            all_rewards.append(turn_reward)
 
-    batch = {
-        'query_tensors': [],
-        'response_tensors': [],
-        'reward_tensors': []
-    }
+    all_samples = []
+    label2samples = collections.defaultdict(list)
+    for label, prompt, reward in zip(all_labels, all_prompts, all_rewards):
+        label2samples[label].append([label, prompt, reward])
+        all_samples.append([label, prompt, reward])
 
-    print(len(chat_labels), len(search_labels))
+    batch_samples = []
+    if batch_size == -1:
+        batch_samples.extend(all_samples)
+    else:
+        batch_samples.extend([
+            random.choice(samples) for samples in label2samples.values()
+        ])
+        while len(batch_samples) < batch_size:
+            idx = int(random.random() * len(all_labels))
+            batch_samples.append([all_labels[idx], all_prompts[idx], all_rewards[idx]])
 
-    # 强制replace过轮次的数据，不用首保chat
-    search_labels.extend(chat_labels)
-    search_prompts.extend(chat_prompts)
-    search_rewards.extend(chat_rewards)
+    batch_tensors = {f'{k}_tensors': [] for k in ['query', 'response', 'reward']}
+    for sample in batch_samples:
+        label, prompt, reward = sample
+        example = prompt + label
 
-    index_list = list(range(len(search_prompts)))
-    if batch_size != -1:
-        need_size = batch_size - len(batch['query_tensors'])
-        while len(index_list) < need_size:
-            index_list += index_list
-        random.shuffle(index_list)
-        index_list = index_list[0: need_size]
-
-    for idx in index_list:
-        search_prompt, search_label, search_reward = search_prompts[idx], search_labels[idx], search_rewards[idx]
-        example = search_prompt + search_label
-
-        prompt = policy_tokenizer.encode(search_prompt)
+        prompt = policy_tokenizer.encode(prompt)
         example = policy_tokenizer.encode(example) + [policy_tokenizer.eos_token_id]
 
-        batch['query_tensors'].append(torch.tensor(prompt))
-        batch['response_tensors'].append(torch.tensor(example[len(prompt):]))
-        batch['reward_tensors'].append(torch.tensor([search_reward]))
-    return batch
+        batch_tensors['query_tensors'].append(torch.tensor(prompt))
+        batch_tensors['response_tensors'].append(torch.tensor(example[len(prompt):]))
+        batch_tensors['reward_tensors'].append(torch.tensor([reward]))
+
+    return batch_tensors
 
 
 cache = Cache()
