@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO,
 
 class GPTBase:
     """
-    model: gpt-4, gpt-3.5-turbo, gpt-4-1106-preview'
+    model: gpt-4, gpt-3.5-turbo, gpt-3.5-turbo'
     """
     def __init__(self, model='gpt-3.5-turbo', retry_times=3, temperature=0.5):
         self.model = model
@@ -64,7 +64,7 @@ class GPTBase:
 import json
 class GPTTest(GPTBase):
     def __init__(self):
-        super().__init__(model='gpt-4-1106-preview')
+        super().__init__(model='gpt-3.5-turbo')
 
     def prompting(self, **kwargs):
         prompt = """
