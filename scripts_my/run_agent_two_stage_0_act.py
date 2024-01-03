@@ -100,9 +100,11 @@ if __name__ == '__main__':
     counter = collections.defaultdict(float)
     tgi_svr2output_file = {
         # 'http://209.51.170.51:1307': f'{input_dir}/{split}.act.pred.7b.auto_gen.refine.json',
-        'http://172.83.13.53:1501': f'{input_dir}/{split}.act.pred.7b.rl.replace.step_0200.json',
-        'http://172.83.13.53:1502': f'{input_dir}/{split}.act.pred.7b.rl.replace.step_0400.json',
-        'http://172.83.13.53:1503': f'{input_dir}/{split}.act.pred.7b.rl.replace.step_0600.json',
+        'http://172.83.13.53:1501': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0100.json',
+        'http://172.83.13.53:1502': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0200.json',
+        'http://172.83.13.53:1503': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0300.json',
+        'http://172.83.13.53:1504': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0400.json',
+        'http://172.83.13.53:1505': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0500.json',
     }
 
     pool = multiprocessing.Pool(len(tgi_svr2output_file))

@@ -64,7 +64,7 @@ class GPTBase:
 import json
 class GPTTest(GPTBase):
     def __init__(self):
-        super().__init__(model='gpt-4')
+        super().__init__(model='gpt-4-1106-preview')
 
     def prompting(self, **kwargs):
         prompt = """

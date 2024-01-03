@@ -273,7 +273,7 @@ def convert_dialog_to_task(turns):
 
 class GPTUserSimulator(GPTBase):
     def __init__(self):
-        super().__init__(model='gpt-4')
+        super().__init__(model='gpt-4-1106-preview')
 
     def prompting(self, service2fields, service2preference, history, **kwargs):
         service_templates = []
@@ -323,7 +323,7 @@ class GPTUserSimulator(GPTBase):
 
 class GPTSystemRAGSimulator(GPTBase):
     def __init__(self):
-        super().__init__(model='gpt-4')
+        super().__init__(model='gpt-4-1106-preview')
 
     def prompting(self, prompt, **kwargs):
         return prompt
