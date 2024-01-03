@@ -327,6 +327,7 @@ def parse_dialog(turns, reward, batch_size, policy_tokenizer):
         while len(batch_samples) < batch_size:
             idx = int(random.random() * len(all_labels))
             batch_samples.append([all_labels[idx], all_prompts[idx], all_rewards[idx]])
+        batch_samples = batch_samples[:batch_size]
 
     batch_tensors = {f'{k}_tensors': [] for k in ['query', 'response', 'reward']}
     for sample in batch_samples:
