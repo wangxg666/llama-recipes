@@ -5,7 +5,7 @@ MODEL_TYPE="13b"
 WORK_DIR="/home/paperspace/xingguang/models/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="agent_sft_gen_dataset"
-DATASET_DIR="agent_sft.v10"
+DATASET_DIR="agent_sft.v10.baseline"
 
 LR=2e-5
 BATCH_SIZE=8
@@ -16,7 +16,7 @@ ts=$(date +"%Y-%m-%d")
 
 cd ..
 
-CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
+CUDA_VISIBLE_DEVICES="4,5,6,7" torchrun \
   --nnodes 1 \
   --nproc_per_node 4 \
   --master_port=1201 \
