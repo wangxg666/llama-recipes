@@ -36,6 +36,7 @@ def agent_tokenize(tokenizer, prompt, label, max_words, do_padding):
         elif padding < 0:
             example = example[: max_words]
 
+
     labels = copy.deepcopy(example)
     labels[: len(prompt)] = -1
     example_mask = example.ge(0)

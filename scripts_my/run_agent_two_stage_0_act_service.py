@@ -51,6 +51,8 @@ def run(tgi_svr, output_file):
     datas = [data for data in open(f'{input_dir}/{split}.act.json')]
     for data in tqdm.tqdm(datas):
         act_obj = json.loads(data)
+        if act_obj['action'] != 'restaurant':
+            continue
         key = f'{act_obj["dialog_id"]}_{act_obj["turn_id"]}'
 
         if key not in key2sample:
@@ -86,20 +88,21 @@ def run(tgi_svr, output_file):
 
 
 if __name__ == '__main__':
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v10/'
+    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v03/'
 
-    split = 'dev'
+    split = 'test'
 
     key2sample = {}
     for filename in [f'{split}.api.json', f'{split}.casual.json']:
         for data in open(f'{input_dir}/{filename}'):
             obj = json.loads(data)
+
             key = f'{obj["dialog_id"]}_{obj["turn_id"]}'
             key2sample[key] = obj
 
     counter = collections.defaultdict(float)
     tgi_svr2output_file = {
-        'http://209.51.170.51:1307': f'{input_dir}/{split}.act.pred.7b.json',
+        'http://209.51.170.51:1307': f'{input_dir}/{split}.act.pred.7b.auto_gen.restaurant.json',
         # 'http://172.83.13.53:1501': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0600.json',
         # 'http://172.83.13.53:1502': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0700.json',
         # 'http://172.83.13.53:1503': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0800.json',

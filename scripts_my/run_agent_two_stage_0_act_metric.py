@@ -35,7 +35,9 @@ def print_action_metric(pred_actions, real_actions):
 
 if __name__ == '__main__':
     for input_file in [
-        '/mnt/share16t/xingguang/datasets/agent_sft.auto.gen.v02/test.act.pred.7b.auto_gen.json',
+        # '/mnt/share16t/xingguang/datasets/agent_sft.auto.gen.v03/test.act.pred.7b.auto_gen.restaurant.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v10/dev.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v10/test.act.pred.7b.json'
     ]:
         print(input_file)
         pred_actions, real_actions = [], []

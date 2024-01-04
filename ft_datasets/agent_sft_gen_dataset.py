@@ -13,15 +13,6 @@ from ft_datasets.agent_sft_common import PERSONA_PROMPT_DICT, agent_tokenize
 
 ANSWER_TYPE_PROMPT = {
     'casual_generation': (
-        # '{persona}\n'
-        # 'Given the conversion history, your task is to generate the next response.\n'
-        # 'Generate an appropriate response; this response should be in the following styles:\n'
-        # '1. Interrogative, If you think that the user\'s needs have not been met, please ask for the necessary information to provide a more accurate understanding.\n'
-        # '2. Direct response: Directly response the user need based on the conversion history.\n'
-        # 'Here is the conversion history:\n{history}\n'
-        # 'and the user lastest utterence: \n{user_utterence}\n'
-        # 'and here is the slots you\'d better to ask rhetorically when outputting your response: \n{slots}\n'
-        # 'Please give your response:\n'
         "{persona}\n"
         "Given the conversation history:\n{history}\n"
         "And the necessary fields of information you deem crucial for effective assistance:\n{slots}\n"
@@ -32,15 +23,6 @@ ANSWER_TYPE_PROMPT = {
         "Now, take a deep breath and think step-by-step, your next response should be:\n"
     ),
     'casual_generation_no_slots': (
-        # '{persona}\n'
-        # 'Given the conversion history, your task is to generate the next response.\n'
-        # 'Generate an appropriate response; this response should be in the following styles:\n'
-        # '- If you believe the conversation is concluded, politely say goodbye; or other direct response based on the conversion history.\n'
-        # '- Other response that is not directly influence the users purpose'
-        # 'Here is the conversion history:\n{history}\n'
-        # 'and the user lastest utterence: \n{user_utterence}\n'
-        # 'Please generate a proper response based on the context.\n'
-        # 'Please give your response:\n'
         "{persona}\n"
         "Given the conversation history:\n{history}\n"
         "Generate the next response to the user's latest reply: \n{user_utterence}.\n"
@@ -77,7 +59,7 @@ class AgentSFTDataset(Dataset):
         type = 'train' if partition == 'train' else 'dev'
         input_files = [
             f'{dataset_config.root}/{dataset_config.dataset_dir}/{type}.{task}.json'
-            for task in ['api', 'casual', 'rag']
+            for task in ['api', 'casual']
         ]
         print(json.dumps(input_files, indent=2), flush=True)
         self.datas = []
