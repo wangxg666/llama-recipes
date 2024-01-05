@@ -92,14 +92,13 @@ if __name__ == '__main__':
         real_actions, pred_actions = [], []
         total_tp, total_fp, total_fn, joint_match, total_api_casual = 0., 0., 0., 0., 0.
 
-        for data in open(input_file):
-            obj = json.loads(data)
+        real_datas = [json.loads(data) for data in open(input_file.replace('gen.pred.7b_13b.json', 'api.json'))]
+        pred_datas = [json.loads(data) for data in open(input_file)]
 
-            if obj['real_gen']['type'] == 'casual_generation_no_slots':
-                continue
+        for real_data, pred_data in zip(real_datas, pred_datas):
+            api_config_real = real_data['label']
+            api_config_pred = pred_data['pred_gen']['label']
 
-            api_config_real = obj['real_gen']['label'] if obj['real_gen']['type'] == 'api_generation' else {}
-            api_config_pred = obj['pred_gen']['label'] if obj['pred_gen']['type'] == 'api_generation' else {}
             tp, fp, fn, is_match = compare(api_config_pred, api_config_real)
             total_tp += tp
             total_fp += fp

@@ -27,7 +27,7 @@ def call_tgi(prompt, tgi_server="http://209.51.170.51:1309"):
 def is_valid_action_response(output):
     try:
         output = json.loads(output)
-        if output['action'] not in {'chat', 'search', 'asking'}:
+        if 'current_service' not in output or 'slots' not in output:
             return False
         for k, v in output['slots'].items():
             if not isinstance(v, list):
@@ -59,16 +59,7 @@ def run(tgi_svr, output_file):
 
         prompt, label = AgentActDataset.prompting(act_obj)
 
-        output = {}
-        for _ in range(3):
-            try:
-                output = call_tgi(prompt, tgi_svr)
-                if is_valid_action_response(output):
-                    break
-            except Exception as e:
-                print(e)
-                continue
-
+        output = call_tgi(prompt, tgi_svr)
         if not is_valid_action_response(output):
             counter['decision_maker_error'] += 1
             continue
@@ -88,32 +79,31 @@ def run(tgi_svr, output_file):
 if __name__ == '__main__':
     input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline/'
 
-    split = 'test'
+    for split in ['dev', 'test']:
+        key2sample = {}
+        for filename in [f'{split}.api.json', f'{split}.casual.json']:
+            for data in open(f'{input_dir}/{filename}'):
+                obj = json.loads(data)
+                key = f'{obj["dialog_id"]}_{obj["turn_id"]}'
+                key2sample[key] = obj
 
-    key2sample = {}
-    for filename in [f'{split}.api.json', f'{split}.casual.json']:
-        for data in open(f'{input_dir}/{filename}'):
-            obj = json.loads(data)
-            key = f'{obj["dialog_id"]}_{obj["turn_id"]}'
-            key2sample[key] = obj
+        counter = collections.defaultdict(float)
+        tgi_svr2output_file = {
+            'http://209.51.170.51:1307': f'{input_dir}/{split}.act.pred.7b.json',
+            # 'http://172.83.13.53:1501': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0600.json',
+            # 'http://172.83.13.53:1502': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0700.json',
+            # 'http://172.83.13.53:1503': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0800.json',
+            # 'http://172.83.13.53:1504': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0900.json',
+            # 'http://172.83.13.53:1505': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_1000.json',
+        }
 
-    counter = collections.defaultdict(float)
-    tgi_svr2output_file = {
-        'http://209.51.170.51:1307': f'{input_dir}/{split}.act.pred.7b.json',
-        # 'http://172.83.13.53:1501': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0600.json',
-        # 'http://172.83.13.53:1502': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0700.json',
-        # 'http://172.83.13.53:1503': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0800.json',
-        # 'http://172.83.13.53:1504': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0900.json',
-        # 'http://172.83.13.53:1505': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_1000.json',
-    }
-
-    pool = multiprocessing.Pool(len(tgi_svr2output_file))
-    for tgi_svr, output_file in tgi_svr2output_file.items():
-        pool.apply_async(
-            func=run,
-            args=(tgi_svr, output_file)
-        )
-    pool.close()
-    pool.join()
+        pool = multiprocessing.Pool(len(tgi_svr2output_file))
+        for tgi_svr, output_file in tgi_svr2output_file.items():
+            pool.apply_async(
+                func=run,
+                args=(tgi_svr, output_file)
+            )
+        pool.close()
+        pool.join()
     # for tgi_svr, output_file in tgi_svr2output_file.items():
     #     run(tgi_svr, output_file)
