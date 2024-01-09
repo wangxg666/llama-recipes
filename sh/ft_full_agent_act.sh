@@ -5,7 +5,7 @@ MODEL_TYPE="7b"
 WORK_DIR="/home/paperspace/xingguang/models/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="agent_sft_act_dataset"
-DATASET_DIR="agent_sft.v10.baseline"
+DATASET_DIR="agent_sft.auto.gen.v05.5.2.dst.lower"
 
 LR=2e-5
 BATCH_SIZE=8
@@ -33,7 +33,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --train_batch_size ${BATCH_SIZE} \
   --micro_batch_size ${BATCH_SIZE} \
   --num_epochs ${EPOCH} \
-  --evaluation_steps 500 \
+  --evaluation_steps 200 \
   --check_point_steps 1000000 \
   --wandb_name ${MODEL_TYPE}-${DATASET_DIR}-${TAG} \
   --wandb_project "llama-pre-train-cmp"

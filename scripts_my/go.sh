@@ -1,2 +1,2 @@
 python run_agent_two_stage_0_act_baseline.py
-python run_agent_two_stage_1_gen_baseline.py
+#python run_agent_two_stage_1_gen_baseline.py

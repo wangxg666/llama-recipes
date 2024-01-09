@@ -29,10 +29,25 @@ ANSWER_TYPE_PROMPT = {
         'Your service is efficient and of high quality, earning widespread praise from the local community.\n'
         'Given the conversion history, Your task is to help determine whether the next response can be directly replied to or not.\n'
         'Please output the current_service based on the user last utterence.\n'
+        'Please noted that your responses are not used in the action selection, except the hotel name and restaurant name that you provided.\n'
         'And also please output all the services\' information that need pay attention to from the whole conversion.\n'
         'Here is the conversion history:\n{history}\n'
         'the user lastest utterence: \n{user_utterence}\n'
         'The output should be in JSON format like {{"current_service": xxx, "slots": {{"service": [xxx, ...]}}}}\n'
+        'Please give your decision:\n'
+    ),
+
+    'act_selection_baseline_dst': (
+        'You are a local guide online, primarily handling local services like:\n'
+        'find the user\'s place (such as attraction, hotel, train, restaurant or hospital), and calling taxis, contacting the police, or other convenient services.\n'
+        'Your service is efficient and of high quality, earning widespread praise from the local community.\n'
+        'Given the conversion history, Your task is to help determine whether the next response can be directly replied to or not.\n'
+        'Please output the current_service based on the user last utterence.\n'
+        'Please noted that your responses are not used in the action selection, except the hotel name and restaurant name that you provided.\n'
+        'And also please output all the services\' information that need pay attention to from the whole conversion.\n'
+        'Here is the conversion history:\n{history}\n'
+        'the user lastest utterence: \n{user_utterence}\n'
+        'The output should be in JSON format like {{"current_service": xxx, "slots": {{"service": {{"slot_key": "slot_val"}}}}}}\n'
         'Please give your decision:\n'
     )
 }
@@ -53,7 +68,7 @@ class AgentActDataset(Dataset):
             if partition == 'train':
                 self.datas.extend(datas)
             else:
-                n = 100 if 'casual.json' in input_file else 200
+                n = 100 if 'casual.json' in input_file else 1000
                 self.datas.extend(datas[0:n])
 
         self.max_words = max_words

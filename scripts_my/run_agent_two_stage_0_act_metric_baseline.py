@@ -31,27 +31,37 @@ def print_action_metric(pred_actions, real_actions):
     from sklearn.metrics import classification_report, confusion_matrix
     print(f'classification_report\n', classification_report(y_true=y_true, y_pred=y_pred, target_names=actions))
 
-    print(f'confusion matrix\n', confusion_matrix(y_true=y_true, y_pred=y_pred))
+    # print(f'confusion matrix\n', confusion_matrix(y_true=y_true, y_pred=y_pred))
 
 if __name__ == '__main__':
+    service2slot_keys = json.load(open('woz_valid_slot_keys.json'))
+
     for input_file in [
         # '/mnt/share16t/xingguang/datasets/agent_sft.auto.gen.v03/test.act.pred.7b.auto_gen.restaurant.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline/dev.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline/test.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2/test.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.1/dev.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5/dev.test.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.4/dev.act.pred.7b.json',
     ]:
         print(input_file)
         pred_actions, real_actions = [], []
 
-        for data in open(input_file):
-            obj = json.loads(data)
-            real_actions.append(obj['real_act'].get('current_service', 'error'))
-            pred_actions.append(obj['pred_act'].get('current_service', 'error'))
+        objs = [json.loads(data) for data in open(input_file)]
+
+        for obj in objs:
+            real_action = obj['real_act'].get('current_service', 'error')
+            if real_action not in ['hotel', 'attraction', 'restaurant', 'train', 'taxi']:
+                real_action = 'other'
+            real_actions.append(real_action)
+
+            pred_action = obj['pred_act'].get('current_service', 'error')
+            if pred_action not in ['hotel', 'attraction', 'restaurant', 'train', 'taxi']:
+                pred_action = 'other'
+            pred_actions.append(pred_action)
         print_action_metric(pred_actions, real_actions)
 
         total_tp, total_fp, total_fn, joint_match, total_n = 0., 0., 0., 0., 0.
-        for data in open(input_file):
-            obj = json.loads(data)
-
+        for obj in objs:
             total_n += 1
             real_slots = get_slots(obj['real_act']['slots'])
             pred_slots = get_slots(obj['pred_act']['slots'])
@@ -59,7 +69,10 @@ if __name__ == '__main__':
             has_fn, has_fp = False, False
             for service, real_slot_keys in real_slots.items():
                 real_slot_keys = set(real_slot_keys)
+
                 pred_slot_keys = set(pred_slots.get(service, []))
+                pred_slot_keys = {pred_slot_key for pred_slot_key in pred_slot_keys if pred_slot_key in service2slot_keys[service]}
+
                 for real_slot_key in real_slot_keys:
                     if real_slot_key not in pred_slot_keys:
                         total_fn += 1
@@ -67,6 +80,7 @@ if __name__ == '__main__':
                     else:
                         total_tp += 1
                 for pred_slot_key in pred_slot_keys:
+
                     if pred_slot_key not in real_slot_keys:
                         total_fp += 1
                         has_fp = True

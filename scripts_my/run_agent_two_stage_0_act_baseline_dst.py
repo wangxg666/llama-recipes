@@ -77,7 +77,7 @@ def run(tgi_svr, output_file):
 
 
 if __name__ == '__main__':
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst/'
+    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst.lower/'
 
     for split in ['dev', 'test']:
         key2sample = {}
@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
         counter = collections.defaultdict(float)
         tgi_svr2output_file = {
-            'http://209.51.170.51:1308': f'{input_dir}/{split}.act.pred.7b.json',
+            'http://209.51.170.51:1307': f'{input_dir}/{split}.act.pred.7b.json',
             # 'http://172.83.13.53:1501': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0600.json',
             # 'http://172.83.13.53:1502': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0700.json',
             # 'http://172.83.13.53:1503': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0800.json',

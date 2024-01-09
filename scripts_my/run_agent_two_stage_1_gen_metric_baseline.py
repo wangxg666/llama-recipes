@@ -34,15 +34,25 @@ def is_matching(hyp, ref, fuzzy_ratio=95):
 def get_slots(obj):
     slots = {}
     for service, kv in obj.items():
+        if service not in service2slot_keys:
+            continue
         for k, v in kv.items():
+            if isinstance(v, list):
+                v = v[0]
             k = k.split('-')[-1]
-            slots[f'{service}-{k}'] = v
+            if k not in service2slot_keys[service]:
+                continue
+            slots[f'{service}-{k}'] = v.lower()
     return slots
 
 
 def compare(hyp, ref, fuzzy_ratio=95):
     hyp = get_slots(hyp)
     ref = get_slots(ref)
+
+    print('hyp', json.dumps(hyp, sort_keys=True))
+    print('ref', json.dumps(ref, sort_keys=True))
+
     # tp ... those mentioned in both and matching
     # tn ... those not mentioned in both (this inflates results for slot acc., thus reporting F1)
     # fn ... those not mentioned in hyp but mentioned in ref
@@ -83,9 +93,11 @@ def get_action(obj):
 
 
 if __name__ == '__main__':
+    service2slot_keys = json.load(open('woz_valid_slot_keys.json'))
+
     for input_file in [
-        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline/dev.gen.pred.7b_13b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline/test.gen.pred.7b_13b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2/dev.gen.pred.7b_13b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2/test.gen.pred.7b_13b.json',
     ]:
 
         print(input_file)

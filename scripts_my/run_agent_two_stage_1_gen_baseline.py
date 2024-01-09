@@ -45,7 +45,7 @@ def is_valid_api_response(output):
 
 
 if __name__ == '__main__':
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline/'
+    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2/'
 
     # act_tgi_svr = 'http://209.51.170.51:1308'
     # act_tgi_svr = 'http://172.83.13.53:1308'
@@ -56,7 +56,7 @@ if __name__ == '__main__':
         counter = collections.defaultdict(float)
 
         key2sample = {}
-        for filename in [f'{split}.api.json', f'{split}.casual.json']:
+        for filename in [f'{split}.api.json']:
             for data in open(f'{input_dir}/{filename}'):
                 obj = json.loads(data)
                 key = f'{obj["dialog_id"]}_{obj["turn_id"]}'
