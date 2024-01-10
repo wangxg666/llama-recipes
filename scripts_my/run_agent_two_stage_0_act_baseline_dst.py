@@ -77,7 +77,7 @@ def run(tgi_svr, output_file):
 
 
 if __name__ == '__main__':
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst.lower/'
+    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e01/'
 
     for split in ['dev', 'test']:
         key2sample = {}
@@ -89,12 +89,14 @@ if __name__ == '__main__':
 
         counter = collections.defaultdict(float)
         tgi_svr2output_file = {
-            'http://209.51.170.51:1307': f'{input_dir}/{split}.act.pred.7b.json',
-            # 'http://172.83.13.53:1501': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0600.json',
-            # 'http://172.83.13.53:1502': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0700.json',
-            # 'http://172.83.13.53:1503': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0800.json',
-            # 'http://172.83.13.53:1504': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_0900.json',
-            # 'http://172.83.13.53:1505': f'{input_dir}/{split}.act.pred.7b.rl.origin.step_1000.json',
+            'http://209.51.170.51:1300': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e01/{split}.act.pred.7b.json',
+            'http://209.51.170.51:1301': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e02/{split}.act.pred.7b.json',
+            'http://209.51.170.51:1302': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e03/{split}.act.pred.7b.json',
+            'http://209.51.170.51:1303': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e04/{split}.act.pred.7b.json',
+            'http://209.51.170.51:1304': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e01/{split}.act.pred.7b.json',
+            'http://209.51.170.51:1305': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e02/{split}.act.pred.7b.json',
+            'http://209.51.170.51:1306': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e03/{split}.act.pred.7b.json',
+            'http://209.51.170.51:1307': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e04/{split}.act.pred.7b.json',
         }
 
         pool = multiprocessing.Pool(len(tgi_svr2output_file))

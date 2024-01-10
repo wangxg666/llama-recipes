@@ -75,10 +75,22 @@ if __name__ == '__main__':
     service2slot_keys = json.load(open('woz_valid_slot_keys.json'))
 
     for input_file in [
-        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst/dev.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst/test.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst/dev.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst/test.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.6/dev.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.6/test.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst/dev.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst/test.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst.lower/dev.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst.lower/test.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst/dev.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst/test.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e01/dev.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e02/dev.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e03/dev.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e04/dev.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e01/dev.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e02/dev.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e03/dev.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e04/dev.act.pred.7b.json',
     ]:
         print(input_file)
         pred_actions, real_actions = [], []
