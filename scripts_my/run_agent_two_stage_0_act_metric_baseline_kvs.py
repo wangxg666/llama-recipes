@@ -83,14 +83,17 @@ if __name__ == '__main__':
         # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst.lower/test.act.pred.7b.json',
         # '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst/dev.act.pred.7b.json',
         # '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst/test.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e01/dev.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e02/dev.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e03/dev.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e04/dev.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e01/dev.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e02/dev.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e03/dev.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e04/dev.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e01/test.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e02/test.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e03/test.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e04/test.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e01/test.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e02/test.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e03/test.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e04/test.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst/test.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst.lower/test.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.1.dst/test.act.pred.7b.json',
     ]:
         print(input_file)
         pred_actions, real_actions = [], []
@@ -107,7 +110,7 @@ if __name__ == '__main__':
             if pred_action not in ['hotel', 'attraction', 'restaurant', 'train', 'taxi']:
                 pred_action = 'other'
             pred_actions.append(pred_action)
-        print_action_metric(pred_actions, real_actions)
+        # print_action_metric(pred_actions, real_actions)
 
         total_tp, total_fp, total_fn, joint_match, total_n = 0., 0., 0., 0., 0.
         for obj in objs:
@@ -138,11 +141,12 @@ if __name__ == '__main__':
         slot_r = total_tp / (total_tp + total_fn + 1e-10)
         slot_f1 = 2 * slot_p * slot_r / (slot_p + slot_r + 1e-10)
 
+        print(total_n)
         print(json.dumps({
             'SlotF': pretty_percent(slot_f1),
             'SlotP': pretty_percent(slot_p),
             'SlotR': pretty_percent(slot_r),
-            'JGA': pretty_percent(joint_match / total_n)
+            'JGA': pretty_percent(joint_match / total_n),
         }))
 
 

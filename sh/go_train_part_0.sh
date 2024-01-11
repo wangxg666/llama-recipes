@@ -10,6 +10,7 @@ cd ..
 
 
 input_dirs=(
+"agent_sft.v10.baseline.dst.limit_1k.e01"
 "agent_sft.v10.baseline.dst.limit_1k.e02"
 "agent_sft.v10.baseline.dst.limit_2k.e01"
 "agent_sft.v10.baseline.dst.limit_2k.e02"

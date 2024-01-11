@@ -170,7 +170,7 @@ def train(model,
             print(
                 f"CPU Total Peak Memory consumed during the train (max): {memtrace.cpu_peaked + memtrace.cpu_begin} GB")
 
-        save_model(model, train_config, fsdp_config, rank, optimizer, epoch=epoch, accu_step=accu_step)
+        save_model(model, train_config, fsdp_config, rank, None, epoch=epoch, accu_step=accu_step)
 
         if train_config.run_validation:
             eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, rank, tokenizer)

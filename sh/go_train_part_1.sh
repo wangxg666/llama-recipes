@@ -9,6 +9,7 @@ DATASET_NAME="agent_sft_act_dataset"
 cd ..
 
 input_dirs=(
+"agent_sft.v10.baseline.dst.limit_1k.e03"
 "agent_sft.v10.baseline.dst.limit_1k.e04"
 "agent_sft.v10.baseline.dst.limit_2k.e03"
 "agent_sft.v10.baseline.dst.limit_2k.e04"

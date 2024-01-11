@@ -38,9 +38,9 @@ if __name__ == '__main__':
 
     for input_file in [
         # '/mnt/share16t/xingguang/datasets/agent_sft.auto.gen.v03/test.act.pred.7b.auto_gen.restaurant.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2/test.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2/dev.act.pred.7b.json',
         # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.1/dev.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5/dev.test.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.6.dst/dev.act.pred.7b.json',
         # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.4/dev.act.pred.7b.json',
     ]:
         print(input_file)
