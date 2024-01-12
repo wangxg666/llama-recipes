@@ -28,38 +28,18 @@ if __name__ == '__main__':
 
         errors = []
 
-        for pred_service, pred_slot_keys in pred_slots.items():
-            if pred_service not in real_slots:
-                errors.append(f'extra_{pred_service}')
+        services = list(set(pred_slots) | set(real_slots))
+        for service in services:
+            if service in pred_slots and service in real_slots:
+                continue
+            if service not in pred_slots:
+                errors.append(f'missing_{service}')
             else:
-                pred_slot_keys = {pred_slot_key for pred_slot_key in pred_slot_keys if
-                                  pred_slot_key in service2slot_keys[pred_service]}
-
-                for pred_slot_key in pred_slot_keys:
-                    if pred_slot_key not in real_slots[pred_service]:
-                        error = f'extra_{pred_service}_{pred_slot_key}'
-                        errors.append(error)
-
-                        if did not in error2did2tid[error]:
-                            error2did2tid[error][did] = []
-                        error2did2tid[error][did].append(tid)
-
-        for real_service, real_slot_keys in real_slots.items():
-            if real_service not in pred_slots:
-                error = f'missing_{real_service}'
-                errors.append(error)
-                if did not in error2did2tid[error]:
-                    error2did2tid[error][did] = []
-                error2did2tid[error][did].append(tid)
-            else:
-                for real_slot_key in real_slot_keys:
-                    pred_slot_keys = {pred_slot_key for pred_slot_key in pred_slots[real_service] if pred_slot_key in service2slot_keys[real_service]}
-                    if real_slot_key not in pred_slot_keys:
-                        error = f'missing_{real_service}_{real_slot_key}'
-                        errors.append(error)
-                        if did not in error2did2tid[error]:
-                            error2did2tid[error][did] = []
-                        error2did2tid[error][did].append(tid)
+                errors.append(f'extra_{service}')
+            error = errors[-1]
+            if did not in error2did2tid[error]:
+                error2did2tid[error][did] = []
+            error2did2tid[error][did].append(tid)
 
         for error in errors:
             error2count[error] += 1

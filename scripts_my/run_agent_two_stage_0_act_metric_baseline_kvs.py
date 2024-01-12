@@ -92,9 +92,12 @@ if __name__ == '__main__':
         # '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e03/test.act.pred.7b.json',
         # '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e04/test.act.pred.7b.json',
         # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst/dev.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst.lower/dev.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst.lower/dev.act.pred.7b.json',
         # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.1.dst/dev.act.pred.7b.json',
         '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.2.dst/dev.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e01/dev.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.2.dst/test.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e01/test.act.pred.7b.json',
     ]:
         print(input_file)
         pred_actions, real_actions = [], []
