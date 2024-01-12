@@ -5,8 +5,8 @@ if __name__ == '__main__':
     service2slot_keys = json.load(open('woz_valid_slot_keys.json'))
 
     # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst/dev.act.pred.7b.json'
-    # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.1.dst/dev.act.pred.7b.json'
-    input_file = '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline/dev.act.pred.7b.json'
+    input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.1.dst/dev.act.pred.7b.json'
+    # input_file = '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline/dev.act.pred.7b.json'
     error2count = collections.defaultdict(float)
     did2sample = {}
     for data in open(input_file.replace('.pred.7b.json', '.json')):
@@ -67,6 +67,8 @@ if __name__ == '__main__':
         print(error, 'auto', count)
         did2tid = error2did2tid[error]
         # print(did2tid)
-        # for did, tids in sorted(did2tid.items(), key=lambda x:len(x[1]), reverse=True)[0:10]:
-        #     print(error, did, tids)
-        #     print(json.dumps([f'{i+1}: {utt}' for i, utt in enumerate(did2sample[did])], indent=2))
+        if 'taxi' not in error:
+            continue
+        for did, tids in sorted(did2tid.items(), key=lambda x:len(x[1]), reverse=True)[0:10]:
+            print(error, did, tids)
+            print(json.dumps([f'{i+1}: {utt}' for i, utt in enumerate(did2sample[did])], indent=2))

@@ -37,11 +37,9 @@ if __name__ == '__main__':
     service2slot_keys = json.load(open('woz_valid_slot_keys.json'))
 
     for input_file in [
-        # '/mnt/share16t/xingguang/datasets/agent_sft.auto.gen.v03/test.act.pred.7b.auto_gen.restaurant.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2/dev.act.pred.7b.json',
-        # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.1/dev.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.6.dst/dev.act.pred.7b.json',
-        # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.4/dev.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst/dev.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst.lower/dev.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.2.dst/dev.act.pred.7b.json',
     ]:
         print(input_file)
         pred_actions, real_actions = [], []

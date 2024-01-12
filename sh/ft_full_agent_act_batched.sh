@@ -11,9 +11,8 @@ cd ..
 
 input_dirs=(
 "agent_sft.v10.baseline.dst.limit_1k.e01"
-"agent_sft.v10.baseline.dst.limit_1k.e02"
-"agent_sft.v10.baseline.dst.limit_2k.e01"
-"agent_sft.v10.baseline.dst.limit_2k.e02"
+"agent_sft.auto.gen.v07.2.dst"
+"agent_sft.auto.gen.v05.5.2.dst"
 )
 
 for dir in "${input_dirs[@]}"
@@ -29,7 +28,7 @@ TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}.${DATASET_DIR}"
 ts=$(date +"%Y-%m-%d")
 
 
-CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
+CUDA_VISIBLE_DEVICES="0,2,3,5" torchrun \
   --nnodes 1 \
   --nproc_per_node 4 \
   --master_port=1202 \
@@ -46,7 +45,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --train_batch_size ${BATCH_SIZE} \
   --micro_batch_size ${BATCH_SIZE} \
   --num_epochs ${EPOCH} \
-  --evaluation_steps 200 \
+  --evaluation_steps 10 \
   --check_point_steps 1000000 \
   --wandb_name ${MODEL_TYPE}-${DATASET_DIR}-${TAG} \
   --wandb_project "llama-pre-train-cmp"

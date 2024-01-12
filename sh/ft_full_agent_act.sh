@@ -33,7 +33,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --train_batch_size ${BATCH_SIZE} \
   --micro_batch_size ${BATCH_SIZE} \
   --num_epochs ${EPOCH} \
-  --evaluation_steps 200 \
+  --evaluation_steps 10 \
   --check_point_steps 1000000 \
   --wandb_name ${MODEL_TYPE}-${DATASET_DIR}-${TAG} \
   --wandb_project "llama-pre-train-cmp"
