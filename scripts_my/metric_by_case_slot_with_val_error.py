@@ -5,7 +5,7 @@ import json
 
 
 if __name__ == '__main__':
-    from woz_name_config import update_slots
+    service2slot_keys = json.load(open('woz_valid_slot_keys.json'))
 
     # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst/dev.act.pred.7b.json'
     # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.1.dst/dev.act.pred.7b.json'
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     slot_key2preds = collections.defaultdict(list)
     slot_key2reals = collections.defaultdict(list)
 
-    name_diff2count = collections.defaultdict(float)
+    name2name2count = {}
 
     for data in open(input_file):
         data = json.loads(data)
@@ -37,7 +37,17 @@ if __name__ == '__main__':
         did, tid = key.split('_')
         pred_slots = data['pred_act']['slots']
         real_slots = data['real_act']['slots']
-        pred_slots = update_slots(pred_slots)
+
+        for service, slot_kvs in pred_slots.items():
+            for slot_key in slot_kvs.keys():
+                if (slot_key == 'name' and service in real_slots
+                        and 'name' in real_slots[service]):
+                    p_name = slot_kvs[slot_key]
+                    r_name = real_slots[service][slot_key]
+
+                    if p_name not in name2name2count:
+                        name2name2count[p_name] = collections.defaultdict(float)
+                    name2name2count[p_name][r_name] += 1
 
         errors = []
 
@@ -74,3 +84,14 @@ if __name__ == '__main__':
                   f"{round(recall_score(y_true=slot_key2reals[slot_key], y_pred=preds), 5)}, "
                   f"{round(f1_score(y_true=slot_key2reals[slot_key], y_pred=preds), 5)}, ")
 
+    rep = {}
+    for p_name, r_name2count in name2name2count.items():
+        total = float(sum(r_name2count.values()))
+        for r_name, count in r_name2count.items():
+            if p_name == r_name:
+                continue
+            ratio = count / total
+            if ratio > 0.6 and count > 13:
+                rep[p_name] = r_name
+                print(p_name, r_name, count, ratio)
+    print(json.dumps(rep))

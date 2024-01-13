@@ -74,6 +74,8 @@ def print_action_metric(pred_actions, real_actions):
 if __name__ == '__main__':
     service2slot_keys = json.load(open('woz_valid_slot_keys.json'))
 
+    from woz_name_config import update_slots
+
     for input_file in [
         # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.6/dev.act.pred.7b.json',
         # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.6/test.act.pred.7b.json',
@@ -94,9 +96,10 @@ if __name__ == '__main__':
         # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst/dev.act.pred.7b.json',
         # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst.lower/dev.act.pred.7b.json',
         # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.1.dst/dev.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.2.dst/dev.act.pred.7b.json',
-        '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e01/dev.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.2.dst/dev.act.pred.7b.json',
+        # '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e01/dev.act.pred.7b.json',
         '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.2.dst/test.act.pred.7b.json',
+        '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.3.dst/test.act.pred.vllm.7b.json',
         '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e01/test.act.pred.7b.json',
     ]:
         print(input_file)
@@ -120,6 +123,7 @@ if __name__ == '__main__':
         for obj in objs:
             real_slots = get_slots(obj['real_act']['slots'])
             pred_slots = get_slots(obj['pred_act']['slots'])
+            pred_slots = update_slots(pred_slots)
 
             is_match = 1
             for service, real_slot_kvs in real_slots.items():
