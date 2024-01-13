@@ -7,7 +7,7 @@ from tqdm.asyncio import tqdm
 
 from ft_datasets.agent_sft_act_dataset import AgentActDataset
 
-async def call_vllm(sem, pbar, idx, prompt, vllm_svr):
+async def call_vllm(sem, pbar, idx, key, prompt, vllm_svr):
     req_obj = {
         "prompt": prompt,
         "best_of": 2,
@@ -19,8 +19,13 @@ async def call_vllm(sem, pbar, idx, prompt, vllm_svr):
     async with sem:
         async with aiohttp.ClientSession() as session:
             async with session.post(f'{vllm_svr}/generate', json=req_obj) as response:
+                output = await response.text()
                 pbar.update(1)
-                return idx, await response.text()
+                try:
+                    output = json.loads(output)["text"][0][len(prompt):]
+                except:
+                    output = ""
+                return idx, key, output
 
 
 def is_valid_action_response(output):
@@ -58,7 +63,7 @@ async def run_generations(vllm_svr, datas):
 
         prompt, _ = AgentActDataset.prompting(act_obj)
 
-        generation_tasks.append(asyncio.create_task(call_vllm(sem, pbar, idx, prompt, vllm_svr)))
+        generation_tasks.append(asyncio.create_task(call_vllm(sem, pbar, idx, key, prompt, vllm_svr)))
         
     generations = await asyncio.gather(*generation_tasks)
     generations = sorted(generations, key= lambda x : x[0])
@@ -69,11 +74,10 @@ async def run_generations(vllm_svr, datas):
 def run(vllm_svr, output_file):
     open(output_file, "w").close()
     sout = open(output_file, "a")
-    # debug
-    datas = [data for data in open(f'{input_dir}/{split}.act.json')][:10]
+    datas = [data for data in open(f'{input_dir}/{split}.act.json')]
     generations = asyncio.run(run_generations(vllm_svr, datas))
 
-    for data_idx, output in generations:
+    for data_idx, data_key, output in generations:
         if not is_valid_action_response(output):
             counter['decision_maker_error'] += 1
             continue
@@ -81,9 +85,9 @@ def run(vllm_svr, output_file):
         act_output = json.loads(output)
 
         sout.write(json.dumps({
-            'key': key,
+            'key': data_key,
             'pred_act': act_output,
-            'real_act': datas[data_idx]['label']
+            'real_act': json.loads(datas[data_idx])['label']
         }) + '\n')
         sout.flush()
         counter['success'] += 1
@@ -92,7 +96,7 @@ def run(vllm_svr, output_file):
 
 
 if __name__ == '__main__':
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.1.dst/'
+    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.3.dst/'
 
     for split in ['dev', 'test']:
         key2sample = {}
@@ -104,7 +108,8 @@ if __name__ == '__main__':
 
         counter = collections.defaultdict(float)
         vllm_svr2output_file = {
-            'http://0.0.0.0:8000': f'debug.1_12_2023.json',
+            'http://0.0.0.0:8000': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.3.dst/{split}.act.pred.vllm.7b.json',
+            # 'http://0.0.0.0:8000': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.3.229_dia_sz.dst/{split}.act.pred.vllm.7b.json',
             # 'http://209.51.170.51:1301': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e02/{split}.act.pred.7b.json',
             # 'http://209.51.170.51:1302': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e03/{split}.act.pred.7b.json',
             # 'http://209.51.170.51:1303': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e04/{split}.act.pred.7b.json',

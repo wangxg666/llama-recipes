@@ -32,7 +32,6 @@ if __name__ == '__main__':
         did, tid = key.split('_')
         pred_slots = data['pred_act']['slots']
         real_slots = data['real_act']['slots']
-
         pred_slots = update_slots(pred_slots)
 
         errors = []
