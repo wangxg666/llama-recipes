@@ -25,6 +25,7 @@ async def call_vllm(sem, pbar, idx, key, prompt, vllm_svr):
                     output = json.loads(output)["text"][0][len(prompt):]
                 except:
                     output = ""
+                print(idx, key, output)
                 return idx, key, output
 
 
@@ -96,9 +97,9 @@ def run(vllm_svr, output_file):
 
 
 if __name__ == '__main__':
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.3.dst/'
+    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.1.dst.ctx'
 
-    for split in ['dev', 'test']:
+    for split in ['test', 'dev']:
         key2sample = {}
         for filename in [f'{split}.api.json']:
             for data in open(f'{input_dir}/{filename}'):
@@ -108,15 +109,7 @@ if __name__ == '__main__':
 
         counter = collections.defaultdict(float)
         vllm_svr2output_file = {
-            'http://0.0.0.0:8000': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.3.dst/{split}.act.pred.vllm.7b.json',
-            # 'http://0.0.0.0:8000': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.3.229_dia_sz.dst/{split}.act.pred.vllm.7b.json',
-            # 'http://209.51.170.51:1301': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e02/{split}.act.pred.7b.json',
-            # 'http://209.51.170.51:1302': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e03/{split}.act.pred.7b.json',
-            # 'http://209.51.170.51:1303': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e04/{split}.act.pred.7b.json',
-            # 'http://209.51.170.51:1304': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e01/{split}.act.pred.7b.json',
-            # 'http://209.51.170.51:1305': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e02/{split}.act.pred.7b.json',
-            # 'http://209.51.170.51:1306': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e03/{split}.act.pred.7b.json',
-            # 'http://209.51.170.51:1307': f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e04/{split}.act.pred.7b.json',
+            'http://0.0.0.0:8000': f'{input_dir}/{split}.act.pred.vllm.7b.json',
         }
 
         for vllm_svr, output_file in vllm_svr2output_file.items():

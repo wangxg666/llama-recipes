@@ -8,7 +8,8 @@ if __name__ == '__main__':
     # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v05.5.2.dst/dev.act.pred.7b.json'
     # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.1.dst/dev.act.pred.7b.json'
     # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.2.dst/dev.act.pred.7b.json'
-    input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.3.dst/dev.act.pred.vllm.7b.json'
+    # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.4.dst/dev.act.pred.vllm.7b.json'
+    input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v07.5.dst/dev.act.pred.vllm.7b.json'
     error2count = collections.defaultdict(float)
     did2sample = {}
     # for data in open(input_file.replace('.pred.7b.json', '.json')):
