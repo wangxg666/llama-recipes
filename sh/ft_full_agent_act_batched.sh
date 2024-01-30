@@ -10,9 +10,10 @@ cd ..
 
 
 input_dirs=(
-"agent_sft.v10.baseline.dst.limit_1k.e01"
-"agent_sft.auto.gen.v07.2.dst"
-"agent_sft.auto.gen.v05.5.2.dst"
+"agent_sft.auto.gen.v08.4.1.dst.ctx"
+"agent_sft.auto.gen.v08.8.1.dst.ctx"
+"agent_sft.auto.gen.v08.13.1.dst.ctx"
+"agent_sft.auto.gen.v08.17.1.dst.ctx"
 )
 
 for dir in "${input_dirs[@]}"
@@ -21,16 +22,16 @@ do
 DATASET_DIR=${dir}
 
 LR=2e-5
-BATCH_SIZE=8
+BATCH_SIZE=4
 EPOCH=1
 
 TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}.${DATASET_DIR}"
 ts=$(date +"%Y-%m-%d")
 
 
-CUDA_VISIBLE_DEVICES="0,2,3,5" torchrun \
+CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --nnodes 1 \
-  --nproc_per_node 4 \
+  --nproc_per_node 8 \
   --master_port=1202 \
   ./llama_finetuning.py \
   --enable_fsdp  \

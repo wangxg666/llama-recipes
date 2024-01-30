@@ -103,7 +103,7 @@ if __name__ == '__main__':
     input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.restaurant.dst.ctx/'
     input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.attraction.dst.ctx/'
 
-    for split in ['test']:
+    for split in ['dev']:
         key2sample = {}
         for filename in [f'{split}.api.json']:
             for data in open(f'{input_dir}/{filename}'):
@@ -113,7 +113,7 @@ if __name__ == '__main__':
 
         counter = collections.defaultdict(float)
         vllm_svr2output_file = {
-            'http://0.0.0.0:8000': f'{input_dir}/{split}.act.pred.vllm.7b.2e-5.json',
+            'http://0.0.0.0:8001': f'{input_dir}/{split}.act.pred.vllm.7b.2e-5.json',
         }
 
         for vllm_svr, output_file in vllm_svr2output_file.items():

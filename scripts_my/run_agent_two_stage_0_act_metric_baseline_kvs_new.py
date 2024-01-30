@@ -104,15 +104,10 @@ def get_slots(obj):
                         continue
                     else:
                         kvs_clean[k] = v
-                if 'leaveat' in k or 'arriveby' in k:
-                    if len(v) == 4:
-                        v = '0' + v
-                        kvs_clean[k] = v
 
             slots[service] = kvs_clean
         except:
             print(kvs)
-
     return slots
 
 
@@ -170,56 +165,22 @@ def print_action_metric(pred_actions, real_actions):
     # print(f'confusion matrix\n', confusion_matrix(y_true=y_true, y_pred=y_pred))
 
 if __name__ == '__main__':
-    # print(fuzz.partial_ratio('after 04:00', '04:00'))
-
     service2slot_keys = json.load(open('woz_valid_slot_keys.json'))
 
     from woz_name_config import update_slots
 
     for split in ['dev', 'test']:
         for input_file in [
-            # f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e01/{split}.act.pred.7b.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.25.1.dst.ctx/{split}.act.pred.vllm.7b.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.27.1.dst.ctx/{split}.act.pred.vllm.7b.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.dst.ctx/{split}.act.pred.vllm.7b.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.29.1.dst.ctx/{split}.act.pred.vllm.7b.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.35.1.dst.ctx/{split}.act.pred.vllm.7b.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.36.1.dst.ctx/{split}.act.pred.vllm.7b.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.36.1.dst.ctx/{split}.act.pred.vllm.7b.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.36.1.4k.dst.ctx/{split}.act.pred.vllm.7b.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.36.1.template.2k.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.25-36.1.dst.ctx/{split}.act.pred.vllm.7b.1e-5.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.25-36.1.dst.ctx/{split}.act.pred.vllm.7b.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.25-36.1.dst.ctx/{split}.act.pred.vllm.7b.5e-5.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst/{split}.act.pred.7b.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.with.gen/{split}.act.pred.vllm.7b.2e-5.json',
-            f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e01/{split}.act.pred.7b.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace_restaurant.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-            f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.37.1.template.2k.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-            f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.39.1.template.2k.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-            # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.37-38.1.template.4k.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-
-            f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.hotel.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-            f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.attraction.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-            f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.restaurant.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-            f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.train.2k.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
+            # f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e01/{split}.act.pred.7b.single.json',
+            f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.4.1.dst.ctx/{split}.act.pred.7b.single.json',
+            f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.8.1.dst.ctx/{split}.act.pred.7b.single.json',
+            f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.13.1.dst.ctx/{split}.act.pred.7b.single.json',
+            f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.17.1.dst.ctx/{split}.act.pred.7b.single.json',
+            f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.18.1.dst.ctx/{split}.act.pred.vllm.7b.json',
         ]:
             print(input_file)
-            pred_actions, real_actions = [], []
 
             objs = [json.loads(data) for data in open(input_file)][:]
-
-            for obj in objs:
-                real_action = obj['real_act'].get('current_service', 'error')
-                if real_action not in ['hotel', 'attraction', 'restaurant', 'train', 'taxi']:
-                    real_action = 'other'
-                real_actions.append(real_action)
-
-                pred_action = obj['pred_act'].get('current_service', 'error')
-                if pred_action not in ['hotel', 'attraction', 'restaurant', 'train', 'taxi']:
-                    pred_action = 'other'
-                pred_actions.append(pred_action)
-            # print_action_metric(pred_actions, real_actions)
 
             total_tp, total_fp, total_fn, joint_match, total_n = 0., 0., 0., 0., 0.
             for obj in objs:
@@ -235,15 +196,6 @@ if __name__ == '__main__':
                         pred_k: pred_v for pred_k, pred_v in pred_slot_kvs.items()
                         if pred_k in service2slot_keys[service] and pred_v
                     }
-
-                    # if service == 'attraction':
-                    #     if 'name' not in real_slot_kvs:
-                    #         if 'name' in pred_slot_kvs:
-                    #             del pred_slot_kvs['name']
-                    #     else:
-                    #         pred_slot_kvs['name'] = real_slot_kvs['name']
-                    # if service == 'train':
-                    #     continue
 
                     tp, fp, fn, _ = compare(pred_slot_kvs, real_slot_kvs)
                     total_tp += tp

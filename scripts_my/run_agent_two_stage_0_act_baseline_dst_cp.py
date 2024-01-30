@@ -79,7 +79,7 @@ def run(tgi_svr, output_file):
 if __name__ == '__main__':
     input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.2.dst.ctx'
 
-    for split in ['dev']:
+    for split in ['test']:
         key2sample = {}
         for filename in [f'{split}.api.json']:
             for data in open(f'{input_dir}/{filename}'):
@@ -89,10 +89,10 @@ if __name__ == '__main__':
 
         counter = collections.defaultdict(float)
         tgi_svr2output_file = {
-            'http://172.83.13.53:1300': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.4.1.dst.ctx/{split}.act.pred.7b.single.json',
-            'http://172.83.13.53:1301': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.8.1.dst.ctx/{split}.act.pred.7b.single.json',
-            'http://172.83.13.53:1302': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.13.1.dst.ctx/{split}.act.pred.7b.single.json',
-            'http://172.83.13.53:1303': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.17.1.dst.ctx/{split}.act.pred.7b.single.json',
+            'http://172.83.13.53:1304': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.4.1.dst.ctx/{split}.act.pred.7b.single.json',
+            'http://172.83.13.53:1305': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.8.1.dst.ctx/{split}.act.pred.7b.single.json',
+            'http://172.83.13.53:1306': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.13.1.dst.ctx/{split}.act.pred.7b.single.json',
+            'http://172.83.13.53:1307': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.17.1.dst.ctx/{split}.act.pred.7b.single.json',
         }
 
         pool = multiprocessing.Pool(len(tgi_svr2output_file))
