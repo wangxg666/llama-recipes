@@ -5,13 +5,22 @@ from fuzzywuzzy import fuzz
 if __name__ == '__main__':
     from woz_name_config import update_slots
 
-    split = 'test'
+    split = 'dev'
     for input_file in [
-        f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e01/{split}.act.pred.7b.json',
-        f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.train.2k.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-        f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.hotel.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-        f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.attraction.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-        f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.restaurant.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
+        # f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e01/{split}.act.pred.7b.json',
+        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.attraction.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
+        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.hotel.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
+        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.restaurant.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
+        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.train.2k.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
+
+        # f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst/{split}.act.pred.7b.json',
+        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.hotel.old.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
+        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.restaurant.old.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
+        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.attraction.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
+        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.taxi.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
+        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.train.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
+        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.restaurant.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
+        f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.hotel.full.dst.ctx.v1/{split}.act.pred.vllm.7b.2e-5.json',
     ]:
         print(input_file)
         error2count = collections.defaultdict(float)
@@ -50,11 +59,6 @@ if __name__ == '__main__':
                 pred_slot_keys = pred_slots.get(service, {})
 
                 slot_keys = list(set(real_slot_keys) | set(pred_slot_keys))
-
-                # print(set(real_slot_keys))
-                # print(set(pred_slot_keys))
-                # print(slot_keys)
-                # print()
 
                 total, tp, fp, tn, fn = 0., 0., 0., 0., 0.
 

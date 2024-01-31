@@ -129,7 +129,7 @@ if __name__ == '__main__':
     #           f"{round(recall_score(y_true=slot_key2reals[slot_key], y_pred=preds), 5)} "
     #           f"{round(accuracy_score(y_true=slot_key2reals[slot_key], y_pred=preds), 5)}"
     #           )
-    for full_slot_key, total in slot_key2total.items():
+    for full_slot_key, total in sorted(slot_key2total.items(), key=lambda x:x[0]):
         # print(full_slot_key, slot_key2tp[full_slot_key], slot_key2fp[full_slot_key], slot_key2fn[full_slot_key])
         p = slot_key2tp[full_slot_key] / (slot_key2tp[full_slot_key] + slot_key2fp[full_slot_key])
         r = slot_key2tp[full_slot_key] / (slot_key2tp[full_slot_key] + slot_key2fn[full_slot_key])

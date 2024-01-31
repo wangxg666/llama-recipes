@@ -15,7 +15,10 @@ DATASET_DIR="agent_sft.auto.gen.v08.39.1.template.2k.dst.ctx"
 DATASET_DIR="agent_sft.auto.gen.v08.28.1.replace.hotel.full.dst.ctx"
 DATASET_DIR="agent_sft.auto.gen.v08.28.1.replace.restaurant.full.dst.ctx"
 DATASET_DIR="agent_sft.auto.gen.v08.28.1.replace.attraction.full.dst.ctx"
-#DATASET_DIR="agent_sft.v10.baseline.dst.with.gen"
+DATASET_DIR="agent_sft.auto.gen.v08.28.1.replace.train.full.dst.ctx"
+DATASET_DIR="agent_sft.auto.gen.v08.28.1.replace.taxi.full.dst.ctx"
+DATASET_DIR="agent_sft.v10.baseline.dst.with.gen"
+DATASET_DIR="agent_sft.v10.baseline.dst.with.gen.37"
 
 LR=2e-5
 BATCH_SIZE=8
@@ -26,10 +29,10 @@ ts=$(date +"%Y-%m-%d")
 
 cd ..
 
-CUDA_VISIBLE_DEVICES="2,3,4,5" torchrun \
+CUDA_VISIBLE_DEVICES="0,1,2,3" torchrun \
   --nnodes 1 \
   --nproc_per_node 4 \
-  --master_port=1201 \
+  --master_port=1202 \
   ./llama_finetuning.py \
   --enable_fsdp  \
   --model_name "${MODEL_NAME}" \

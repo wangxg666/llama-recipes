@@ -98,10 +98,8 @@ def run(vllm_svr, output_file):
 
 
 if __name__ == '__main__':
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.37-38.1.template.4k.dst.ctx/'
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.hotel.dst.ctx/'
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.restaurant.dst.ctx/'
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.attraction.dst.ctx/'
+    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.hotel.full.dst.ctx/'
+    # input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.with.gen.37/'
 
     for split in ['test']:
         key2sample = {}
