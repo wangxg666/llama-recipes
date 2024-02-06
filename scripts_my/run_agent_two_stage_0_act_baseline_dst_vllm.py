@@ -1,3 +1,4 @@
+import argparse
 import collections
 import json
 
@@ -6,6 +7,7 @@ import aiohttp
 from tqdm.asyncio import tqdm
 
 from ft_datasets.agent_sft_act_dataset import AgentActDataset
+
 
 async def call_vllm(sem, pbar, idx, key, prompt, vllm_svr):
     req_obj = {
@@ -32,7 +34,7 @@ async def call_vllm(sem, pbar, idx, key, prompt, vllm_svr):
 def is_valid_action_response(output):
     try:
         output = json.loads(output)
-        if 'current_service' not in output or 'slots' not in output:
+        if 'slots' not in output:
             return False
         for k, v in output['slots'].items():
             if not isinstance(v, list) and not isinstance(v, dict):
@@ -48,27 +50,23 @@ def is_valid_api_response(output):
         return True
     except:
         return False
-    
+
+
 async def run_generations(vllm_svr, datas):
     generation_tasks = []
     sem = asyncio.Semaphore(30)
-    pbar = tqdm(total = len(datas))
-    
+    pbar = tqdm(total=len(datas))
+
     for idx, data in enumerate(datas):
         act_obj = json.loads(data)
         key = f'{act_obj["dialog_id"]}_{act_obj["turn_id"]}'
 
-        if key not in key2sample:
-            counter['sample_is_missing'] += 1
-            continue
-
-        # act_obj['type'] = 'act_selection_baseline_dst_old'
         prompt, _ = AgentActDataset.prompting(act_obj)
 
         generation_tasks.append(asyncio.create_task(call_vllm(sem, pbar, idx, key, prompt, vllm_svr)))
-        
+
     generations = await asyncio.gather(*generation_tasks)
-    generations = sorted(generations, key= lambda x : x[0])
+    generations = sorted(generations, key=lambda x: x[0])
 
     return generations
 
@@ -76,7 +74,7 @@ async def run_generations(vllm_svr, datas):
 def run(vllm_svr, output_file):
     open(output_file, "w").close()
     sout = open(output_file, "a")
-    datas = [data for data in open(f'{input_dir}/{split}.act.json')]
+    datas = [data for data in open(f'{input_dir}/{args.split}.act.json')]
     generations = asyncio.run(run_generations(vllm_svr, datas))
 
     for data_idx, data_key, output in generations:
@@ -98,21 +96,19 @@ def run(vllm_svr, output_file):
 
 
 if __name__ == '__main__':
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.hotel.full.dst.ctx/'
-    # input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.with.gen.37/'
+    args = argparse.ArgumentParser()
+    args.add_argument('--dataset', type=str, default='agent_sft.woz.2.4.limit_1k')
+    args.add_argument('--split', type=str, default='dev')
+    args.add_argument('--host', type=str, default='http://0.0.0.0:8002')
+    args.add_argument('--tag', type=str, default='')
+    args = args.parse_args()
 
-    for split in ['test']:
-        key2sample = {}
-        for filename in [f'{split}.api.json']:
-            for data in open(f'{input_dir}/{filename}'):
-                obj = json.loads(data)
-                key = f'{obj["dialog_id"]}_{obj["turn_id"]}'
-                key2sample[key] = obj
+    input_dir = f'/mnt/share16t/xingguang/datasets/{args.dataset}/'
 
-        counter = collections.defaultdict(float)
-        vllm_svr2output_file = {
-            'http://0.0.0.0:8000': f'{input_dir}/{split}.act.pred.vllm.7b.2e-5.json',
-        }
+    counter = collections.defaultdict(float)
+    vllm_svr2output_file = {
+        args.host: f'{input_dir}/{args.split}.act.pred.vllm.13b.2e-5{args.tag}.json',
+    }
 
-        for vllm_svr, output_file in vllm_svr2output_file.items():
-            run(vllm_svr, output_file)
+    for vllm_svr, output_file in vllm_svr2output_file.items():
+        run(vllm_svr, output_file)

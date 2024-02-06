@@ -89,10 +89,10 @@ def is_gen_out_no_response(response:str):
     return False
 
 
-# act_tgi_svr = 'http://209.51.170.51:1308'
-act_tgi_svr = 'http://172.83.13.53:1308'
+act_tgi_svr = 'http://209.51.170.51:1307'
+# act_tgi_svr = 'http://172.83.13.53:1308'
+gen_tgi_svr = 'http://209.51.170.51:1308'
 # gen_tgi_svr = 'http://209.51.170.51:1309'
-gen_tgi_svr = 'http://172.83.13.53:1309'
 
 
 class Cache:

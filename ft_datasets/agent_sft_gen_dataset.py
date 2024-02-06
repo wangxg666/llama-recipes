@@ -8,6 +8,7 @@ import copy
 import json
 from typing import Dict
 
+
 from ft_datasets.agent_sft_common import PERSONA_PROMPT_DICT, agent_tokenize
 
 
@@ -59,7 +60,7 @@ class AgentSFTDataset(Dataset):
         type = 'train' if partition == 'train' else 'dev'
         input_files = [
             f'{dataset_config.root}/{dataset_config.dataset_dir}/{type}.{task}.json'
-            for task in ['api', 'casual']
+            for task in ['rag', 'casual']
         ]
         print(json.dumps(input_files, indent=2), flush=True)
         self.datas = []

@@ -37,7 +37,7 @@ ANSWER_TYPE_PROMPT = {
         'Please give your decision:\n'
     ),
 
-    'act_selection_baseline_dst_new': (
+    'act_selection_baseline_dst_2.4': (
         'You are a local guide online, primarily handling local services like:\n'
         'find the user\'s place (such as attraction, hotel, train, restaurant or hospital), and calling taxis, contacting the police, or other convenient services.\n'
         'Your service is efficient and of high quality, earning widespread praise from the local community.\n'
@@ -70,7 +70,7 @@ ANSWER_TYPE_PROMPT['default'] = ANSWER_TYPE_PROMPT['act_selection']
 
 class AgentActDataset(Dataset):
     def __init__(self, dataset_config, tokenizer, partition="train", max_words=2048, do_padding=True, debug=False):
-        type = 'train' if partition == 'train' else 'dev'
+        type = 'train' if partition == 'train' else 'test'
         input_files = [
             f'{dataset_config.root}/{dataset_config.dataset_dir}/{type}.{task}.json'
             for task in ['act']
@@ -82,7 +82,8 @@ class AgentActDataset(Dataset):
             if partition == 'train':
                 self.datas.extend(datas)
             else:
-                n = 100 if 'casual.json' in input_file else 1000
+                # n = 100 if 'casual.json' in input_file else 2000
+                n = len(datas)
                 self.datas.extend(datas[0:n])
 
         self.max_words = max_words
@@ -119,7 +120,7 @@ class AgentActDataset(Dataset):
             )
 
             # 训练时不需要 current service，直接预测 slot 就可以
-            if type == 'act_selection_baseline_dst_new':
+            if type == 'act_selection_baseline_dst_2.4' and 'current_service' in item['label']:
                 del item['label']['current_service']
 
             label = json.dumps(item['label'])

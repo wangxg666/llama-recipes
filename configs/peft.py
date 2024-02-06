@@ -7,7 +7,7 @@ from typing import ClassVar, List, Tuple
 
 @dataclass
 class lora_config:
-    r: int = 16
+    r: int = 32
     lora_alpha: int = 32
     target_modules: Tuple[str] = ("q_proj", "v_proj", "k_proj", "o_proj")
     # target_modules: Tuple[str] = ("gate_proj", "down_proj", 'up_proj')

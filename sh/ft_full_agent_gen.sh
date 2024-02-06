@@ -1,24 +1,24 @@
 #!/bin/bash
 set -x
 
-MODEL_TYPE="13b"
+MODEL_TYPE="7b"
 WORK_DIR="/home/paperspace/xingguang/models/${MODEL_TYPE}"
 MODEL_NAME="meta-llama/Llama-2-${MODEL_TYPE}-hf"
 DATASET_NAME="agent_sft_gen_dataset"
-DATASET_DIR="agent_sft.auto.gen.v05.5.2"
+DATASET_DIR="agent_sft.v10.baseline.dst.limit_8k"
 
 LR=2e-5
 BATCH_SIZE=8
 EPOCH=1
 
-TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}.${DATASET_DIR}"
+TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}.${DATASET_DIR}.${DATASET_NAME}"
 ts=$(date +"%Y-%m-%d")
 
 cd ..
 
-CUDA_VISIBLE_DEVICES="4,5,6,7" torchrun \
+CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --nnodes 1 \
-  --nproc_per_node 4 \
+  --nproc_per_node 8 \
   --master_port=1201 \
   ./llama_finetuning.py \
   --enable_fsdp  \
@@ -35,7 +35,7 @@ CUDA_VISIBLE_DEVICES="4,5,6,7" torchrun \
   --num_epochs ${EPOCH} \
   --evaluation_steps 500 \
   --check_point_steps 1000000 \
-  --wandb_name ${MODEL_TYPE}-${DATASET_DIR}-${TAG} \
-  --wandb_project "llama-pre-train-cmp"
+  --wandb_name ${TAG} \
+  --wandb_project "agent"
 
 

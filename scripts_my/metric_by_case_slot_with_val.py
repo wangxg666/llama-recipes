@@ -46,7 +46,7 @@ if __name__ == '__main__':
     # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.35.1.dst.ctx/dev.act.pred.vllm.7b.json'
     # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.36.1.dst.ctx/dev.act.pred.vllm.7b.json'
     # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.33.1.dst.ctx/dev.act.pred.vllm.7b.json'
-    # input_file = '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst/dev.act.pred.7b.json'
+    input_file = '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst/dev.act.pred.7b.json'
 
     # input_file = '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k.e01/dev.act.pred.7b.json'
     # input_file = '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e01/dev.act.pred.7b.json'
@@ -55,7 +55,8 @@ if __name__ == '__main__':
     # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.restaurant.dst.ctx/dev.act.pred.vllm.7b.2e-5.json'
     # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.attraction.dst.ctx/dev.act.pred.vllm.7b.2e-5.json'
     # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.hotel.dst.ctx/dev.act.pred.vllm.7b.2e-5.json'
-    input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.train.2k.dst.ctx/dev.act.pred.vllm.7b.2e-5.json'
+    # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.train.2k.dst.ctx/dev.act.pred.vllm.7b.2e-5.json'
+    # input_file = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.train.full.dst.ctx/dev.act.pred.vllm.7b.2e-5.json'
     error2count = collections.defaultdict(float)
 
     error2did2tid = collections.defaultdict(dict)
