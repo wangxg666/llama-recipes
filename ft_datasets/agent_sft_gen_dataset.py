@@ -16,16 +16,6 @@ ANSWER_TYPE_PROMPT = {
     'casual_generation': (
         "{persona}\n"
         "Given the conversation history:\n{history}\n"
-        "And the necessary fields of information you deem crucial for effective assistance:\n{slots}\n"
-        "Generate the next response to the user's latest comment: \n{user_utterence}.\n"
-        "Your response must adhere strictly to one of the following two types:\n"
-        "1. Querying: If you believe you need additional information to fully understand the user's needs, you should ask further questions. For example, if a user is asking for a restaurant recommendation but hasn't mentioned their preferred price range, which you consider essential for successful assistance, you should inquire about that in this round.\n"
-        "2. Confirmation: Alternatively, you may choose to repeat or verify the needs that the user has expressed to ensure that your assistance aligns with their actual requirements.\n"
-        "Now, take a deep breath and think step-by-step, your next response should be:\n"
-    ),
-    'casual_generation_no_slots': (
-        "{persona}\n"
-        "Given the conversation history:\n{history}\n"
         "Generate the next response to the user's latest reply: \n{user_utterence}.\n"
         "Your response must adhere strictly to one of the following two types:\n"
         "1. Concluding Sentence: If it seems that the user is looking to end the assistance, conclude your conversation appropriately. This may include, but is not limited to, saying goodbye.\n"
@@ -36,23 +26,16 @@ ANSWER_TYPE_PROMPT = {
     ),
     'rag_generation': (
         '{persona}\n'
-        'Given the conversion history, user utterance, and query result from database, '
+        'Given the conversion history and the search result, '
         'please generate a appropriate answer based on the give conversion status.\n'
         'Here is the conversion history:\n{history}\n'
-        'query result:\n{search_results}\n'
-        'the user lastest utterence: \n{user_utterence}\n'
-        'Please give your generation:\n'
-    ),
-    'api_generation': (
-        '{persona}\n'
-        'Given the conversion history, your task is the generate the formatted API for searching.\n'
-        'Here is the conversion history:\n{history}\n'
-        'the user lastest utterence: \n{user_utterence}\n'
-        'and here is the slots you\'d better to refer when generating the formatted API: \n{slots}\n'
-        'Please give your API:\n'
+        'the search result:\n{search_results}\n'
+        'Please give your response based on the conversion history and search result.\n'
+        'Your response:\n'
     )
 }
 ANSWER_TYPE_PROMPT['default'] = ANSWER_TYPE_PROMPT['casual_generation']
+ANSWER_TYPE_PROMPT['casual_generation_no_slots'] = ANSWER_TYPE_PROMPT['casual_generation']
 
 
 class AgentSFTDataset(Dataset):
@@ -125,11 +108,14 @@ class AgentSFTDataset(Dataset):
 
         else:
             persona = PERSONA_PROMPT_DICT.get(item['action'], PERSONA_PROMPT_DICT['default'])
+            if len(item['search_results']) > 5:
+                search_results = f"search result size = {len(item['search_results'])}"
+            else:
+                search_results = json.dumps(item['search_results'], separators=(',', ':'))
             prompt = ANSWER_TYPE_PROMPT[type].format(
                 persona=persona,
                 history=json.dumps(history[0:-1], indent=2),
-                user_utterence=history[-1].replace('user: ', ''),
-                search_results=json.dumps(item['search_results'], separators=(',', ':'))
+                search_results=search_results
             )
             label = item['label']
 
@@ -139,9 +125,11 @@ class AgentSFTDataset(Dataset):
 if __name__ == '__main__':
     from transformers import LlamaTokenizer
 
-    tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-13b-hf')
+    tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
 
-    items = json.load(open('./datas/agent_sft_gen_data.json'))
-    for item in items:
+    dir = '/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k'
+
+    items = [json.loads(data) for data in open(f'{dir}/train.rag.json')]
+    for item in items[0:10]:
         prompt, label = AgentSFTDataset.prompting(item)
         print(prompt + label, '\n\n')

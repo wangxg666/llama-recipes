@@ -11,19 +11,12 @@ from ft_datasets.agent_sft_common import PERSONA_PROMPT_DICT, agent_tokenize
 
 
 ANSWER_TYPE_PROMPT = {
-    'act_selection': (
-        '{persona}\n'
-        'Given the conversion history, Your task is to help determine whether the next response can be directly replied to or not.\n'
-        '1. If you think it can be replied without searching, the action would be `chat`.\n'
-        '2. Otherwise the action would be `search`.\n'
-        'In addition, please also output the types of information that need pay attention to for the current action.\n'
-        'Here is the conversion history:\n{history}\n'
-        'the user lastest utterence: \n{user_utterence}\n'
-        'The output should be in JSON format like {{"action": xxx, "slots": {{"service": [xxx, ...]}}}}\n'
-        'Please give your decision:\n'
+    'act_selection_baseline_dst_emb': (
+        'Please summary the following dialog into what the user want and what system provided.\n'
+        'Here is the dialog:\n{history}\n'
+        'Please give your summary:\n'
     ),
-
-    'act_selection_baseline': (
+    'act_selection_baseline_dst': (
         'You are a local guide online, primarily handling local services like:\n'
         'find the user\'s place (such as attraction, hotel, train, restaurant or hospital), and calling taxis, contacting the police, or other convenient services.\n'
         'Your service is efficient and of high quality, earning widespread praise from the local community.\n'
@@ -33,10 +26,9 @@ ANSWER_TYPE_PROMPT = {
         'And also please output all the services\' information that need pay attention to from the whole conversion.\n'
         'Here is the conversion history:\n{history}\n'
         'the user lastest utterence: \n{user_utterence}\n'
-        'The output should be in JSON format like {{"current_service": xxx, "slots": {{"service": [xxx, ...]}}}}\n'
+        'The output should be in JSON format like {{"current_service": xxx, "slots": {{"service": {{"slot_key": "slot_val"}}}}}}\n'
         'Please give your decision:\n'
     ),
-
     'act_selection_baseline_dst_2.4': (
         'You are a local guide online, primarily handling local services like:\n'
         'find the user\'s place (such as attraction, hotel, train, restaurant or hospital), and calling taxis, contacting the police, or other convenient services.\n'
@@ -50,22 +42,8 @@ ANSWER_TYPE_PROMPT = {
         'The output should be in JSON format like {{"slots": {{"service": {{"slot_key": "slot_val"}}}}}}\n'
         'Please give your decision:\n'
     ),
-
-    'act_selection_baseline_dst': (
-        'You are a local guide online, primarily handling local services like:\n'
-        'find the user\'s place (such as attraction, hotel, train, restaurant or hospital), and calling taxis, contacting the police, or other convenient services.\n'
-        'Your service is efficient and of high quality, earning widespread praise from the local community.\n'
-        'Given the conversion history, Your task is to help determine whether the next response can be directly replied to or not.\n'
-        'Please output the current_service based on the user last utterence.\n'
-        'Please noted that your responses are not used in the action selection, except the hotel name and restaurant name that you provided.\n'
-        'And also please output all the services\' information that need pay attention to from the whole conversion.\n'
-        'Here is the conversion history:\n{history}\n'
-        'the user lastest utterence: \n{user_utterence}\n'
-        'The output should be in JSON format like {{"current_service": xxx, "slots": {{"service": {{"slot_key": "slot_val"}}}}}}\n'
-        'Please give your decision:\n'
-    )
 }
-ANSWER_TYPE_PROMPT['default'] = ANSWER_TYPE_PROMPT['act_selection']
+ANSWER_TYPE_PROMPT['default'] = ANSWER_TYPE_PROMPT['act_selection_baseline_dst']
 
 
 class AgentActDataset(Dataset):
@@ -104,7 +82,13 @@ class AgentActDataset(Dataset):
         type = item['type']
         history = [x.replace('USER', 'user').replace('SYSTEM', 'you') for x in item['history']]
 
-        if type == 'act_selection':
+        if type == 'act_selection_baseline_dst_emb':
+            prompt = ANSWER_TYPE_PROMPT[type].format(
+                history=json.dumps(history, indent=2),
+            )
+            label = json.dumps(item['label'])
+
+        elif type == 'act_selection':
             # persona = PERSONA_PROMPT_DICT.get(item['action'], PERSONA_PROMPT_DICT['default'])
             persona = PERSONA_PROMPT_DICT['default']
             prompt = ANSWER_TYPE_PROMPT[type].format(

@@ -11,7 +11,7 @@ LR=2e-5
 BATCH_SIZE=8
 EPOCH=1
 
-TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}.${DATASET_DIR}.${DATASET_NAME}"
+TAG="${MODEL_TYPE}.${LR}.full.B${BATCH_SIZE}.E${EPOCH}.${DATASET_DIR}"
 ts=$(date +"%Y-%m-%d")
 
 cd ..
@@ -35,7 +35,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" torchrun \
   --num_epochs ${EPOCH} \
   --evaluation_steps 500 \
   --check_point_steps 1000000 \
-  --wandb_name ${TAG} \
+  --wandb_name ${TAG}.${DATASET_NAME} \
   --wandb_project "agent"
 
 

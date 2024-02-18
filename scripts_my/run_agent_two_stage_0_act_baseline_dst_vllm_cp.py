@@ -13,7 +13,7 @@ async def call_vllm(sem, pbar, idx, key, prompt, vllm_svr):
     req_obj = {
         "prompt": prompt,
         "best_of": 3,
-        "temperature": 0.1,
+        "temperature": 0.,
         "max_tokens": 500,
         "use_beam_search": True
     }
@@ -51,7 +51,7 @@ def is_valid_api_response(output):
         return False
 
 
-async def run_generations(vllm_svr, datas):
+async def run_generations(vllm_svrs, datas):
     generation_tasks = []
     sem = asyncio.Semaphore(30)
     pbar = tqdm(total=len(datas))
@@ -62,7 +62,7 @@ async def run_generations(vllm_svr, datas):
 
         prompt, _ = AgentActDataset.prompting(act_obj)
 
-        generation_tasks.append(asyncio.create_task(call_vllm(sem, pbar, idx, key, prompt, vllm_svr)))
+        generation_tasks.append(asyncio.create_task(call_vllm(sem, pbar, idx, key, prompt, vllm_svrs[idx % len(vllm_svrs)])))
 
     generations = await asyncio.gather(*generation_tasks)
     generations = sorted(generations, key=lambda x: x[0])
@@ -70,11 +70,11 @@ async def run_generations(vllm_svr, datas):
     return generations
 
 
-def run(vllm_svr, output_file):
+def run(vllm_svrs, output_file):
     open(output_file, "w").close()
     sout = open(output_file, "a")
     datas = [data for data in open(f'{input_dir}/{args.split}.act.json')]
-    generations = asyncio.run(run_generations(vllm_svr, datas))
+    generations = asyncio.run(run_generations(vllm_svrs, datas))
 
     for data_idx, data_key, output in generations:
         if not is_valid_action_response(output):
@@ -90,7 +90,7 @@ def run(vllm_svr, output_file):
         }) + '\n')
         sout.flush()
         counter['success'] += 1
-    print(vllm_svr, json.dumps(counter, indent=2))
+    print(vllm_svrs, json.dumps(counter, indent=2))
     sout.close()
 
 
@@ -98,16 +98,20 @@ if __name__ == '__main__':
     args = argparse.ArgumentParser()
     args.add_argument('--dataset', type=str, default='agent_sft.woz.2.4.limit_1k')
     args.add_argument('--split', type=str, default='dev')
-    args.add_argument('--host', type=str, default='http://0.0.0.0:8002')
     args.add_argument('--tag', type=str, default='')
     args = args.parse_args()
 
     input_dir = f'/mnt/share16t/xingguang/datasets/{args.dataset}/'
 
     counter = collections.defaultdict(float)
-    vllm_svr2output_file = {
-        args.host: f'{input_dir}/{args.split}.act.pred.vllm.13b.2e-5{args.tag}.json',
-    }
-
-    for vllm_svr, output_file in vllm_svr2output_file.items():
-        run(vllm_svr, output_file)
+    vllm_svrs = [
+        'http://0.0.0.0:8000',
+        'http://0.0.0.0:8001',
+        'http://0.0.0.0:8002',
+        'http://0.0.0.0:8003',
+        'http://0.0.0.0:8004',
+        'http://0.0.0.0:8005',
+        'http://0.0.0.0:8006',
+        'http://0.0.0.0:8007',
+    ]
+    run(vllm_svrs, f'{input_dir}/{args.split}.act.pred.vllm.7b.2e-5{args.tag}.json')

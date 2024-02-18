@@ -5,22 +5,21 @@ from fuzzywuzzy import fuzz
 if __name__ == '__main__':
     from woz_name_config import update_slots
 
-    split = 'dev'
+    split = 'test'
     for input_file in [
-        # f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k.e01/{split}.act.pred.7b.json',
-        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.attraction.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.hotel.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.restaurant.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.train.2k.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-
-        # f'/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst/{split}.act.pred.7b.json',
-        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.hotel.old.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.restaurant.old.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.attraction.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.taxi.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.train.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-        # f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.restaurant.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-        f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.hotel.full.dst.ctx.v1/{split}.act.pred.vllm.7b.2e-5.json',
+        # 2.2 蒸馏实验 7B
+        f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k/{split}.act.pred.vllm.7b.2e-5.json',
+        f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k/{split}.act.pred.vllm.7b.2e-5.pre-train-8k.json',
+        # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_1k/{split}.act.pred.vllm.7b.2e-5.pre-train-16k.json',
+        f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k/{split}.act.pred.vllm.7b.2e-5.json',
+        f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k/{split}.act.pred.vllm.7b.2e-5.pre-train-8k.json',
+        # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k/{split}.act.pred.vllm.7b.2e-5.pre-train-16k.json',
+        f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_4k/{split}.act.pred.vllm.7b.2e-5.json',
+        f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_4k/{split}.act.pred.vllm.7b.2e-5.pre-train-8k.json',
+        # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_4k/{split}.act.pred.vllm.7b.2e-5.pre-train-16k.json',
+        f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.7b.2e-5.json',
+        f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.7b.2e-5.pre-train-8k.json',
+        # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.7b.2e-5.pre-train-16k.json',
     ]:
         print(input_file)
         error2count = collections.defaultdict(float)
@@ -95,3 +94,6 @@ if __name__ == '__main__':
                   f'{round(r, 5)} '
                   f'{round(f, 5)} '
                   )
+
+            # acc = slot_key2tp[full_slot_key] / (slot_key2tp[full_slot_key] + slot_key2fp[full_slot_key] + slot_key2fn[full_slot_key])
+            # print(f'{full_slot_key} {round(acc, 5)}')

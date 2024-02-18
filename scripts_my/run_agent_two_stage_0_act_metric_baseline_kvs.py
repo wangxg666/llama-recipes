@@ -47,14 +47,10 @@ def compare(hyp, ref, fuzzy_ratio=95):
     for slot, value in hyp.items():
         if slot in ref and fuzz.partial_ratio(value, ref[slot]) > fuzzy_ratio:
             tp += 1
-        elif slot not in ref:
-            fp += 1
         else:
             fp += 1
     for slot, value in ref.items():
-        if slot not in hyp:
-            fn += 1
-        elif fuzz.partial_ratio(hyp[slot], value) <= fuzzy_ratio:
+        if slot not in hyp or fuzz.partial_ratio(hyp[slot], value) <= fuzzy_ratio:
             fn += 1
     return tp, fp, fn, is_matching(hyp, ref)
 
@@ -73,12 +69,12 @@ def print_action_metric(pred_actions, real_actions):
 if __name__ == '__main__':
     service2slot_keys = json.load(open('woz_valid_slot_keys.json'))
 
-    for split in ['dev', 'test']:
+    for split in ['test']:
         for input_file in [
-            # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst/{split}.act.pred.7b.json',
+            # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.7b.2e-5.json',
+            # f'/mnt/share16t/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.attraction.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.hotel.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.restaurant.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
-            # f'/mnt/share16t/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.attraction.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.taxi.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.auto.gen.v08.28.1.replace.train.full.dst.ctx/{split}.act.pred.vllm.7b.2e-5.json',
 
@@ -100,8 +96,11 @@ if __name__ == '__main__':
             # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_4k/{split}.act.pred.vllm.7b.2e-5.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_4k/{split}.act.pred.vllm.7b.2e-5.pre-train-8k.json',
             # # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_4k/{split}.act.pred.vllm.7b.2e-5.pre-train-16k.json',
-            # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.7b.2e-5.json',
+            f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.7b.2e-5.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.7b.2e-5.pre-train-8k.json',
+            # # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.7b.2e-5.pre-train-8k.only.json',
+            f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.7b.2e-5.pre-train-16k.dedup.json',
+            f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.7b.2e-5.pre-train-16k.dedup.v2.json',
             # # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.7b.2e-5.pre-train-16k.json',
 
             # 2.2 蒸馏实验 13B
@@ -111,11 +110,11 @@ if __name__ == '__main__':
             # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_2k/{split}.act.pred.vllm.13b.2e-5.pre-train-8k.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_4k/{split}.act.pred.vllm.13b.2e-5.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_4k/{split}.act.pred.vllm.13b.2e-5.pre-train-8k.json',
-            f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.13b.2e-5.json',
+            # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.13b.2e-5.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.13b.1e-5.pre-train-8k.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.13b.2e-5.pre-train-8k.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.13b.5e-5.pre-train-8k.json',
-            f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.13b.2e-5.pre-train-16k.json',
+            # f'/mnt/share16t/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/{split}.act.pred.vllm.13b.2e-5.pre-train-16k.json',
 
             # 2.4 蒸馏实验 7B
             # f'/mnt/share16t/xingguang/datasets/agent_sft.woz.2.4.limit_1k.new/{split}.act.pred.vllm.7b.2e-5.json',
@@ -134,19 +133,22 @@ if __name__ == '__main__':
             # f'/mnt/share16t/xingguang/datasets/agent_sft.woz.2.4.limit_2k.new/{split}.act.pred.vllm.13b.2e-5.pre-train-8k.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.woz.2.4.limit_4k.new/{split}.act.pred.vllm.13b.2e-5.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.woz.2.4.limit_4k.new/{split}.act.pred.vllm.13b.2e-5.pre-train-8k.json',
-            f'/mnt/share16t/xingguang/datasets/agent_sft.woz.2.4.limit_8k.new/{split}.act.pred.vllm.13b.2e-5.json',
+            # f'/mnt/share16t/xingguang/datasets/agent_sft.woz.2.4.limit_8k.new/{split}.act.pred.vllm.13b.2e-5.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.woz.2.4.limit_8k.new/{split}.act.pred.vllm.13b.1e-5.pre-train-8k.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.woz.2.4.limit_8k.new/{split}.act.pred.vllm.13b.2e-5.pre-train-8k.json',
             # f'/mnt/share16t/xingguang/datasets/agent_sft.woz.2.4.limit_8k.new/{split}.act.pred.vllm.13b.5e-5.pre-train-8k.json',
-            f'/mnt/share16t/xingguang/datasets/agent_sft.woz.2.4.limit_8k.new/{split}.act.pred.vllm.13b.2e-5.pre-train-16k.json',
+            # f'/mnt/share16t/xingguang/datasets/agent_sft.woz.2.4.limit_8k.new/{split}.act.pred.vllm.13b.2e-5.pre-train-16k.json',
         ]:
             parts = input_file.split('/')
+            print(input_file)
             print('/'.join(parts[-2:]))
             pred_actions, real_actions = [], []
 
             objs = [json.loads(data) for data in open(input_file)][:]
 
             for obj in objs:
+                if 'real_act' not in obj or 'pred_act' not in obj:
+                    continue
                 real_action = obj['real_act'].get('current_service', 'error')
                 if real_action not in ['hotel', 'attraction', 'restaurant', 'train', 'taxi']:
                     real_action = 'other'
@@ -160,6 +162,8 @@ if __name__ == '__main__':
 
             total_tp, total_fp, total_fn, joint_match, total_n = 0., 0., 0., 0., 0.
             for obj in objs:
+                if 'real_act' not in obj or 'pred_act' not in obj:
+                    continue
                 real_slots = get_slots(obj['real_act']['slots'])
                 pred_slots = get_slots(obj['pred_act']['slots'])
 

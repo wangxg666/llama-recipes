@@ -45,63 +45,53 @@ def is_valid_api_response(output):
         return False
 
 
-def run(tgi_svr, output_file):
-    sout = open(output_file, 'w')
+def run_one(obj, tgi_svr):
+    key = f'{obj["dialog_id"]}_{obj["turn_id"]}'
 
-    datas = [data for data in open(f'{input_dir}/{split}.act.json')]
-    for data in tqdm.tqdm(datas):
-        act_obj = json.loads(data)
-        key = f'{act_obj["dialog_id"]}_{act_obj["turn_id"]}'
+    prompt, label = AgentActDataset.prompting(obj)
 
-        if key not in key2sample:
-            counter['sample_is_missing'] += 1
-            continue
+    output = call_tgi(prompt, tgi_svr)
+    if not is_valid_action_response(output):
+        return "{}"
 
-        prompt, label = AgentActDataset.prompting(act_obj)
-
-        output = call_tgi(prompt, tgi_svr)
-        if not is_valid_action_response(output):
-            counter['decision_maker_error'] += 1
-            continue
-
-        act_output = json.loads(output)
-
-        sout.write(json.dumps({
+    act_output = json.loads(output)
+    return json.dumps({
             'key': key,
             'pred_act': act_output,
-            'real_act': act_obj['label']
-        }) + '\n')
-        sout.flush()
-        counter['success'] += 1
-    print(tgi_svr, json.dumps(counter, indent=2))
+            'real_act': obj['label']
+        })
+
 
 
 if __name__ == '__main__':
-    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.2.dst.ctx'
+    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.woz.2.4.limit_8k.new/'
+    input_dir = '/home/paperspace/xingguang/datasets/agent_sft.v10.baseline.dst.limit_8k/'
 
-    for split in ['test']:
-        key2sample = {}
-        for filename in [f'{split}.api.json']:
-            for data in open(f'{input_dir}/{filename}'):
-                obj = json.loads(data)
-                key = f'{obj["dialog_id"]}_{obj["turn_id"]}'
-                key2sample[key] = obj
+    tgi_servers = [
+        'http://209.51.170.51:1300',
+        'http://209.51.170.51:1301',
+        'http://209.51.170.51:1302',
+        'http://209.51.170.51:1303',
+        'http://209.51.170.51:1304',
+        'http://209.51.170.51:1305',
+        'http://209.51.170.51:1306',
+        'http://209.51.170.51:1307',
+    ]
 
-        counter = collections.defaultdict(float)
-        tgi_svr2output_file = {
-            'http://172.83.13.53:1304': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.4.1.dst.ctx/{split}.act.pred.7b.single.json',
-            'http://172.83.13.53:1305': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.8.1.dst.ctx/{split}.act.pred.7b.single.json',
-            'http://172.83.13.53:1306': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.13.1.dst.ctx/{split}.act.pred.7b.single.json',
-            'http://172.83.13.53:1307': f'/home/paperspace/xingguang/datasets/agent_sft.auto.gen.v08.17.1.dst.ctx/{split}.act.pred.7b.single.json',
-        }
+    split = 'test'
 
-        pool = multiprocessing.Pool(len(tgi_svr2output_file))
-        for tgi_svr, output_file in tgi_svr2output_file.items():
-            pool.apply_async(
-                func=run,
-                args=(tgi_svr, output_file)
-            )
-        pool.close()
-        pool.join()
-    # for tgi_svr, output_file in tgi_svr2output_file.items():
-    #     run(tgi_svr, output_file)
+    pool = multiprocessing.Pool(len(tgi_servers))
+    reses = []
+    for i, data in enumerate(open(f'{input_dir}/{split}.act.json')):
+        obj = json.loads(data)
+        reses.append(pool.apply_async(
+            func=run_one,
+            args=(obj, tgi_servers[i % len(tgi_servers)])
+        ))
+
+    sout = open(f'{input_dir}/{split}.act.pred.vllm.7b.2e-5.pre-train-8k.dedup.json', 'w')
+    for res in tqdm.tqdm(reses):
+        res = res.get()
+        sout.write(res + '\n')
+        sout.flush()
+    pool.close()
